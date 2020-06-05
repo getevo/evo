@@ -6,7 +6,6 @@ import (
 	"github.com/getevo/evo"
 	"github.com/getevo/evo/lib/concurrent"
 	"github.com/getevo/evo/lib/fontawesome"
-	"github.com/getevo/evo/lib/gpath"
 	"github.com/getevo/evo/menu"
 	"github.com/getevo/evo/user"
 	"github.com/jinzhu/gorm"
@@ -63,7 +62,7 @@ func (App) Register() {
 	if config.Database.Enabled == false {
 		panic("Auth App require database to be enabled. solution: enable database at config.yml")
 	}
-	Path = gpath.Parent(gpath.WorkingDir()) + "/apps/settings"
+	Path = evo.GuessAsset("/apps/settings")
 	fmt.Println(Path + "/views")
 	views = evo.RegisterView("settings", Path+"/views")
 	db.AutoMigrate(&Settings{})

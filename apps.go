@@ -1,9 +1,12 @@
 package evo
 
 import (
+	"github.com/getevo/evo/lib/gpath"
 	"github.com/getevo/evo/lib/ref"
 	"github.com/getevo/evo/menu"
 	"github.com/getevo/evo/user"
+	"path"
+	"runtime"
 )
 
 type App interface {
@@ -41,4 +44,19 @@ func Register(app App) {
 // GetRegisteredApps return list of registered apps
 func GetRegisteredApps() map[string]interface{} {
 	return apps
+}
+
+func GuessAsset(p string) string {
+	if gpath.IsDirExist(gpath.Parent(gpath.WorkingDir()) + p) {
+		return gpath.Parent(gpath.WorkingDir()) + p
+	}
+	_, filename, _, ok := runtime.Caller(0)
+	if !ok {
+		panic("Unable to guess asset path for " + p)
+	}
+	if gpath.IsDirExist(path.Dir(filename) + p) {
+		return path.Dir(filename) + p
+	}
+	panic("Unable to guess asset path for " + p)
+	return ""
 }

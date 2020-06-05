@@ -5,7 +5,6 @@ import (
 	"github.com/CloudyKit/jet"
 	"github.com/getevo/evo"
 	"github.com/getevo/evo/apps/settings"
-	"github.com/getevo/evo/lib/gpath"
 	"github.com/getevo/evo/menu"
 	"github.com/getevo/evo/user"
 	"github.com/getevo/evo/viewfn"
@@ -35,7 +34,7 @@ var config *evo.Configuration
 // Register the adminlte
 func (App) Register() {
 	fmt.Println("AdminLTE Registered")
-	Path = gpath.Parent(gpath.WorkingDir()) + "/apps/adminlte"
+	Path = evo.GuessAsset("/apps/adminlte")
 	pages = evo.RegisterView("template", Path+"/pages")
 	elements = evo.RegisterView("html", Path+"/html")
 	config = evo.GetConfig()
