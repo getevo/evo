@@ -2,9 +2,9 @@ package apiman
 
 import (
 	"fmt"
-	"github.com/iesreza/io"
-	"github.com/iesreza/io/menu"
-	"github.com/iesreza/io/user"
+	"github.com/getevo/evo"
+	"github.com/getevo/evo/menu"
+	"github.com/getevo/evo/user"
 )
 
 func Register() {

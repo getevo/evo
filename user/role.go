@@ -2,7 +2,7 @@ package user
 
 import (
 	"fmt"
-	"github.com/iesreza/io/lib/log"
+	"github.com/getevo/evo/lib/log"
 	"github.com/iesreza/validate"
 )
 

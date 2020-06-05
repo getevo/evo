@@ -2,11 +2,11 @@ package test
 
 import (
 	"fmt"
+	"github.com/getevo/evo"
+	"github.com/getevo/evo/html"
+	"github.com/getevo/evo/lib/T"
+	"github.com/getevo/evo/lib/fontawesome"
 	"github.com/gofiber/fiber"
-	"github.com/iesreza/io"
-	"github.com/iesreza/io/html"
-	"github.com/iesreza/io/lib/T"
-	"github.com/iesreza/io/lib/fontawesome"
 	"reflect"
 	"strings"
 )

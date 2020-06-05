@@ -2,7 +2,6 @@ package network
 
 import (
 	"fmt"
-	"github.com/iesreza/foundation/lib/machine"
 	"testing"
 )
 

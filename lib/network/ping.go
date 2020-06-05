@@ -2,7 +2,7 @@ package network
 
 import (
 	"fmt"
-	"github.com/iesreza/foundation/lib"
+	"github.com/getevo/evo/lib"
 	"os/exec"
 	"regexp"
 	"runtime"

@@ -3,13 +3,13 @@ package telegram
 import (
 	"fmt"
 	"github.com/CloudyKit/jet"
+	"github.com/getevo/evo"
+	"github.com/getevo/evo/apps/settings"
+	"github.com/getevo/evo/lib/gpath"
+	"github.com/getevo/evo/menu"
+	"github.com/getevo/evo/user"
+	"github.com/getevo/evo/viewfn"
 	"github.com/gofiber/fiber"
-	"github.com/iesreza/io"
-	"github.com/iesreza/io/apps/settings"
-	"github.com/iesreza/io/lib/gpath"
-	"github.com/iesreza/io/menu"
-	"github.com/iesreza/io/user"
-	"github.com/iesreza/io/viewfn"
 )
 
 // Register register the adminlte in io apps

@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/CloudyKit/jet"
-	"github.com/iesreza/gutil/log"
-	"github.com/iesreza/io"
+	"github.com/getevo/evo"
+	"github.com/getevo/evo/lib/log"
 	"strconv"
 	"strings"
 )

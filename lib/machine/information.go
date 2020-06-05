@@ -3,9 +3,9 @@ package machine
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/getevo/evo/lib"
+	"github.com/getevo/evo/lib/network"
 	"github.com/gocarina/gocsv"
-	"github.com/iesreza/foundation/lib"
-	"github.com/iesreza/foundation/lib/network"
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/mem"
 	"os"

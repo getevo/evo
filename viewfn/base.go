@@ -3,8 +3,8 @@ package viewfn
 import (
 	"github.com/CloudyKit/jet"
 	"github.com/disintegration/imaging"
-	"github.com/iesreza/io/lib/gpath"
-	"github.com/iesreza/io/lib/log"
+	"github.com/getevo/evo/lib/gpath"
+	"github.com/getevo/evo/lib/log"
 	"os"
 	"path/filepath"
 	"reflect"

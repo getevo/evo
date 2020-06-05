@@ -2,15 +2,15 @@ package settings
 
 import (
 	"encoding/json"
+	"github.com/getevo/evo"
+	"github.com/getevo/evo/errors"
+	"github.com/getevo/evo/html"
+	"github.com/getevo/evo/i18"
+	"github.com/getevo/evo/lib"
+	"github.com/getevo/evo/lib/constant"
+	"github.com/getevo/evo/lib/ref"
+	"github.com/getevo/evo/lib/text"
 	"github.com/gofiber/fiber"
-	"github.com/iesreza/io"
-	"github.com/iesreza/io/errors"
-	"github.com/iesreza/io/html"
-	"github.com/iesreza/io/i18"
-	"github.com/iesreza/io/lib"
-	"github.com/iesreza/io/lib/constant"
-	"github.com/iesreza/io/lib/ref"
-	"github.com/iesreza/io/lib/text"
 	"reflect"
 	"strings"
 )

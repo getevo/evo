@@ -2,9 +2,9 @@ package evo
 
 import (
 	"fmt"
+	"github.com/getevo/evo/lib/log"
+	"github.com/getevo/evo/lib/text"
 	"github.com/gofiber/fiber"
-	"github.com/iesreza/io/lib/log"
-	"github.com/iesreza/io/lib/text"
 	"mime/multipart"
 	"reflect"
 	"time"

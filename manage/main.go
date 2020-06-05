@@ -3,10 +3,10 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/iesreza/gutil/date"
-	"github.com/iesreza/io/lib/gpath"
-	"github.com/iesreza/io/lib/text"
-	"github.com/iesreza/io/manage/tools/gaper"
+	"github.com/getevo/evo/lib/date"
+	"github.com/getevo/evo/lib/gpath"
+	"github.com/getevo/evo/lib/text"
+	"github.com/getevo/evo/manage/tools/gaper"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -16,7 +16,7 @@ import (
 
 var (
 	git           = "https://github.com/getevo/evo.git"
-	path          = os.Getenv("GOPATH") + "/src/github.com/iesreza/io/apps/standard"
+	path          = os.Getenv("GOPATH") + "/src/github.com/getevo/evo/apps/standard"
 	command       = ""
 	workingdir, _ = os.Getwd()
 	app           = filepath.Base(workingdir)

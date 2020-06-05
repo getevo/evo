@@ -2,10 +2,10 @@ package auth
 
 import (
 	"fmt"
-	"github.com/iesreza/io"
-	"github.com/iesreza/io/apps/query"
-	"github.com/iesreza/io/menu"
-	"github.com/iesreza/io/user"
+	"github.com/getevo/evo"
+	"github.com/getevo/evo/apps/query"
+	"github.com/getevo/evo/menu"
+	"github.com/getevo/evo/user"
 	"github.com/jinzhu/gorm"
 )
 
@@ -49,7 +49,6 @@ func (App) Register() {
 // Router setup routers
 func (App) Router() {
 	controller := Controller{}
-
 
 	auth := evo.Group("/auth")
 
@@ -144,7 +143,6 @@ func (App) Router() {
 	// @doc body   		Model:user.Group
 	// @doc required	Permission:auth.group.create
 	auth.Post("/group/create", controller.CreateGroup)
-
 
 	// @doc type 		api
 	// @doc name 		group edit

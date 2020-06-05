@@ -2,8 +2,8 @@ package log
 
 import (
 	"fmt"
-	"github.com/iesreza/foundation/lib"
-	"github.com/iesreza/io/lib/log/logger"
+	"github.com/getevo/evo/lib"
+	"github.com/getevo/evo/lib/log/logger"
 	"io"
 	"os"
 	"path/filepath"

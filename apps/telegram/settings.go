@@ -2,7 +2,7 @@ package telegram
 
 import (
 	"fmt"
-	"github.com/iesreza/io"
+	"github.com/getevo/evo"
 	"reflect"
 	"sync"
 )

@@ -1,7 +1,7 @@
 package admin
 
 import (
-	"github.com/iesreza/io"
+	"github.com/getevo/evo"
 )
 
 type Widget struct {

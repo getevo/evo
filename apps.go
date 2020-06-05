@@ -1,9 +1,9 @@
 package evo
 
 import (
-	"github.com/iesreza/io/lib/ref"
-	"github.com/iesreza/io/menu"
-	"github.com/iesreza/io/user"
+	"github.com/getevo/evo/lib/ref"
+	"github.com/getevo/evo/menu"
+	"github.com/getevo/evo/user"
 )
 
 type App interface {

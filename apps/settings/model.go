@@ -1,6 +1,6 @@
 package settings
 
-import "github.com/iesreza/io"
+import "github.com/getevo/evo"
 
 type Settings struct {
 	evo.Model

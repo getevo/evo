@@ -2,8 +2,8 @@ package user
 
 import (
 	"encoding/json"
-	"github.com/iesreza/io/lib/data"
-	"github.com/iesreza/io/lib/text"
+	"github.com/getevo/evo/lib/data"
+	"github.com/getevo/evo/lib/text"
 	"github.com/jinzhu/gorm"
 	"time"
 )

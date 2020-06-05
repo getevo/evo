@@ -5,17 +5,17 @@ import (
 	"fmt"
 	"github.com/AlexanderGrom/go-event"
 	swagger "github.com/arsmn/fiber-swagger"
+	"github.com/getevo/evo/lib/gpath"
+	"github.com/getevo/evo/lib/jwt"
+	"github.com/getevo/evo/lib/text"
+	"github.com/getevo/evo/lib/utils"
+	"github.com/getevo/evo/user"
 	"github.com/gofiber/cors"
 	"github.com/gofiber/fiber"
 	"github.com/gofiber/limiter"
 	"github.com/gofiber/logger"
 	recovermd "github.com/gofiber/recover"
 	"github.com/gofiber/requestid"
-	"github.com/iesreza/io/lib/gpath"
-	"github.com/iesreza/io/lib/jwt"
-	"github.com/iesreza/io/lib/text"
-	"github.com/iesreza/io/lib/utils"
-	"github.com/iesreza/io/user"
 )
 
 var (

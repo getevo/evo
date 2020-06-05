@@ -1,8 +1,8 @@
 package evo
 
 import (
-	"github.com/iesreza/io/lib/gpath"
-	"github.com/iesreza/io/lib/text"
+	"github.com/getevo/evo/lib/gpath"
+	"github.com/getevo/evo/lib/text"
 	"github.com/mitchellh/mapstructure"
 	"github.com/xhit/go-str2duration"
 	"gopkg.in/yaml.v2"

@@ -3,12 +3,12 @@ package settings
 import (
 	"fmt"
 	"github.com/CloudyKit/jet"
-	"github.com/iesreza/io"
-	"github.com/iesreza/io/lib/concurrent"
-	"github.com/iesreza/io/lib/fontawesome"
-	"github.com/iesreza/io/lib/gpath"
-	"github.com/iesreza/io/menu"
-	"github.com/iesreza/io/user"
+	"github.com/getevo/evo"
+	"github.com/getevo/evo/lib/concurrent"
+	"github.com/getevo/evo/lib/fontawesome"
+	"github.com/getevo/evo/lib/gpath"
+	"github.com/getevo/evo/menu"
+	"github.com/getevo/evo/user"
 	"github.com/jinzhu/gorm"
 	"reflect"
 )

@@ -1,7 +1,7 @@
 package test
 
 import (
-	"github.com/iesreza/io"
+	"github.com/getevo/evo"
 )
 
 type MyModel struct {
