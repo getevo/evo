@@ -2,7 +2,7 @@ package log
 
 import (
 	"fmt"
-	"github.com/getevo/evo/lib"
+	"github.com/getevo/evo/lib/date"
 	"github.com/getevo/evo/lib/log/logger"
 	"io"
 	"os"
@@ -96,7 +96,7 @@ func Rotate() {
 		cleanOldFiles()
 		log.Info("Log Rotated")
 		go func() {
-			duration, _ := lib.Now().DiffExpr("tomorrow midnight")
+			duration, _ := date.Now().DiffExpr("tomorrow midnight")
 			time.Sleep(duration)
 			time.Sleep(1 * time.Second)
 			Rotate()
