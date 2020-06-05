@@ -1,0 +1,23 @@
+<div class="form-group {{ if input.Horizontal }}row{{end}} {{ if input.Size > 0 }}col-sm-{{ input.Size }}{{end}}">
+	<label for="{{ input.Attr("id") }}" class="col-sm-{{ input.LabelSize }} control-label">
+		{{  if input.Attr("required") != "" }}
+			<i class="fa fa-asterisk text-danger"></i>
+		{{end}}
+		{{ input.Label }}
+	</label>
+	<div class="col-sm-{{ input.InputSize }} input-group">
+		{{ if input.Pre != "" }}
+		<div class="input-group-prepend">
+            <span class="input-group-text">{{ input.Pre }}</span>
+        </div>
+		{{end}}
+		<input type="text"  masked data-inputmask-alias="datetime" data-inputmask-inputformat="yyyy/mm/dd" name="{{ input.Name }}" {{ input.Attributes.Render()|raw }} {{ if input.Value != nil}}value="{{ input.Value}}"{{end}} />
+		{{ if input.Post != "" }}
+		<div class="input-group-append">
+            <div class="input-group-text">{{ input.Post }}</div>
+        </div>
+        {{end}}
+
+	</div>
+	{{ if input.Hint != "" }}<small class="form-text text-muted">{{ input.Hint }}</small>{{end}}
+</div>

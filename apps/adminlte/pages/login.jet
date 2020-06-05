@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+	{{include "imports/head.jet"}}
+</head>
+<body class="hold-transition login-page">
+<div class="login-box">
+  <div class="login-logo">
+    <a href="{{ base }}"><b>{{ title }}</b></a>
+  </div>
+  <div class="card">
+	{{ raw:body }}
+  </div>
+</div>
+	{{include "imports/scripts.jet"}}
+</body>
+</html>

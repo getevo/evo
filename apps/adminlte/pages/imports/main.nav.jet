@@ -1,0 +1,27 @@
+<ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+{{block menu()}}
+    {{range .}}
+		{{ if request.User.HasPerm(.Permission) }}
+	      <li class="nav-item">
+		      <a href="{{ .Url }}" class="nav-link">
+		        <i class="nav-icon fas fa-{{ .Icon }}"></i>
+		        <p>
+		          {{ .Title }}
+		          {{if len(.Children)}}
+					<i class="right fas fa-angle-left"></i>
+				   {{end}}
+		        </p>
+		      </a>
+		      {{if len(.Children)}}
+		        <ul class="nav nav-treeview">
+		            {{yield menu() .Children}}
+		        </ul>
+	          {{end}}
+	      </li>
+	    {{end}}
+    {{end}}
+{{end}}
+
+{{yield menu() nav}}
+
+</ul>

@@ -1,0 +1,85 @@
+<div class="card card-primary card-outline card-outline-tabs">
+      <div class="card-header p-0 border-bottom-0">
+	        <ul class="nav nav-tabs" id="settings-tab" role="tablist">
+	        {{ range registries }}
+	            <li class="nav-item">
+	                <a class="nav-link" id="{{ .Slug }}-tab" data-toggle="pill" href="#{{ .Slug }}" role="tab" aria-controls="{{ .Slug }}" >{{ .Title }}</a>
+	            </li>
+	        {{ end }}
+	        </ul>
+        </div>
+
+	<div class="card-body">
+
+			<div class="tab-content" id="settings-tabContent">
+				{{ range registries }}
+					<div class="tab-pane fade" id="{{ .Slug }}" role="tabpanel" aria-labelledby="{{ .Slug }}-tab">
+						<form class="col-12" data-reference="{{ .Reference }}">
+							<div class="row">
+							{{range .Form}}
+					            {{.|raw}}
+					        {{end}}
+					        </div>
+				        </form>
+			        </div>
+			     {{end}}
+
+			</div>
+
+	</div>
+	<div class="card-footer">
+		<button class="btn btn-success" onclick="Save()" ><i class="fas fa-save"></i> Save </button>
+		<button class="btn btn-secondary" onclick="window.location.reload()"><i class="fas fa-times"></i> Cancel </button>
+		<button class="btn btn-secondary float-right" onclick="Reset()"><i class="fas fa-redo"></i> Default </button>
+	</div>
+</div>
+<script>
+	require("plugins/jquery-serialize-json/jquery-serialize-json.js");
+	var memo = {};
+	$('a[data-toggle="pill"]').on('shown.bs.tab', function (e) {
+		 var active = $(".tab-pane.active.show form");
+		 data = $(active).serializeJSON();
+		 memo[active.data("reference")] = data;
+
+    });
+	$('.nav-tabs a:first').tab('show');
+
+	$('a[data-toggle="pill"]').on('show.bs.tab', function (e) {
+		var active = $(".tab-pane.active.show form");
+		var data   = $(active).serializeJSON();
+		if( JSON.stringify(data) !=  JSON.stringify( memo[active.data("reference")] )){
+		    return confirm("You have some unsaved data do you want leave this tab without save them?");
+		}
+	    return true
+    });
+
+
+	var Save = function() {
+	    var active = jQuery(".tab-pane.active.show form");
+        var data   = jQuery(active).serializeJSON();
+	    IO.Ajax({
+	        url:"admin/settings/"+active.data("reference"),
+	        data:data,
+	        success:function(res) {
+	          if(!App.Error(res)){
+	              window.location.reload();
+	          }
+	        }
+	    });
+	}
+
+	var Reset = function() {
+        var active = jQuery(".tab-pane.active.show form");
+        var data   = jQuery(active).serializeJSON();
+        IO.Ajax({
+            url:"admin/settings/reset/"+active.data("reference"),
+            data:data,
+            success:function(res) {
+              if(!App.Error(res)){
+                  window.location.reload();
+
+              }
+            }
+        });
+    }
+</script>
