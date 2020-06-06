@@ -2,11 +2,13 @@ package evo
 
 import (
 	"github.com/getevo/evo/lib/gpath"
+	"github.com/getevo/evo/lib/log"
 	"github.com/getevo/evo/lib/ref"
 	"github.com/getevo/evo/menu"
 	"github.com/getevo/evo/user"
-	"path"
-	"runtime"
+	"go/build"
+	"reflect"
+	"strings"
 )
 
 type App interface {
@@ -46,17 +48,32 @@ func GetRegisteredApps() map[string]interface{} {
 	return apps
 }
 
-func GuessAsset(p string) string {
-	if gpath.IsDirExist(gpath.Parent(gpath.WorkingDir()) + p) {
-		return gpath.Parent(gpath.WorkingDir()) + p
+func GuessAsset(app App) string {
+	src := ""
+	pack := ""
+	t := reflect.ValueOf(app)
+	if t.Kind() == reflect.Ptr {
+		src = t.Elem().Type().PkgPath()
+		pack = t.Elem().Type().String()
+	} else {
+		src = t.Type().PkgPath()
+		pack = t.Type().String()
 	}
-	_, filename, _, ok := runtime.Caller(0)
-	if !ok {
-		panic("Unable to guess asset path for " + p)
+	//
+	pack = strings.Replace(pack, ".", "/", 1)
+	pack = "/override/" + gpath.Parent(pack)
+	pack = strings.Trim(pack, "/")
+
+	if gpath.IsDirExist(gpath.WorkingDir() + "/" + pack) {
+		log.Info("Found override at " + gpath.WorkingDir() + "/" + pack)
+		return gpath.WorkingDir() + "/" + pack
 	}
-	if gpath.IsDirExist(path.Dir(filename) + p) {
-		return path.Dir(filename) + p
+
+	if gpath.IsDirExist(build.Default.GOPATH + "/src/" + src) {
+		log.Info("Load assets from " + gpath.WorkingDir() + "/" + pack)
+		return build.Default.GOPATH + "/src/" + src
 	}
-	panic("Unable to guess asset path for " + p)
+
+	panic("Unable to guess asset path for " + pack)
 	return ""
 }

@@ -34,7 +34,7 @@ var config *evo.Configuration
 // Register the adminlte
 func (App) Register() {
 	fmt.Println("AdminLTE Registered")
-	Path = evo.GuessAsset("/apps/adminlte")
+	Path = evo.GuessAsset(App{})
 	pages = evo.RegisterView("template", Path+"/pages")
 	elements = evo.RegisterView("html", Path+"/html")
 	config = evo.GetConfig()

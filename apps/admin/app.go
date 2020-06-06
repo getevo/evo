@@ -7,6 +7,7 @@ import (
 	"github.com/getevo/evo/apps/auth"
 	"github.com/getevo/evo/apps/settings"
 	"github.com/getevo/evo/lib/fontawesome"
+	"github.com/getevo/evo/lib/log"
 	"github.com/getevo/evo/menu"
 	"github.com/getevo/evo/user"
 	"github.com/gofiber/fiber"
@@ -33,9 +34,10 @@ var setting Settings
 func (App) Register() {
 	//Require auth
 	setting.SessionAge = fmt.Sprint(evo.GetConfig().JWT.Age.Seconds())
-	Path = evo.GuessAsset("/apps/admin")
+	Path = evo.GuessAsset(App{})
 	auth.Register()
 	views = evo.RegisterView("admin", Path+"/views")
+	log.Error(Path + "/views")
 	settings.Register("Admin Panel", &setting)
 }
 
