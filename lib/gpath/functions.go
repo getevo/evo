@@ -36,7 +36,7 @@ func RSlash(path string) string {
 // IsDirExist checks if is directory exist
 func IsDirExist(path string) bool {
 	info, err := os.Stat(path)
-	if os.IsNotExist(err) {
+	if os.IsNotExist(err) || info == nil {
 		return false
 	}
 	return info.IsDir()

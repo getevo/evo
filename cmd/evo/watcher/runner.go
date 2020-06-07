@@ -1,4 +1,4 @@
-package gaper
+package watcher
 
 import (
 	"errors"
