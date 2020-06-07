@@ -4,6 +4,7 @@ import "github.com/alexflint/go-arg"
 
 type args struct {
 	Config string `arg:"env" help:"Configuration path" default:"config.yml"`
+	Pack   bool   `arg:"-p" help:"Copy assets to build dir"`
 }
 
 var Arg args

@@ -54,3 +54,5 @@ func (App) WhenReady() {
 			Name:"Group 3",
 		})*/
 }
+
+func (App) Pack() {}

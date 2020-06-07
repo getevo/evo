@@ -16,6 +16,7 @@ type App interface {
 	Router()
 	WhenReady()
 	Permissions() []user.Permission
+	Pack()
 	Menus() []menu.Menu
 }
 
@@ -41,6 +42,10 @@ func Register(app App) {
 	AppMenus = append(AppMenus, n...)
 
 	onReady = append(onReady, app.WhenReady)
+
+	if Arg.Pack {
+		app.Pack()
+	}
 }
 
 // GetRegisteredApps return list of registered apps
@@ -61,16 +66,16 @@ func GuessAsset(app App) string {
 	}
 	//
 	pack = strings.Replace(pack, ".", "/", 1)
-	pack = "/override/" + gpath.Parent(pack)
+	pack = "/bundle/" + gpath.Parent(pack)
 	pack = strings.Trim(pack, "/")
 
 	if gpath.IsDirExist(gpath.WorkingDir() + "/" + pack) {
-		log.Info("Found override at " + gpath.WorkingDir() + "/" + pack)
+		log.Info("Load local bundle at " + gpath.WorkingDir() + "/" + pack)
 		return gpath.WorkingDir() + "/" + pack
 	}
 
 	if gpath.IsDirExist(build.Default.GOPATH + "/src/" + src) {
-		log.Info("Load assets from " + gpath.WorkingDir() + "/" + pack)
+		log.Info("Load bundle from " + gpath.WorkingDir() + "/" + pack)
 		return build.Default.GOPATH + "/src/" + src
 	}
 

@@ -81,3 +81,7 @@ func (App) Permissions() []user.Permission { return []user.Permission{} }
 func (App) Menus() []menu.Menu {
 	return []menu.Menu{}
 }
+
+func (App) Pack() {
+	evo.Pack(Path)
+}

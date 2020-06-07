@@ -27,6 +27,10 @@ var Path string
 // App admin app struct
 type App struct{}
 
+func (App) Pack() {
+	evo.Pack(Path)
+}
+
 var views *jet.Set
 var setting Settings
 

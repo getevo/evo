@@ -93,7 +93,7 @@ func firstScan(dir string, level int) {
 				}
 				continue
 			}
-			if strings.HasSuffix(info.Name(), ".go") {
+			if !info.IsDir() && strings.HasSuffix(info.Name(), ".go") {
 				if level < 4 {
 					mu.Lock()
 					if _, ok := files[path]; !ok {

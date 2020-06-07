@@ -16,6 +16,9 @@ import (
 	"github.com/gofiber/logger"
 	recovermd "github.com/gofiber/recover"
 	"github.com/gofiber/requestid"
+	"os"
+	"path/filepath"
+	"strings"
 )
 
 var (
@@ -35,7 +38,9 @@ func Setup() {
 	fmt.Printf("Input args %+v \n", Arg)
 
 	parseConfig()
-
+	if Arg.Pack {
+		config.Database.Debug = "false"
+	}
 	bodySize, err := utils.ParseSize(config.Server.MaxUploadSize)
 	if err != nil {
 		bodySize = 10 * 1024 * 1024
@@ -121,6 +126,9 @@ func CustomError(code int, path string) error {
 
 // Run start IO Server
 func Run() {
+	if Arg.Pack {
+		return
+	}
 	go InterceptOSSignal()
 
 	//Static Files
@@ -158,4 +166,58 @@ func Run() {
 // GetFiber return fiber instance
 func GetFiber() *fiber.App {
 	return app
+}
+
+/*func recursiveCpyPack(dir,relative,ds,src,dest string) {
+	dir = strings.TrimRight(dir, ds+".")
+	res, err := ioutil.ReadDir(dir)
+	if err == nil {
+		for _, info := range res {
+			path := dir + "/" + info.Name()
+
+
+			if info.IsDir() && path != src {
+				if path != dir {
+					gpath.MakePath(dest+relative)
+					//recursiveCpyPack(dir,relative,ds,src,dest)
+				}
+				continue
+			}
+
+			if !info.IsDir() && !strings.HasSuffix(info.Name(), ".go") {
+				gpath.CopyFile(,dest+relative)
+			}
+
+		}
+	}
+
+
+}*/
+
+func Pack(path string) {
+	name := filepath.Base(path)
+	WorkingDir = gpath.WorkingDir()
+	dest := WorkingDir + "/bundle/" + name
+
+	err := gpath.MakePath(dest)
+	if err != nil {
+		panic(err)
+	}
+	f, err := gpath.Open(WorkingDir + "/bundle/.ignore")
+	if err != nil {
+		panic(err)
+	}
+	f.WriteString("#evo")
+	len := len(path)
+	filepath.Walk(path, func(p string, info os.FileInfo, err error) error {
+		if info.IsDir() {
+			gpath.MakePath(dest + p[len:])
+		} else {
+			if !strings.HasSuffix(info.Name(), ".go") {
+				gpath.CopyFile(p, dest+p[len:])
+			}
+		}
+		return nil
+	})
+
 }

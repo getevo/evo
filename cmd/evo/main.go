@@ -28,12 +28,21 @@ func main() {
 			return nil
 		},
 		Commands: []*cli.Command{
-			//dev run
+			//run
 			{
 				Name:  "run",
 				Usage: "live run application (hot reload)",
 				Action: func(c *cli.Context) error {
 					build()
+					return nil
+				},
+			},
+			//pack
+			{
+				Name:  "pack",
+				Usage: "pack all needed assets to binary dir",
+				Action: func(c *cli.Context) error {
+					pack()
 					return nil
 				},
 			},
@@ -46,8 +55,26 @@ func main() {
 	}
 }
 
+func pack() {
+	fmt.Println("Pack Mode")
+	cfg := Build{}
+	cfg.WorkingDir = gpath.WorkingDir()
+	var builder = watcher.NewBuilder(cfg.WorkingDir, cfg.BinName, cfg.WorkingDir, cfg.BuildArgs)
+	var runner = watcher.NewRunner(os.Stdout, os.Stderr, filepath.Join(cfg.WorkingDir, builder.Binary()), []string{"-p"})
+	err := builder.Build()
+	if err != nil {
+		panic(err)
+	}
+	_, err = runner.Run()
+	if err != nil {
+		panic(err)
+	}
+	runner.Kill()
+
+}
+
 func build() {
-	fmt.Println("go to build mode")
+	fmt.Println("Hot Reload Mode")
 	cfg := Build{}
 	cfg.WorkingDir = gpath.WorkingDir()
 	var onBuild = false
