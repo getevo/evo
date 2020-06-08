@@ -1,10 +1,13 @@
-package apiman
+package bible
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/CloudyKit/jet"
 	"github.com/getevo/evo"
 	"github.com/getevo/evo/menu"
 	"github.com/getevo/evo/user"
+	"github.com/gofiber/fiber"
 )
 
 func Register() {
@@ -14,11 +17,16 @@ func Register() {
 type App struct{}
 
 var config *evo.Configuration
+var views *jet.Set
+var Path string
 
 // Register the adminlte
 func (App) Register() {
-	fmt.Println("API Man Registered")
+	fmt.Println("Bible Registered")
 	config = evo.GetConfig()
+	Path = evo.GuessAsset(App{})
+	fmt.Println("sssss", Path)
+	views = evo.RegisterView("bible", Path+"/views")
 }
 
 // WhenReady called after setup all apps
@@ -26,7 +34,12 @@ func (App) WhenReady() {}
 
 // Router setup routers
 func (App) Router() {
+	evo.Get("/bible", func(ctx *fiber.Ctx) {
 
+		r := evo.Upgrade(ctx)
+		data, _ := json.Marshal(evo.Docs)
+		r.View(string(data), "bible.default")
+	})
 }
 
 // Permissions setup permissions of app

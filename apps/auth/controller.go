@@ -16,6 +16,9 @@ import (
 )
 
 type Controller struct{}
+
+// @doc type 			model
+// @doc description		input parameters for login api
 type AuthParams struct {
 	Username string `json:"username" form:"username" validate:"empty=false"`
 	Password string `json:"password" form:"password" validate:"empty=false"`

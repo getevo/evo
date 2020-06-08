@@ -36,8 +36,8 @@ func (c Controller) set(s string, object interface{}) {
 		Ptr:       object,
 	}
 	settings.Set(_type, obj)
-	if db.Debug().Where("reference = ?", _type).Take(&obj).RecordNotFound() {
-		db.Debug().Create(&obj)
+	if db.Where("reference = ?", _type).Take(&obj).RecordNotFound() {
+		db.Create(&obj)
 		return
 	}
 	json.Unmarshal([]byte(obj.Data), object)
@@ -142,7 +142,7 @@ func (c Controller) save(ctx *fiber.Ctx) {
 	b, err := json.Marshal(item.Ptr)
 	item.Data = string(b)
 
-	db.Debug().Model(&item).Where("reference = ?", item.Reference).Update("data", item.Data)
+	db.Model(&item).Where("reference = ?", item.Reference).Update("data", item.Data)
 	settings.Set(name, item)
 	r.Flash("success", i18.T("Successfully saved"))
 	r.WriteResponse(true, item)
@@ -169,7 +169,7 @@ func (c Controller) reset(ctx *fiber.Ctx) {
 		return
 	}
 	ref.Invoke(item.Ptr, "OnUpdate", r)
-	db.Debug().Model(&item).Where("reference = ?", item.Reference).Update("data", item.Data)
+	db.Model(&item).Where("reference = ?", item.Reference).Update("data", item.Data)
 	settings.Set(name, item)
 	r.WriteResponse(true, item)
 }

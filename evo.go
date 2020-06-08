@@ -168,32 +168,6 @@ func GetFiber() *fiber.App {
 	return app
 }
 
-/*func recursiveCpyPack(dir,relative,ds,src,dest string) {
-	dir = strings.TrimRight(dir, ds+".")
-	res, err := ioutil.ReadDir(dir)
-	if err == nil {
-		for _, info := range res {
-			path := dir + "/" + info.Name()
-
-
-			if info.IsDir() && path != src {
-				if path != dir {
-					gpath.MakePath(dest+relative)
-					//recursiveCpyPack(dir,relative,ds,src,dest)
-				}
-				continue
-			}
-
-			if !info.IsDir() && !strings.HasSuffix(info.Name(), ".go") {
-				gpath.CopyFile(,dest+relative)
-			}
-
-		}
-	}
-
-
-}*/
-
 func Pack(path string) {
 	name := filepath.Base(path)
 	WorkingDir = gpath.WorkingDir()

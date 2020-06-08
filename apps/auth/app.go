@@ -1,3 +1,7 @@
+// @doc type 		app
+// @doc name		auth
+// @doc description authentication api
+// @doc author		reza
 package auth
 
 import (
@@ -9,6 +13,7 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
+// Register register app
 func Register() {
 	evo.Register(App{})
 }
@@ -50,36 +55,38 @@ func (App) Register() {
 func (App) Router() {
 	controller := Controller{}
 
-	auth := evo.Group("/auth")
+	// @doc type 		meta
+	// @doc prefix		/auth
+	var auth = evo.Group("/auth")
 
 	// @doc type 		api
 	// @doc name 		login
 	// @doc description Possible return json or set cookie
-	// @doc body   		Model:auth.AuthParams
+	// @doc body   		Model:#auth.AuthParams
 	// @doc return		Note:json cookie or text based on accept parameter
 	// @doc required	Header:accept(text/html,application/json)
 	auth.Post("/user/login", controller.Login)
 
 	// @doc type 		api
 	// @doc name 		user create
-	// @doc body   		Model:user.User
+	// @doc body   		Model:#user.User
 	// @doc return 		Map:id,username,name,param
-	// @doc required	Permission:auth.user.create
+	// @doc required	Permission:#auth.user.create
 	auth.Post("/user/create", controller.CreateUser)
 
 	// @doc type 		api
 	// @doc name 		user edit
 	// @doc describe    :id (user id)
-	// @doc body   		Model:user.User
+	// @doc body   		Model:#user.User
 	// @doc return 		Map:id,username,name,param
-	// @doc required	Permission:auth.user.edit
+	// @doc required	Permission:#auth.user.edit
 	auth.Post("/user/edit/:id", controller.EditUser)
 
 	// @doc type 		api
 	// @doc name 		me
 	// @doc description return current logged in user
 	// @doc path   		/user/me
-	// @doc return 		Model:auth.user.User
+	// @doc return 		Model:#user.User
 	auth.Get("/user/me", controller.GetMe)
 
 	// @doc type 		api
@@ -95,81 +102,81 @@ func (App) Router() {
 	// @doc name 		get user
 	// @doc description get single user by id
 	// @doc describe    :id (user id)
-	// @doc return 		Model:user.User
-	// @doc required	Permission:auth.user.view
+	// @doc return 		Model:#user.User
+	// @doc required	Permission:#auth.user.view
 	auth.Get("/user/:id", controller.GetUser) //this should be always last router else it will match before others
 
 	// @doc type 		api
 	// @doc name 		create role
-	// @doc body   		Model:user.Role
+	// @doc body   		Model:#user.Role
 	// @doc return 		Map:id,name,code_name,parent
-	// @doc required	Permission:auth.role.create
+	// @doc required	Permission:#auth.role.create
 	auth.Post("/role/create", controller.CreateRole)
 
 	// @doc type 		api
 	// @doc name 		edit role
 	// @doc describe    :id (role id)
-	// @doc body   		Model:user.Role
+	// @doc body   		Model:#user.Role
 	// @doc return 		Map:id,name,code_name,parent
-	// @doc required	Permission:auth.user.edit
+	// @doc required	Permission:#auth.user.edit
 	auth.Post("/role/edit/:id", controller.EditRole)
 
 	// @doc type 		api
 	// @doc name 		roles
 	// @doc description get list of all roles
-	// @doc return 		Model:[]user.Role
-	// @doc required	Permission:auth.role.view
+	// @doc return 		Model:#[]user.Role
+	// @doc required	Permission:#auth.role.view
 	auth.Get("/role/all", controller.GetRoles)
 
 	// @doc type 		api
 	// @doc name 		get role
 	// @doc describe    :id (role id)
 	// @doc description get single role
-	// @doc return 		Model:user.Role
-	// @doc required	Permission:auth.role.view
+	// @doc return 		Model:#user.Role
+	// @doc required	Permission:#auth.role.view
 	auth.Get("/role/:id", controller.GetRole)
 
 	// @doc type 		api
 	// @doc name 		roles
 	// @doc description get list of all groups of a single role
 	// @doc describe    :id (role id)
-	// @doc return 		Model:[]user.Role
-	// @doc required	Permission:auth.role.view
+	// @doc return 		Model:#[]user.Role
+	// @doc required	Permission:#auth.role.view
 	auth.Get("/role/:id/groups", controller.GetRoleGroups)
 
 	// @doc type 		api
 	// @doc name 		group create
-	// @doc return 		Model:user.Group
-	// @doc body   		Model:user.Group
-	// @doc required	Permission:auth.group.create
+	// @doc return 		Model:#user.Group
+	// @doc body   		Model:#user.Group
+	// @doc required	Permission:#auth.group.create
 	auth.Post("/group/create", controller.CreateGroup)
 
 	// @doc type 		api
 	// @doc name 		group edit
 	// @doc describe    :id (group id)
-	// @doc return 		Model:user.Group
-	// @doc body   		Model:user.Group
-	// @doc required	Permission:auth.group.create
+	// @doc return 		Model:#user.Group
+	// @doc body   		Model:#user.Group
+	// @doc required	Permission:#auth.group.create
 	auth.Post("/group/edit/:id", controller.EditGroup)
 
 	// @doc type 		api
 	// @doc name 		get groups
-	// @doc return 		Model:[]user.Group
-	// @doc required	Permission:auth.group.view
+	// @doc return 		Model:#[]user.Group
+	// @doc required	Permission:#auth.group.view
 	auth.Get("/group/all", controller.GetGroups)
 
 	// @doc type 		api
 	// @doc name 		get single group
 	// @doc describe    :id (group id)
-	// @doc return 		Model:[]user.Group
-	// @doc required	Permission:auth.group.view
+	// @doc return 		Model:#[]user.Group
+	// @doc required	Permission:#auth.group.view
 	auth.Get("/group/:id", controller.GetGroup)
 
 	// @doc type 		api
 	// @doc name 		all permissions
 	// @doc description get list of all system permissions
-	// @doc return 		Model:[]user.Permission
-	// @doc required	Permission:auth.role.view
+	// @doc return 		Model:#[]user.Permission
+	// @doc required	Permission:#auth.role.view
 	auth.Get("/permission/all", controller.GetAllPermissions)
 
 	// @doc group
@@ -177,6 +184,7 @@ func (App) Router() {
 
 // Permissions setup permissions of app
 func (App) Permissions() []user.Permission {
+	// @doc type permission
 	return []user.Permission{
 		{Title: "Access Users", CodeName: "user.view", Description: "Access list to view list of users"},
 		{Title: "Create Users", CodeName: "user.create", Description: "Create new user"},

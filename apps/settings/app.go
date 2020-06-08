@@ -63,7 +63,6 @@ func (App) Register() {
 		panic("Auth App require database to be enabled. solution: enable database at config.yml")
 	}
 	Path = evo.GuessAsset(App{})
-	fmt.Println(Path + "/views")
 	views = evo.RegisterView("settings", Path+"/views")
 	db.AutoMigrate(&Settings{})
 }

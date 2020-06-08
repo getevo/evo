@@ -42,7 +42,9 @@ func Register(app App) {
 	AppMenus = append(AppMenus, n...)
 
 	onReady = append(onReady, app.WhenReady)
-
+	if config.Server.Debug {
+		NewDoc(app)
+	}
 	if Arg.Pack {
 		app.Pack()
 	}
