@@ -25,15 +25,17 @@ func (App) Register() {
 	fmt.Println("Bible Registered")
 	config = evo.GetConfig()
 	Path = evo.GuessAsset(App{})
-	fmt.Println("sssss", Path)
 	views = evo.RegisterView("bible", Path+"/views")
 }
 
 // WhenReady called after setup all apps
-func (App) WhenReady() {}
+func (App) WhenReady() {
+	views.AddGlobal("title", config.App.Name)
+}
 
 // Router setup routers
 func (App) Router() {
+	evo.Static("/assets", Path+"/assets")
 	evo.Get("/bible", func(ctx *fiber.Ctx) {
 
 		r := evo.Upgrade(ctx)

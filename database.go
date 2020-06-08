@@ -23,7 +23,7 @@ func setupDatabase() {
 	}
 	switch strings.ToLower(config.Type) {
 	case "mysql":
-		connectionString := fmt.Sprintf("%s:%s@tcp(%s)/%s?"+config.Params, config.Username, config.Password, config.Server, config.Database)
+		connectionString := fmt.Sprintf("%s:%s@tcp(%s)/%s?", config.Username, config.Password, config.Server, config.Database, config.Params)
 		Database, err = gorm.Open("mysql", connectionString)
 	case "postgres":
 		connectionString := fmt.Sprintf("user=%s password=%s host=%s dbname=%s sslmode=%s "+config.Params, config.Username, config.Password, config.Server, config.Database, config.SSLMode)
