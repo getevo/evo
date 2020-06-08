@@ -47,9 +47,8 @@ func (r *Request) BaseURL() string {
 }
 
 // Body contains the raw body submitted in a POST request.
-// If a key is provided, it returns the form value
-func (r *Request) Body(key ...string) string {
-	return r.Context.Body(key...)
+func (r *Request) Body() string {
+	return r.Context.Body()
 }
 
 // BodyParser binds the request body to a struct.
@@ -71,8 +70,8 @@ func (r *Request) Cookie(cookie *fiber.Cookie) {
 }
 
 // Cookies is used for getting a cookie value by key
-func (r *Request) Cookies(key ...string) (value string) {
-	return r.Context.Cookies(key...)
+func (r *Request) Cookies(key string) (value string) {
+	return r.Context.Cookies(key)
 }
 
 // Download transfers the file from path as an attachment.
