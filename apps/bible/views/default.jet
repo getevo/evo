@@ -39,11 +39,22 @@
     <main role="main" class="row" >
 		<div class="col-md-3 sidebar">
 		   <ul class="nav flex-column" id="apps">
-
+				<li><h4>Installed Apps</h4></li>
            </ul>
 		</div>
 		<div class="col-md-9">
+			<div class="d-flex align-items-center p-3 my-3 text-white-50 bg-purple rounded box-shadow">
+                  <div class="lh-100">
+                      <h6 class="mb-0 text-white lh-100 cf" id="app_name"></h6>
+                      <small id="app_info" class="cf"></small>
+                  </div>
+            </div>
 
+			<div class="my-3 p-3 bg-white rounded box-shadow" id="content">
+
+
+
+			</div>
 		</div>
 
     </main>
@@ -59,28 +70,167 @@
 
 <template name="menuitem">
 	<li class="nav-item">
-        <a class="nav-link active" href="/bible?app=${name}">${name}</a>
+        <a class="nav-link" href="/bible?app=${name}&view=app">${name}</a>
+        <span>${description}</span>
     </li>
 </template>
+
+<template name="app">
+	 <h6 class="border-bottom border-gray pb-2 mb-0">Documented Information</h6>
+     <div class="media text-muted pt-3">
+      <div alt="32x32" class="mr-2 rounded bg-blue app-icon"><i class="fa fa-project-diagram"></i></div>
+      <p class="media-body pb-3 mb-0 small lh-125 border-bottom border-gray">
+        <a href="/bible?app=${app}&view=api"><strong class="d-block text-gray-dark">APIs</strong></a>
+        <span id="api_info"></span>
+      </p>
+    </div>
+    <div class="media text-muted pt-3">
+      <div alt="32x32" class="mr-2 rounded bg-blue app-icon"><i class="fa fa-database"></i> </div>
+      <p class="media-body pb-3 mb-0 small lh-125 border-bottom border-gray">
+        <a href="#"><strong class="d-block text-gray-dark">Models</strong></a>
+        <span id="model_info"></span>
+      </p>
+    </div>
+
+    <div class="media text-muted pt-3">
+      <div alt="32x32" class="mr-2 rounded bg-blue app-icon" ><i class="fa fa-shield-alt"></i> </div>
+      <p class="media-body pb-3 mb-0 small lh-125 border-bottom border-gray">
+        <a href="#"><strong class="d-block text-gray-dark">Permissions</strong></a>
+        <span id="permission_info"></span>
+      </p>
+    </div>
+    <div class="media text-muted pt-3">
+      <div alt="32x32" class="mr-2 rounded bg-blue app-icon" ><i class="fa fa-bars"></i> </div>
+      <p class="media-body pb-3 mb-0 small lh-125 border-bottom border-gray">
+        <a href="#"><strong class="d-block text-gray-dark">Menus</strong></a>
+        <span id="menu_info"></span>
+      </p>
+    </div>
+</template>
+<template name="api">
+	<div class="text-muted pt-3">
+		<p class="pb-3 mb-0 small lh-125 border-bottom border-gray">
+		 <strong class="d-block text-gray-dark">${name}</strong>
+		  <code>URL: ${url}</code>
+		  <code>Method: ${method}</code>
+		  <code>Body: "Model:#auth.AuthParams"</code>
+		  <code>Describe: ${describe}</code>
+		  <code>Description: ${description}</code>
+		  <code>Required: ${required}</code>
+		  <code>Return: ${return}</code>
+		</p>
+	</div>
+</template>
 <script>
+	const urlParams = new URLSearchParams(window.location.search);
+	var view = urlParams.get("view")
+	var selectedApp;
+	if (view == "") view = "app"
+
 	$(document).ready(function() {
-	  $.each(data,function(k,app) {
-		if(app.name == ""){
-		    app.name = app.namespace
+
+	    $.each(data, function(k, app) {
+	        if (app.name == "") {
+	            app.name = app.namespace
+	        }
+	        if (app.description == "") {
+	            app.description = "No description"
+	        }
+	        var html = parseTpl($("template[name=menuitem]").html(), app);
+	        $("#apps").append(html)
+
+	        if (urlParams.get("app") == app.name) {
+	            $("#apps li:last").addClass("active")
+	            selectedApp = app
+	        }
+	    })
+
+	    $("#apps>li.nav-item").click(function() {
+	        window.location = $(this).find("a").attr("href")
+	    })
+
+
+	    if ($("#apps>li.nav-item.active").length == 0) {
+	        $("#apps>li.nav-item:first").click()
+	    }
+        if(!selectedApp.models)
+	        selectedApp.models = []
+	    if(!selectedApp.apis)
+        	selectedApp.apis = []
+        if(!selectedApp.permissions)
+        	selectedApp.permissions = []
+        if(!selectedApp.menus)
+        	selectedApp.menus = []
+
+		if (view == "app") {
+            var html = parseTpl($("template[name=app]").html(), {app:selectedApp.namespace});
+            $("#content").html(html)
+            $("#content #model_info").html(selectedApp.models.length+" model(s)")
+            $("#content #api_info").html(selectedApp.apis.length+" api(s)")
+            $("#content #permission_info").html(selectedApp.permissions.length+" model(s)")
+            $("#content #menu_info").html(selectedApp.menus.length+" menu(s)")
+
+        }
+
+		if(view == "api"){
+			$.each(selectedApp.apis,function(k,api) {
+			    if(!api.describe){
+			        api.describe = []
+			    }
+			    api.describe = api.describe.join(", ")
+			    var html = parseTpl($("template[name=api]").html(), api);
+			    $("#content").append(html)
+			})
 		}
-		var html = parseTpl($("template[name=menuitem]").html(), app);
-		$("#apps").append(html)
-	  })
+
+	    $("#app_name").html(selectedApp.name)
+	    var info = ""
+	    if(selectedApp.description != ""){
+	        info += selectedApp.description
+	    }
+	    if(selectedApp.author != ""){
+        	info += ", author: "+selectedApp.author
+        }
+	    $("#app_info").html( info.trim() )
+
+
+
+
+
+
 	})
 
-	function get(path, obj, fb = `$\{${path}}`) {
-      return path.split('.').reduce((res, key) => res[key] || fb, obj);
-    }
+	function get(path, obj, fb = "") {
+	    return path.split('.').reduce((res, key) => res[key] || fb, obj);
+	}
 
-    function parseTpl(template, map, fallback) {
-      return template.replace(/\$\{.+?}/g, (match) => {
-        const path = match.substr(2, match.length - 3).trim();
-        return get(path, map, fallback);
-      });
-    }
+	function parseTpl(template, map, fallback) {
+	    return template.replace(/\$\{.+?}/g, (match) => {
+	        const path = match.substr(2, match.length - 3).trim();
+	        v = get(path, map, fallback);
+	        if(v.contains("#")){
+	            var type = ""
+	            var detected = false
+	            for(var i=0; i < v.length; i++){
+					if(type == "" && !detected){
+					    if(v[i] == " " || v[i] == ";"){
+					        detected = false
+					        continue
+					    }
+					    if(v[i] == ":"){
+					         detected = false
+					         type = type.toLowerCase()
+                             continue
+					    }
+					    type += v[i]
+					}
+	            }
+
+
+	        }
+	        return v
+	    });
+	}
+
+
 </script>
