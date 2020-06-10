@@ -17,6 +17,7 @@ type Model struct {
 }
 
 // Role role struct
+// @doc	type 	model
 type Role struct {
 	Model
 	Name          string       `json:"name" form:"name" validate:"empty=false & format=strict_html"`
@@ -28,6 +29,7 @@ type Role struct {
 }
 
 // Group group struct
+// @doc type 			model
 type Group struct {
 	Model
 	Name     string   `json:"name" form:"name" validate:"empty=false & format=strict_html"`
@@ -38,6 +40,7 @@ type Group struct {
 }
 
 // Permission permission struct
+// @doc type 			model
 type Permission struct {
 	Model
 	CodeName    string `json:"code_name" form:"code_name" validate:"empty=false"`
@@ -50,6 +53,7 @@ type Permission struct {
 type Permissions []Permission
 
 // RolePermission role to permission orm
+// @doc type 			model
 type RolePermission struct {
 	Model
 	RoleID       uint
@@ -57,6 +61,7 @@ type RolePermission struct {
 }
 
 // User user struct
+// @doc type 			model
 type User struct {
 	Model
 	Name      string    `json:"name" form:"name"`

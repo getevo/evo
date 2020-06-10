@@ -24,6 +24,7 @@ type DocApp struct {
 	APIs        []*DocAPI         `json:"apis"`
 	Permissions []user.Permission `json:"permissions"`
 	Menus       []menu.Menu       `json:"menus"`
+	Package     string            `json:"package"`
 }
 
 type DocAPI struct {
@@ -35,6 +36,8 @@ type DocAPI struct {
 	Required    string   `json:"required"`
 	Method      string   `json:"method"`
 	URL         string   `json:"url"`
+	Package     string   `json:"package"`
+	Path        string   `json:"path"`
 }
 
 type DocModel struct {
@@ -43,6 +46,8 @@ type DocModel struct {
 	Description string   `json:"description"`
 	Methods     []string `json:"methods"`
 	Fields      []string `json:"fields"`
+	Package     string   `json:"package"`
+	Path        string   `json:"path"`
 }
 
 func NewDoc(app App) {
@@ -58,7 +63,6 @@ func NewDoc(app App) {
 
 	filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
 		if err == nil && !info.IsDir() && strings.HasSuffix(info.Name(), ".go") {
-
 			content := strings.Split(string(gpath.SafeFileContent(path)), "\n")
 			parseDoc(&doc, content, typ.PkgPath())
 		}
@@ -95,6 +99,10 @@ func parseDoc(app *DocApp, content []string, path string) {
 				}
 				continue
 			}
+			if cmd == "include" {
+				includeDoc(app, value)
+				continue
+			}
 			if typ == "api" && api != nil {
 				api.setReflectValue(cmd, value)
 			}
@@ -111,16 +119,40 @@ func parseDoc(app *DocApp, content []string, path string) {
 			if strings.TrimSpace(line) == "" {
 				continue
 			}
+
+			if ln < 10 && strings.HasPrefix(strings.TrimSpace(line), "package") {
+				parts := strings.Fields(strings.TrimSpace(line))
+				if len(parts) == 2 {
+					meta["package"] = parts[1]
+				}
+				continue
+			}
 			if typ == "api" && api != nil {
 				api.Parse(content, ln, meta)
 			}
 			if typ == "model" && model != nil {
 				model.Parse(content, ln, meta)
-				model.Type = app.Namespace + "." + model.Name
+				if v, ok := meta["package"]; ok {
+					model.Type = v + "." + model.Name
+				} else {
+					model.Type = app.Namespace + "." + model.Name
+				}
+
 			}
 			typ = ""
 		}
 	}
+
+}
+
+func includeDoc(doc *DocApp, path string) {
+	filepath.Walk(build.Default.GOPATH+"/src/"+path, func(path string, info os.FileInfo, err error) error {
+		if err == nil && !info.IsDir() && strings.HasSuffix(info.Name(), ".go") {
+			content := strings.Split(string(gpath.SafeFileContent(path)), "\n")
+			parseDoc(doc, content, path)
+		}
+		return nil
+	})
 
 }
 

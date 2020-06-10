@@ -2,6 +2,7 @@
 // @doc name		auth
 // @doc description authentication api
 // @doc author		reza
+// @doc include		github.com/getevo/evo/user
 package auth
 
 import (

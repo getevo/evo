@@ -87,7 +87,7 @@
     <div class="media text-muted pt-3">
       <div alt="32x32" class="mr-2 rounded bg-blue app-icon"><i class="fa fa-database"></i> </div>
       <p class="media-body pb-3 mb-0 small lh-125 border-bottom border-gray">
-        <a href="#"><strong class="d-block text-gray-dark">Models</strong></a>
+        <a href="/bible?app=${app}&view=model"><strong class="d-block text-gray-dark">Models</strong></a>
         <span id="model_info"></span>
       </p>
     </div>
@@ -95,25 +95,25 @@
     <div class="media text-muted pt-3">
       <div alt="32x32" class="mr-2 rounded bg-blue app-icon" ><i class="fa fa-shield-alt"></i> </div>
       <p class="media-body pb-3 mb-0 small lh-125 border-bottom border-gray">
-        <a href="#"><strong class="d-block text-gray-dark">Permissions</strong></a>
+        <a href="/bible?app=${app}&view=permission"><strong class="d-block text-gray-dark">Permissions</strong></a>
         <span id="permission_info"></span>
       </p>
     </div>
     <div class="media text-muted pt-3">
       <div alt="32x32" class="mr-2 rounded bg-blue app-icon" ><i class="fa fa-bars"></i> </div>
       <p class="media-body pb-3 mb-0 small lh-125 border-bottom border-gray">
-        <a href="#"><strong class="d-block text-gray-dark">Menus</strong></a>
+        <a href="/bible?app=${app}&view=menu"><strong class="d-block text-gray-dark">Menus</strong></a>
         <span id="menu_info"></span>
       </p>
     </div>
 </template>
 <template name="api">
-	<div class="text-muted pt-3">
+	<div class="text-muted pt-3  ${selected}">
 		<p class="pb-3 mb-0 small lh-125 border-bottom border-gray">
 		 <strong class="d-block text-gray-dark">${name}</strong>
 		  <code>URL: ${url}</code>
 		  <code>Method: ${method}</code>
-		  <code>Body: "Model:#auth.AuthParams"</code>
+		  <code>Body: ${body}</code>
 		  <code>Describe: ${describe}</code>
 		  <code>Description: ${description}</code>
 		  <code>Required: ${required}</code>
@@ -121,11 +121,61 @@
 		</p>
 	</div>
 </template>
+<template name="model">
+	<div class="model ${selected}">
+		<h4>${name}</h4>
+		<h6>${type}</h6>
+		<span>${description}</span>
+		<blockquote class="code">
+			<span class="code_blue">type</span> <span class="code_black">${name}</span> <span class="code_blue">struct</span> {<br/>
+				${lines}
+			}
+		</blockquote>
+	</div>
+</template>
+<template name="model_line">
+	<div class="code_tab"><span class="code_black">${name}</span> ${type} <span class="code_orange">${tag}</span> <span class="code_gray">${comment}</span></div>
+</template>
+
+<template name="permissions">
+	<table class="table table-responsive">
+		<thead class="thead-dark">
+			<tr><th>Permission</th><th>Name</th><th>Description</th></tr>
+		</thead>
+		<tbody id="permissions">
+
+		</tbody>
+	</table>
+</template>
+<template name="permissions_line">
+	<tr class="${selected}">
+		<td>${namespace}.${code_name}</td>
+		<td>${title}</td>
+		<td>${description}</td>
+	</tr>
+</template>
+
+<template name="menus">
+	<table class="table table-responsive">
+		<thead class="thead-dark">
+			<tr><th>Title</th><th>Permission</th><th>Icon</th><th>URL</th></tr>
+		</thead>
+		<tbody id="menus">
+
+		</tbody>
+	</table>
+</template>
+<template name="menus_line">
+	<tr class="${selected}">
+		<td>${title}</td><td>${permission}</td><td>${icon}</td><td>${url}</td>
+	</tr>
+</template>
 <script>
 	const urlParams = new URLSearchParams(window.location.search);
-	var view = urlParams.get("view")
+	var view = urlParams.get("view");
 	var selectedApp;
-	if (view == "") view = "app"
+	var ObjectMap = {};
+	if (view == "") view = "app";
 
 	$(document).ready(function() {
 
@@ -143,6 +193,21 @@
 	            $("#apps li:last").addClass("active")
 	            selectedApp = app
 	        }
+	        $.each(app.permissions,function(k,perm) {
+	           ObjectMap[app.namespace+"."+perm.code_name] = "/bible?app="+app.namespace+"&view=permission&item="+perm.code_name
+	        })
+	        $.each(app.models,function(k,model) {
+         	   ObjectMap[model.type] = "/bible?app="+app.namespace+"&view=model&item="+model.type
+         	})
+         	$.each(app.menus,function(k,menu) {
+               ObjectMap[app.namespace+"."+menu.title] = "/bible?app="+app.namespace+"&view=menu&item="+menu.title
+            })
+
+            $.each(app.apis,function(k,api) {
+                ObjectMap["api:"+app.namespace+"."+api.name] = "/bible?app="+app.namespace+"&view=api&item="+api.name
+            })
+            ObjectMap["app:"+app.namespace] = "/bible?app="+app
+	        //
 	    })
 
 	    $("#apps>li.nav-item").click(function() {
@@ -167,21 +232,68 @@
             $("#content").html(html)
             $("#content #model_info").html(selectedApp.models.length+" model(s)")
             $("#content #api_info").html(selectedApp.apis.length+" api(s)")
-            $("#content #permission_info").html(selectedApp.permissions.length+" model(s)")
+            $("#content #permission_info").html(selectedApp.permissions.length+" permission(s)")
             $("#content #menu_info").html(selectedApp.menus.length+" menu(s)")
-
         }
 
 		if(view == "api"){
 			$.each(selectedApp.apis,function(k,api) {
+
 			    if(!api.describe){
 			        api.describe = []
 			    }
+
 			    api.describe = api.describe.join(", ")
 			    var html = parseTpl($("template[name=api]").html(), api);
 			    $("#content").append(html)
 			})
 		}
+
+		if(view == "model"){
+			$.each(selectedApp.models,function(k,model) {
+				var lines = "";
+				if(model.fields){
+					for(var i = 0; i < model.fields.length; i++)
+						lines += parseTpl($("template[name=model_line]").html(), parseStructLine(model.fields[i]));
+				}
+				model.selected = ( urlParams.get("item") == model.type )?"selected":""
+				model.lines = lines
+                var html = parseTpl($("template[name=model]").html(), model);
+                $("#content").append(html)
+            })
+		}
+
+		if(view == "permission"){
+		    var lines = "";
+            $.each(selectedApp.permissions,function(k,perm) {
+                perm.namespace = selectedApp.namespace
+                perm.selected = ( urlParams.get("item") == perm.code_name )?"selected":""
+				lines += parseTpl($("template[name=permissions_line]").html(), perm);
+
+            })
+            var html = parseTpl($("template[name=permissions]").html(), {});
+
+            $("#content").html(html)
+            $("#permissions").html(lines)
+        }
+
+		if(view == "menu"){
+            var lines = "";
+            $.each(selectedApp.menus,function(k,menu) {
+                menu.namespace = selectedApp.namespace
+                menu.selected = ( urlParams.get("item") == menu.title )?"selected":""
+                menu.url = '<a href="\\'+menu.url+'">'+menu.url+'</a>'
+                menu.icon = menu.icon +" <i class='fa fa-"+menu.icon+"'></i>"
+                if(menu.permission != "")
+                    menu.permission = "#"+menu.permission
+                lines += parseTpl($("template[name=menus_line]").html(), menu);
+
+            })
+            var html = parseTpl($("template[name=menus]").html(), {});
+
+            $("#content").html(html)
+            $("#menus").html(lines)
+        }
 
 	    $("#app_name").html(selectedApp.name)
 	    var info = ""
@@ -193,7 +305,15 @@
         }
 	    $("#app_info").html( info.trim() )
 
-
+		if($("#content .selected").length > 0){
+		    $("#content .selected").addClass("locked")
+		    $([document.documentElement, document.body]).animate({
+                    scrollTop: $("#content .selected").offset().top - 100
+            }, 700);
+		    setTimeout(function() {
+		      $("#content .selected").removeClass("locked")
+		    },700)
+		}
 
 
 
@@ -208,28 +328,43 @@
 	    return template.replace(/\$\{.+?}/g, (match) => {
 	        const path = match.substr(2, match.length - 3).trim();
 	        v = get(path, map, fallback);
-	        if(v.contains("#")){
-	            var type = ""
-	            var detected = false
-	            for(var i=0; i < v.length; i++){
-					if(type == "" && !detected){
-					    if(v[i] == " " || v[i] == ";"){
-					        detected = false
-					        continue
-					    }
-					    if(v[i] == ":"){
-					         detected = false
-					         type = type.toLowerCase()
-                             continue
-					    }
-					    type += v[i]
-					}
-	            }
+	        // # parser
+	        v = v.replace(/#\[{0,1}\]{0,1}\*{0,1}\w+(\.\w+)*/g,(hashtag)=>{
+	            var hs = hashtag.substring(1)
+	            if(hs[0] == "[")
+	                hs = hs.substring(2)
+	            console.warn(hs)
+				if(ObjectMap.hasOwnProperty(hs)){
+				    return "<a href='"+ObjectMap[hs]+"'>#"+hs+"</a>"
+				}else{
+				    return hs
+				}
 
+	        })
+	         // end # parser
 
-	        }
 	        return v
 	    });
+	}
+
+	function parseStructLine(line) {
+	  var regex = /((\w+)\s+){1}(\[{0,1}\]{0,1}\*{0,1}\w+){1}\s*(`.+`){0,1}(\s*\/\/.+){0,1}/gm;
+	  var res = {
+	      name:"",
+	      type:"",
+	      tag:"",
+	      comment:""
+	  }
+	  parsed = regex.exec(line.trim())
+	  if(parsed){
+	     res.name = parsed[2]
+	     res.type = parsed[3]
+	     if(parsed[4])
+	        res.tag = parsed[4]
+	     if(parsed[5])
+	        res.comment = parsed[5]
+	  }
+	  return res
 	}
 
 
