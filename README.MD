@@ -28,6 +28,8 @@ EVO is a powerful package for quickly writing modular web applications/services 
 
 ## Documentation
 
+[Documentation (WIKI)](https://github.com/getevo/evo/wiki)  
+
 #### Quick Start
  - Installation
  - Create new project
@@ -40,7 +42,7 @@ EVO is a powerful package for quickly writing modular web applications/services 
 - Journal App
 - Log App
 - Swagger
-- Documentation (WIKI)
+- [Documentation (WIKI)](https://github.com/getevo/evo/wiki)  
 - Sample Apps
 - Clear Libraries
 - Improve Manager
