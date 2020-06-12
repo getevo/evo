@@ -1,6 +1,6 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/iesreza/io)](https://goreportcard.com/report/github.com/iesreza/io)
-## IO Web Application Development Framework
-IO is a powerful package for quickly writing modular web applications/services in Golang aimed both backend and frontend.
+## EVO Web Application Development Framework
+EVO is a powerful package for quickly writing modular web applications/services in Golang aimed both backend and frontend.
 
 
 ## Features
@@ -28,6 +28,8 @@ IO is a powerful package for quickly writing modular web applications/services i
 
 ## Documentation
 
+[Documentation (WIKI)](https://github.com/getevo/evo/wiki)  
+
 #### Quick Start
  - Installation
  - Create new project
@@ -40,7 +42,7 @@ IO is a powerful package for quickly writing modular web applications/services i
 - Journal App
 - Log App
 - Swagger
-- Documentation (WIKI)
+- [Documentation (WIKI)](https://github.com/getevo/evo/wiki)  
 - Sample Apps
 - Clear Libraries
 - Improve Manager
