@@ -8,7 +8,6 @@ import (
 	"github.com/getevo/evo/lib/constant"
 	"github.com/getevo/evo/lib/jwt"
 	"github.com/getevo/evo/user"
-	"github.com/gofiber/fiber"
 	"github.com/iesreza/validate"
 	"gopkg.in/hlandau/passlib.v1"
 	"net/http"
@@ -75,12 +74,11 @@ func AuthUserByPassword(username, password string) (*user.User, error) {
 	return user, nil
 }
 
-func (c Controller) Login(ctx *fiber.Ctx) {
+func (c Controller) Login(r *evo.Request) {
 	var err error
 	var user *user.User
 	var token string
 
-	r := evo.Upgrade(ctx)
 	r.Accepts("text/html", "application/json")
 	params := AuthParams{}
 	err = r.BodyParser(&params)
@@ -138,9 +136,8 @@ func (c Controller) Login(ctx *fiber.Ctx) {
 
 }
 
-func (c Controller) CreateUser(ctx *fiber.Ctx) {
+func (c Controller) CreateUser(r *evo.Request) {
 
-	var r = evo.Upgrade(ctx)
 	if !r.User.HasPerm("auth.create.user") {
 		r.WriteResponse(constant.ERROR_UNAUTHORIZED)
 		return
@@ -167,8 +164,8 @@ func (c Controller) CreateUser(ctx *fiber.Ctx) {
 
 }
 
-func (c Controller) CreateRole(ctx *fiber.Ctx) {
-	var r = evo.Upgrade(ctx)
+func (c Controller) CreateRole(r *evo.Request) {
+
 	var role = user.Role{}
 	if !r.User.HasPerm("auth.create.role") {
 		r.WriteResponse(constant.ERROR_UNAUTHORIZED)
@@ -195,8 +192,8 @@ func (c Controller) CreateRole(ctx *fiber.Ctx) {
 
 }
 
-func (c Controller) CreateGroup(ctx *fiber.Ctx) {
-	var r = evo.Upgrade(ctx)
+func (c Controller) CreateGroup(r *evo.Request) {
+
 	var group = user.Group{}
 	if !r.User.HasPerm("auth.create.group") {
 		r.WriteResponse(constant.ERROR_UNAUTHORIZED)
@@ -219,8 +216,8 @@ func (c Controller) CreateGroup(ctx *fiber.Ctx) {
 }
 
 // TODO: Password check and change
-func (c Controller) EditUser(ctx *fiber.Ctx) {
-	var r = evo.Upgrade(ctx)
+func (c Controller) EditUser(r *evo.Request) {
+
 	if !r.User.HasPerm("auth.edit.user") {
 		r.WriteResponse(constant.ERROR_UNAUTHORIZED)
 		return
@@ -253,8 +250,8 @@ func (c Controller) EditUser(ctx *fiber.Ctx) {
 
 }
 
-func (c Controller) EditRole(ctx *fiber.Ctx) {
-	var r = evo.Upgrade(ctx)
+func (c Controller) EditRole(r *evo.Request) {
+
 	if !r.User.HasPerm("auth.edit.role") {
 		r.WriteResponse(constant.ERROR_UNAUTHORIZED)
 		return
@@ -284,8 +281,8 @@ func (c Controller) EditRole(ctx *fiber.Ctx) {
 
 }
 
-func (c Controller) EditGroup(ctx *fiber.Ctx) {
-	var r = evo.Upgrade(ctx)
+func (c Controller) EditGroup(r *evo.Request) {
+
 	if !r.User.HasPerm("auth.edit.group") {
 		r.WriteResponse(constant.ERROR_UNAUTHORIZED)
 		return
@@ -315,8 +312,8 @@ func (c Controller) EditGroup(ctx *fiber.Ctx) {
 
 }
 
-func (c Controller) GetGroups(ctx *fiber.Ctx) {
-	r := evo.Upgrade(ctx)
+func (c Controller) GetGroups(r *evo.Request) {
+
 	if !r.User.HasPerm("auth.group.view") {
 		r.WriteResponse(constant.ERROR_UNAUTHORIZED)
 		return
@@ -330,14 +327,14 @@ func (c Controller) GetGroups(ctx *fiber.Ctx) {
 	}
 }
 
-func (c Controller) GetGroup(ctx *fiber.Ctx) {
-	r := evo.Upgrade(ctx)
+func (c Controller) GetGroup(r *evo.Request) {
+
 	if !r.User.HasPerm("auth.group.view") {
 		r.WriteResponse(constant.ERROR_UNAUTHORIZED)
 		return
 	}
 	var group user.Group
-	var id = ctx.Params("id")
+	var id = r.Params("id")
 	if db.Where("id = ? OR code_name = ?", id, id).Find(&group).RecordNotFound() {
 		r.WriteResponse(e.Field("id", constant.ERROR_INVALID_ID))
 		return
@@ -346,8 +343,8 @@ func (c Controller) GetGroup(ctx *fiber.Ctx) {
 	}
 }
 
-func (c Controller) GetRoles(ctx *fiber.Ctx) {
-	r := evo.Upgrade(ctx)
+func (c Controller) GetRoles(r *evo.Request) {
+
 	if !r.User.HasPerm("auth.role.view") {
 		r.WriteResponse(constant.ERROR_UNAUTHORIZED)
 		return
@@ -361,14 +358,14 @@ func (c Controller) GetRoles(ctx *fiber.Ctx) {
 	}
 }
 
-func (c Controller) GetRole(ctx *fiber.Ctx) {
-	r := evo.Upgrade(ctx)
+func (c Controller) GetRole(r *evo.Request) {
+
 	if !r.User.HasPerm("auth.role.view") {
 		r.WriteResponse(constant.ERROR_UNAUTHORIZED)
 		return
 	}
 	var role user.Role
-	var id = ctx.Params("id")
+	var id = r.Params("id")
 	if db.Where("id = ? OR code_name = ?", id, id).Find(&role).RecordNotFound() {
 		r.WriteResponse(e.Field("id", constant.ERROR_INVALID_ID))
 		return
@@ -377,14 +374,14 @@ func (c Controller) GetRole(ctx *fiber.Ctx) {
 	}
 }
 
-func (c Controller) GetRoleGroups(ctx *fiber.Ctx) {
-	r := evo.Upgrade(ctx)
+func (c Controller) GetRoleGroups(r *evo.Request) {
+
 	if !r.User.HasPerm("auth.role.view") {
 		r.WriteResponse(constant.ERROR_UNAUTHORIZED)
 		return
 	}
 	var role user.Role
-	var id = ctx.Params("id")
+	var id = r.Params("id")
 	if db.Where("id = ? OR code_name = ?", id, id).Find(&role).RecordNotFound() {
 		r.WriteResponse(e.Field("id", constant.ERROR_INVALID_ID))
 		return
@@ -395,14 +392,14 @@ func (c Controller) GetRoleGroups(ctx *fiber.Ctx) {
 	}
 }
 
-func (c Controller) GetUser(ctx *fiber.Ctx) {
-	r := evo.Upgrade(ctx)
+func (c Controller) GetUser(r *evo.Request) {
+
 	if !r.User.HasPerm("auth.user.view") {
 		r.WriteResponse(constant.ERROR_UNAUTHORIZED)
 		return
 	}
 	var user user.User
-	var id = ctx.Params("id")
+	var id = r.Params("id")
 	if db.Where("id = ? OR username = ? OR email = ?", id, id, id).Find(&user).RecordNotFound() {
 		r.WriteResponse(constant.ERROR_OBJECT_NOT_EXIST)
 		return
@@ -411,19 +408,19 @@ func (c Controller) GetUser(ctx *fiber.Ctx) {
 	}
 }
 
-func (c Controller) GetMe(ctx *fiber.Ctx) {
-	r := evo.Upgrade(ctx)
+func (c Controller) GetMe(r *evo.Request) {
+
 	r.WriteResponse(r.User)
 }
 
-func (c Controller) GetAllUsers(ctx *fiber.Ctx) {
-	r := evo.Upgrade(ctx)
+func (c Controller) GetAllUsers(r *evo.Request) {
+
 	if !r.User.HasPerm("auth.user.view") {
 		r.WriteResponse(constant.ERROR_UNAUTHORIZED)
 		return
 	}
 	var users []user.User
-	err := db.Offset(ctx.Params("offset")).Limit(ctx.Params("limit")).Find(&users).Error
+	err := db.Offset(r.Params("offset")).Limit(r.Params("limit")).Find(&users).Error
 	if err != nil {
 		r.WriteResponse(err)
 	} else {
@@ -431,8 +428,8 @@ func (c Controller) GetAllUsers(ctx *fiber.Ctx) {
 	}
 }
 
-func (c Controller) GetAllPermissions(ctx *fiber.Ctx) {
-	r := evo.Upgrade(ctx)
+func (c Controller) GetAllPermissions(r *evo.Request) {
+
 	if !r.User.HasPerm("auth.role.view") {
 		r.WriteResponse(constant.ERROR_UNAUTHORIZED)
 		return

@@ -7,7 +7,6 @@ import (
 	"github.com/getevo/evo"
 	"github.com/getevo/evo/menu"
 	"github.com/getevo/evo/user"
-	"github.com/gofiber/fiber"
 )
 
 func Register() {
@@ -36,9 +35,7 @@ func (App) WhenReady() {
 // Router setup routers
 func (App) Router() {
 	evo.Static("/assets", Path+"/assets")
-	evo.Get("/bible", func(ctx *fiber.Ctx) {
-
-		r := evo.Upgrade(ctx)
+	evo.Get("/bible", func(r *evo.Request) {
 		data, _ := json.Marshal(evo.Docs)
 		r.View(string(data), "bible.default")
 	})

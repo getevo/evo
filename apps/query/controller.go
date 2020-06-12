@@ -9,7 +9,6 @@ import (
 	"github.com/getevo/evo/lib/T"
 	"github.com/getevo/evo/lib/constant"
 	"github.com/getevo/evo/lib/sanitize"
-	"github.com/gofiber/fiber"
 	"github.com/iesreza/validate"
 	"github.com/jinzhu/gorm"
 	"reflect"
@@ -48,9 +47,8 @@ func (c Controller) Register(v Filter) {
 	evo.Post("/filter/:slug/:id", c.Route)
 }
 
-func (Controller) Route(c *fiber.Ctx) {
-	obj := c.Params("slug")
-	r := evo.Upgrade(c)
+func (Controller) Route(r *evo.Request) {
+	obj := r.Params("slug")
 	filter := objects.Get(obj)
 	if filter != nil {
 		v := reflect.ValueOf(filter.Object)
@@ -64,7 +62,7 @@ func (Controller) Route(c *fiber.Ctx) {
 		scope := db.NewScope(el.Interface())
 
 		var post map[string]interface{}
-		err := c.BodyParser(&post)
+		err := r.BodyParser(&post)
 		if err != nil {
 			r.WriteResponse(constant.ERROR_JSON_PARSE)
 			return

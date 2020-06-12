@@ -8,7 +8,6 @@ import (
 	"github.com/getevo/evo/menu"
 	"github.com/getevo/evo/user"
 	"github.com/getevo/evo/viewfn"
-	"github.com/gofiber/fiber"
 )
 
 // Register register the adminlte in io apps
@@ -55,20 +54,20 @@ func (App) Router() {
 	evo.Static("/assets", Path+"/assets")
 	evo.Static("/plugins", Path+"/plugins")
 
-	evo.Get("", func(ctx *fiber.Ctx) {
-		r := evo.Upgrade(ctx)
+	evo.Get("", func(r *evo.Request) {
+
 		r.Var("heading", "Test")
 		r.View(nil, "template.default")
 	})
 
-	evo.Get("/test", func(ctx *fiber.Ctx) {
-		r := evo.Upgrade(ctx)
+	evo.Get("/test", func(r *evo.Request) {
+
 		r.Var("heading", "Test1")
 		r.View(nil, "template.default")
 	})
 
-	evo.Get("/test2", func(ctx *fiber.Ctx) {
-		r := evo.Upgrade(ctx)
+	evo.Get("/test2", func(r *evo.Request) {
+
 		r.Var("heading", "Test2")
 		r.View(nil, "template.default")
 	})

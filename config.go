@@ -111,11 +111,7 @@ type Configuration struct {
 var config = &Configuration{}
 
 func parseConfig() *Configuration {
-	WorkingDir, err := os.Getwd()
-	if err != nil {
-		log.Fatal(err)
-	}
-
+	WorkingDir, _ = os.Getwd()
 	WorkingDir = gpath.RSlash(WorkingDir)
 	OS.Name = runtime.GOOS
 	if OS.Name == "windows" {
@@ -165,7 +161,7 @@ func parseConfig() *Configuration {
 
 	data, err := ioutil.ReadFile(GuessPath(Arg.Config))
 	if err != nil {
-		log.Println("could not load config file at ", GuessPath(Arg.Config))
+		log.Println("could not load config file at %s", GuessPath(Arg.Config))
 		log.Fatalf("error: %v", err)
 	}
 	err = yaml.Unmarshal([]byte(data), &m)

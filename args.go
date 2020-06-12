@@ -1,6 +1,8 @@
 package evo
 
-import "github.com/alexflint/go-arg"
+import (
+	"github.com/alexflint/go-arg"
+)
 
 type args struct {
 	Config string `arg:"env" help:"Configuration path" default:"config.yml"`
@@ -14,6 +16,10 @@ func (args) Version() string {
 	return config.App.Name
 }
 func parseArgs() {
-	arg.MustParse(&Arg)
+	// TODO: Dynamic args
+	arg.Parse(&Arg)
+	if Arg.Config == "" {
+		Arg.Config = "config.yml"
+	}
 
 }

@@ -10,7 +10,6 @@ import (
 	"github.com/getevo/evo/lib/constant"
 	"github.com/getevo/evo/lib/ref"
 	"github.com/getevo/evo/lib/text"
-	"github.com/gofiber/fiber"
 	"reflect"
 	"strings"
 )
@@ -43,8 +42,7 @@ func (c Controller) set(s string, object interface{}) {
 	json.Unmarshal([]byte(obj.Data), object)
 }
 
-func (c Controller) view(ctx *fiber.Ctx) {
-	r := evo.Upgrade(ctx)
+func (c Controller) view(r *evo.Request) {
 	if r.User.Anonymous {
 		r.Flash("warning", constant.ERROR_UNAUTHORIZED.Error())
 		r.Redirect("/admin/error")
@@ -119,9 +117,7 @@ func (c Controller) getForm(v interface{}) []html.InputStruct {
 	return frm
 }
 
-func (c Controller) save(ctx *fiber.Ctx) {
-
-	r := evo.Upgrade(ctx)
+func (c Controller) save(r *evo.Request) {
 	if !r.User.HasPerm("settings.access") {
 		r.WriteResponse(false, e.Context(constant.ERROR_UNAUTHORIZED))
 		return
@@ -148,8 +144,7 @@ func (c Controller) save(ctx *fiber.Ctx) {
 	r.WriteResponse(true, item)
 }
 
-func (c Controller) reset(ctx *fiber.Ctx) {
-	r := evo.Upgrade(ctx)
+func (c Controller) reset(r *evo.Request) {
 	if !r.User.HasPerm("settings.access") {
 		r.WriteResponse(false, e.Context(constant.ERROR_UNAUTHORIZED))
 		return

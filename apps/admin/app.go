@@ -10,7 +10,6 @@ import (
 	"github.com/getevo/evo/lib/log"
 	"github.com/getevo/evo/menu"
 	"github.com/getevo/evo/user"
-	"github.com/gofiber/fiber"
 )
 
 // Register register the admin in io apps
@@ -47,13 +46,11 @@ func (App) Register() {
 
 // Router setup routers
 func (App) Router() {
-	evo.Get("/admin/login", func(ctx *fiber.Ctx) {
-		r := evo.Upgrade(ctx)
+	evo.Get("/admin/login", func(r *evo.Request) {
 		r.View(nil, "admin.login", "template.login")
 	})
 
-	evo.Get("/admin/dashboard", func(ctx *fiber.Ctx) {
-		r := evo.Upgrade(ctx)
+	evo.Get("/admin/dashboard", func(r *evo.Request) {
 		r.View(nil, "template.default")
 	})
 }

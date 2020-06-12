@@ -31,6 +31,12 @@ func (App) Register() {
 
 func (App) Router() {
 	evo.Get("/admin/list", FilterViewController)
+	evo.Get("test1", func(request *evo.Request) {
+		request.WriteResponse("testttt")
+	})
+	evo.Group("/a").Group("/b").Get("/test", func(request *evo.Request) {
+		request.WriteResponse("test")
+	})
 }
 
 func (App) Permissions() []user.Permission {
