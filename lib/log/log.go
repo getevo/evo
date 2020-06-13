@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/getevo/evo/lib/date"
 	"github.com/getevo/evo/lib/log/logger"
+	"github.com/wzshiming/ctc"
 	"io"
 	"os"
 	"path/filepath"
@@ -349,7 +350,7 @@ func Read(lines int, level Level) {
 			msgLevel := ParseLevel(line[1:5])
 			if msgLevel <= level {
 
-				printable = "\r\n" + logger.Colors[logger.LogLevel(msgLevel)] + line + "\033[0m" + printable
+				printable = "\r\n" + fmt.Sprintln(logger.Colors[logger.LogLevel(msgLevel)], line, ctc.Reset, printable)
 				if breakLines {
 					break
 				}

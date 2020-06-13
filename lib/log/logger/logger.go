@@ -2,8 +2,8 @@ package logger
 
 // Import packages
 import (
-	"bytes"
 	"fmt"
+	"github.com/wzshiming/ctc"
 	"io"
 	"log"
 	"os"
@@ -16,7 +16,7 @@ import (
 
 var (
 	// Map for the various codes of colors
-	Colors map[LogLevel]string
+	Colors map[LogLevel]ctc.Color
 
 	// Map from format's placeholders to printf verbs
 	phfs map[string]string
@@ -210,12 +210,12 @@ func (w *Worker) Log(level LogLevel, calldepth int, info *Info) string {
 	}
 
 	if w.Color != 0 {
-		buf := &bytes.Buffer{}
-		buf.Write([]byte(Colors[level]))
-		buf.Write([]byte(info.Output(w.format)))
-		buf.Write([]byte("\033[0m"))
+		/*		buf := &bytes.Buffer{}
+				buf.Write([]byte(Colors[level]))
+				buf.Write([]byte(info.Output(w.format)))
+				buf.Write([]byte("\033[0m"))*/
 
-		w.Minion.Output(calldepth+1, buf.String())
+		w.Minion.Output(calldepth+1, fmt.Sprintln(Colors[level], info.Output(w.format), ctc.Reset))
 	} else {
 		w.Minion.Output(calldepth+1, info.Output(w.format))
 	}
@@ -229,14 +229,23 @@ func colorString(color int) string {
 
 // Initializes the map of colors
 func initColors() {
-	Colors = map[LogLevel]string{
+	/*	Colors = map[LogLevel]string{
 		CriticalLevel: colorString(Magenta),
 		ErrorLevel:    colorString(Red),
 		WarningLevel:  colorString(Yellow),
 		NoticeLevel:   colorString(Green),
 		DebugLevel:    colorString(Cyan),
 		InfoLevel:     colorString(White),
+	}*/
+	Colors = map[LogLevel]ctc.Color{
+		CriticalLevel: ctc.BackgroundRed,
+		ErrorLevel:    ctc.ForegroundRedBackgroundBlack,
+		WarningLevel:  ctc.ForegroundYellowBackgroundBlack,
+		NoticeLevel:   ctc.ForegroundBrightMagentaBackgroundBlack,
+		DebugLevel:    ctc.ForegroundBrightCyanBackgroundBlack,
+		InfoLevel:     ctc.BackgroundCyan,
 	}
+
 }
 
 // Initializes the map of placeholders

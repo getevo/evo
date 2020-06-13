@@ -7,6 +7,7 @@ import (
 	swagger "github.com/arsmn/fiber-swagger"
 	"github.com/getevo/evo/lib/gpath"
 	"github.com/getevo/evo/lib/jwt"
+	"github.com/getevo/evo/lib/log"
 	"github.com/getevo/evo/lib/text"
 	"github.com/getevo/evo/lib/utils"
 	"github.com/getevo/evo/user"
@@ -153,14 +154,14 @@ func Run() {
 	if config.Server.HTTPS {
 		cer, err := tls.LoadX509KeyPair(GuessPath(config.Server.Cert), GuessPath(config.Server.Key))
 		if err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 		err = app.Listen(config.Server.Host+":"+config.Server.Port, &tls.Config{Certificates: []tls.Certificate{cer}})
 	} else {
 		err = app.Listen(config.Server.Host + ":" + config.Server.Port)
 	}
 	Events.Go("server.panic")
-	panic(err)
+	log.Fatal(err)
 }
 
 // GetFiber return fiber instance
@@ -175,11 +176,11 @@ func Pack(path string) {
 
 	err := gpath.MakePath(dest)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	f, err := gpath.Open(WorkingDir + "/bundle/.ignore")
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	f.WriteString("#evo")
 	len := len(path)
