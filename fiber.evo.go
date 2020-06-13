@@ -19,6 +19,7 @@ func Group(path string, handlers ...func(request *Request)) *group {
 			route = app.Group(path, func(ctx *fiber.Ctx) {
 				r := Upgrade(ctx)
 				handler(r)
+				r = nil
 			})
 		}
 	} else {
@@ -54,6 +55,7 @@ func Use(path string, handlers ...func(request *Request)) *fiber.Route {
 		route = app.Use(path, func(ctx *fiber.Ctx) {
 			r := Upgrade(ctx)
 			handler(r)
+			r = nil
 		})
 	}
 	return route
@@ -69,6 +71,7 @@ func Connect(path string, handlers ...func(request *Request)) *fiber.Route {
 		route = app.Connect(path, func(ctx *fiber.Ctx) {
 			r := Upgrade(ctx)
 			handler(r)
+			r = nil
 		})
 	}
 	return route
@@ -84,6 +87,7 @@ func Put(path string, handlers ...func(request *Request)) *fiber.Route {
 		route = app.Put(path, func(ctx *fiber.Ctx) {
 			r := Upgrade(ctx)
 			handler(r)
+			r = nil
 		})
 	}
 	return route
@@ -99,6 +103,7 @@ func Post(path string, handlers ...func(request *Request)) *fiber.Route {
 		route = app.Post(path, func(ctx *fiber.Ctx) {
 			r := Upgrade(ctx)
 			handler(r)
+			r = nil
 		})
 	}
 	return route
@@ -114,6 +119,7 @@ func Delete(path string, handlers ...func(request *Request)) *fiber.Route {
 		route = app.Delete(path, func(ctx *fiber.Ctx) {
 			r := Upgrade(ctx)
 			handler(r)
+			r = nil
 		})
 	}
 	return route
@@ -129,6 +135,7 @@ func Head(path string, handlers ...func(request *Request)) *fiber.Route {
 		route = app.Head(path, func(ctx *fiber.Ctx) {
 			r := Upgrade(ctx)
 			handler(r)
+			r = nil
 		})
 	}
 	return route
@@ -144,6 +151,7 @@ func Patch(path string, handlers ...func(request *Request)) *fiber.Route {
 		route = app.Patch(path, func(ctx *fiber.Ctx) {
 			r := Upgrade(ctx)
 			handler(r)
+			r = nil
 		})
 	}
 	return route
@@ -159,6 +167,7 @@ func Options(path string, handlers ...func(request *Request)) *fiber.Route {
 		route = app.Options(path, func(ctx *fiber.Ctx) {
 			r := Upgrade(ctx)
 			handler(r)
+			r = nil
 		})
 	}
 	return route
@@ -174,6 +183,7 @@ func Trace(path string, handlers ...func(request *Request)) *fiber.Route {
 		route = app.Trace(path, func(ctx *fiber.Ctx) {
 			r := Upgrade(ctx)
 			handler(r)
+			r = nil
 		})
 	}
 	return route
@@ -189,6 +199,7 @@ func Get(path string, handlers ...func(request *Request)) *fiber.Route {
 		route = app.Get(path, func(ctx *fiber.Ctx) {
 			r := Upgrade(ctx)
 			handler(r)
+			r = nil
 		})
 	}
 	return route
@@ -204,6 +215,7 @@ func All(path string, handlers ...func(request *Request)) {
 		app.All(path, func(ctx *fiber.Ctx) {
 			r := Upgrade(ctx)
 			handler(r)
+			r = nil
 		})
 	}
 
