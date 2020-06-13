@@ -32,7 +32,9 @@ func (App) Register() {
 func (App) Router() {
 	evo.Get("/admin/list", FilterViewController)
 	evo.Get("test1", func(request *evo.Request) {
-		request.WriteResponse("testttt")
+		u := user.User{}
+		db.Find(&u)
+		request.WriteResponse(u)
 	})
 	evo.Group("/a").Group("/b").Get("/test", func(request *evo.Request) {
 		request.WriteResponse("test")
