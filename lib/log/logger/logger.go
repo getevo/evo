@@ -208,23 +208,21 @@ func (w *Worker) Log(level LogLevel, calldepth int, info *Info) string {
 	if w.level < level {
 		return ""
 	}
-
+	var err error
 	if w.Color != 0 {
 		/*		buf := &bytes.Buffer{}
 				buf.Write([]byte(Colors[level]))
 				buf.Write([]byte(info.Output(w.format)))
 				buf.Write([]byte("\033[0m"))*/
 
-		w.Minion.Output(calldepth+1, fmt.Sprintln(Colors[level], info.Output(w.format), ctc.Reset))
+		err = w.Minion.Output(calldepth+1, fmt.Sprintln(Colors[level], info.Output(w.format), ctc.Reset))
 	} else {
-		w.Minion.Output(calldepth+1, info.Output(w.format))
+		err = w.Minion.Output(calldepth+1, info.Output(w.format))
+	}
+	if err != nil {
+		panic(err)
 	}
 	return info.Output(w.format)
-}
-
-// Returns a proper string to output for colored logging
-func colorString(color int) string {
-	return fmt.Sprintf("\033[%dm", int(color))
 }
 
 // Initializes the map of colors

@@ -160,6 +160,7 @@ func (r *Request) View(data interface{}, views ...string) {
 	buff := r.RenderView(data, views...)
 	buff.Bytes()
 	r.SendHTML(buff.Bytes())
+	buff = nil
 }
 
 func (r *Request) RenderView(input interface{}, views ...string) *bytes.Buffer {
@@ -201,6 +202,7 @@ func (r *Request) RenderView(input interface{}, views ...string) *bytes.Buffer {
 
 		}
 	}
+	vars = nil
 	return &buff
 }
 

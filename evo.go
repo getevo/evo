@@ -130,7 +130,6 @@ func Run() {
 	if Arg.Pack {
 		return
 	}
-	go InterceptOSSignal()
 
 	//Static Files
 	for _, item := range statics {
