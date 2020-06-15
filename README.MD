@@ -13,7 +13,7 @@ EVO is a powerful package for quickly writing modular web applications/services 
  - A lot of useful functions
  - A lot of UI components and integrations
  - A lot of usable/reusable apps to include and use
- - Live code reload
+ - Live reload
  - High performance
  - Superfast template engine
  - Actively maintained
