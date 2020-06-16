@@ -1,6 +1,7 @@
 package evo
 
 import (
+	"fmt"
 	"github.com/getevo/evo/lib/gpath"
 	"github.com/getevo/evo/lib/text"
 	"github.com/mitchellh/mapstructure"
@@ -242,4 +243,46 @@ func run(command string) string {
 // GetConfig return configuration instance
 func GetConfig() *Configuration {
 	return config
+}
+
+func ParseConfig(path string, key string, out interface{}) error {
+	if path == "" {
+		path = Arg.Config
+	}
+	path = GuessPath(path)
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("could not load config file at %s", path)
+	}
+
+	m := map[string]interface{}{}
+	err = yaml.Unmarshal([]byte(data), &m)
+	if err != nil {
+		return err
+	}
+	var toDecode interface{}
+	if key != "" {
+		if v, ok := m[key]; ok {
+			toDecode = v
+		} else {
+			return fmt.Errorf("cannot find %s in %s", key, path)
+		}
+	} else {
+		toDecode = m
+	}
+
+	cfg := &mapstructure.DecoderConfig{
+		Metadata: nil,
+		Result:   &out,
+		TagName:  "yaml",
+	}
+	decoder, err := mapstructure.NewDecoder(cfg)
+	if err != nil {
+		return err
+	}
+	err = decoder.Decode(toDecode)
+	if err != nil {
+		return err
+	}
+	return nil
 }

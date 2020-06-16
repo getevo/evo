@@ -20,7 +20,7 @@ var validate = validator.New()
 
 type Parser struct {
 	Params    []Param
-	Processor func(params *[]string)
+	Processor func(params []string) []string
 }
 type Param struct {
 	Key        string
@@ -98,7 +98,7 @@ func (parser *Parser) Parse(r *evo.Request) ([]string, error) {
 		return res, fmt.Errorf("unable to parse inputs")
 	}
 	if parser.Processor != nil {
-		parser.Processor(&res)
+		parser.Processor(res)
 	}
 	return res, nil
 }
