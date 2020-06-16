@@ -35,7 +35,7 @@ var (
 
 // Setup setup the IO app
 func Setup() {
-	parseArgs()
+	parseArgs(true)
 	fmt.Printf("Input args %+v \n", Arg)
 
 	parseConfig()
@@ -127,9 +127,11 @@ func CustomError(code int, path string) error {
 
 // Run start IO Server
 func Run() {
+
 	if Arg.Pack {
 		return
 	}
+	parseArgs(false)
 
 	//Static Files
 	for _, item := range statics {

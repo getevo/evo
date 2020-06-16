@@ -1,25 +1,37 @@
 package evo
 
 import (
-	"github.com/alexflint/go-arg"
+	"github.com/creasty/defaults"
+	"github.com/getevo/evo/lib/log"
+	"github.com/getevo/go-arg"
 )
 
 type args struct {
-	Config string `arg:"env" help:"Configuration path" default:"config.yml"`
+	Config string `arg:"-c" help:"Configuration path" default:"config.yml"`
 	Pack   bool   `arg:"-p" help:"Copy assets to build dir"`
 }
 
 var Arg args
+var argList []interface{}
 
 // Version return app version
 func (args) Version() string {
 	return config.App.Name
 }
-func parseArgs() {
-	// TODO: Dynamic args
-	arg.Parse(&Arg)
-	if Arg.Config == "" {
-		Arg.Config = "config.yml"
-	}
 
+func ParseArg(dest interface{}) {
+	argList = append(argList, dest)
+}
+
+func parseArgs(first bool) {
+	if !first {
+		argList = append([]interface{}{&Arg}, argList...)
+		arg.MustParse(argList...)
+	} else {
+		if arg.MustParse(&Arg) != nil {
+			if err := defaults.Set(&Arg); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
 }
