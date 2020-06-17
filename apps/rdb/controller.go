@@ -3,8 +3,10 @@ package rdb
 import (
 	"database/sql"
 	"github.com/getevo/evo"
+	"github.com/getevo/evo/lib/log"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jackskj/carta"
+	"strings"
 	"sync"
 )
 
@@ -13,6 +15,7 @@ type Controller struct{}
 type DBO struct {
 	Conn    *sql.DB
 	Queries map[string]*Query
+	Debug   bool
 	mu      sync.Mutex
 }
 
@@ -46,7 +49,7 @@ func PushDB(name string, db *sql.DB) error {
 		return err
 	}
 	connections.Set(name, &DBO{
-		db, map[string]*Query{}, sync.Mutex{},
+		db, map[string]*Query{}, false, sync.Mutex{},
 	})
 	return nil
 }
@@ -58,7 +61,7 @@ func GetDBO(name string) *DBO {
 	return nil
 }
 
-func (dbo *DBO) GetQuery(name) *Query {
+func (dbo *DBO) GetQuery(name string) *Query {
 	dbo.mu.Lock()
 	defer dbo.mu.Unlock()
 	return dbo.Queries[name]
@@ -93,6 +96,9 @@ func (q *Query) All(out interface{}, params ...interface{}) error {
 	}
 	var err error
 	var rows *sql.Rows
+	if q.DBO.Debug {
+		log.Infof(strings.Replace(q.QueryString, "?", "%s", len(params)), params...)
+	}
 	if rows, err = q.DBO.Conn.Query(q.QueryString, params...); err != nil {
 		return err
 	}
