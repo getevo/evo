@@ -13,7 +13,8 @@ const (
 	Post   Source = 1
 	URL    Source = 3
 	Header Source = 4
-	Any    Source = 5
+	Cookie Source = 5
+	Any    Source = 6
 )
 
 var validate = validator.New()
@@ -26,6 +27,7 @@ type Param struct {
 	Key        string
 	Source     Source
 	Validation string
+	Default    string
 }
 
 func NewParser(params ...Param) *Parser {
@@ -66,6 +68,9 @@ func (parser *Parser) Parse(r *evo.Request) ([]string, error) {
 		case URL:
 			data = r.Params(item.Key)
 			break
+		case Cookie:
+			data = r.Cookies(item.Key)
+			break
 		case Any:
 			data = r.Query(item.Key)
 			if data == "" {
@@ -88,6 +93,8 @@ func (parser *Parser) Parse(r *evo.Request) ([]string, error) {
 				return res, fmt.Errorf("%s is not valid", item.Key)
 			}
 			res = append(res, data)
+		} else if item.Default != "" {
+			res = append(res, item.Default)
 		} else {
 			return res, fmt.Errorf("%s is empty", item.Key)
 		}

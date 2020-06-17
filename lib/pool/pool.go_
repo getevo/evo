@@ -1,0 +1,75 @@
+package pool
+
+import (
+	"fmt"
+	"sync"
+)
+type Object struct {
+	Object interface{}
+	Index  int
+}
+type pool struct {
+	objects  []*Object
+	list     map[int]bool
+	mu       sync.Mutex
+	sig		 chan bool
+	size     int
+}
+
+func NewPool(size int)  *pool {
+	var p pool
+	if size > 0 {
+		p = pool{
+			objects:  make([]*Object, size,size),
+			list:     make(map[int]bool, size),
+			mu:       sync.Mutex{},
+			size:     size,
+		}
+	}
+	return &p
+}
+
+func (p *pool)Append(item interface{}) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.size > 0 && len(p.list) >= p.size{
+		return fmt.Errorf("pool is full")
+	}
+	o := &Object{ Object:item, Index:0}
+	p.objects = append(p.objects,o)
+	o.Index = len(p.objects) - 1
+	p.list[len(p.objects) - 1] = true
+	p.sig <- true
+	return nil
+}
+
+func (p *pool)RemoveIndex(index int) error {
+	if index < 1 || len(p.list) < 1{
+		return fmt.Errorf("cant remove from pool")
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if inUse,exist := p.list[index]; exist{
+		if inUse{
+			return fmt.Errorf("index %d is in use",index)
+		}else{
+			delete(p.list,index)
+		}
+	}else{
+		return fmt.Errorf("invalid index %d",index)
+	}
+	p.objects = append(p.objects[:index], p.objects[index+1:]...)
+	return nil
+}
+
+func (p *pool)Get(item interface{}) (*Object,error) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	for index,item := range p.list{
+		if item.
+	}
+}
+/*
+func (p *pool)Release(item interface{}) error {
+
+}*/

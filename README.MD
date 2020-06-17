@@ -38,7 +38,6 @@ EVO is a powerful package for quickly writing modular web applications/services 
 ## Todo
 - i18n
 - User Management app
-- List filter ui
 - Journal App
 - Log App
 - Swagger

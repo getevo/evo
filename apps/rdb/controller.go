@@ -5,12 +5,15 @@ import (
 	"github.com/getevo/evo"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jackskj/carta"
+	"sync"
 )
 
 type Controller struct{}
 
 type DBO struct {
-	Conn *sql.DB
+	Conn    *sql.DB
+	Queries map[string]*Query
+	mu      sync.Mutex
 }
 
 type Query struct {
@@ -19,12 +22,23 @@ type Query struct {
 	Parser      *Parser
 }
 
-func CreateConnection(name, driver, dsn string) error {
+func CreateConnections(config map[string]string) error {
+	var err error
+	for name, dsn := range config {
+		_, err = CreateConnection(name, "mysql", dsn)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func CreateConnection(name, driver, dsn string) (*sql.DB, error) {
 	db, err := sql.Open(driver, dsn)
 	if err != nil {
-		return err
+		return db, err
 	}
-	return PushDB(name, db)
+	return db, PushDB(name, db)
 }
 
 func PushDB(name string, db *sql.DB) error {
@@ -32,7 +46,7 @@ func PushDB(name string, db *sql.DB) error {
 		return err
 	}
 	connections.Set(name, &DBO{
-		db,
+		db, map[string]*Query{}, sync.Mutex{},
 	})
 	return nil
 }
@@ -44,8 +58,18 @@ func GetDBO(name string) *DBO {
 	return nil
 }
 
-func (dbo *DBO) Query(query string) *Query {
-	return &Query{query, dbo, nil}
+func (dbo *DBO) GetQuery(name) *Query {
+	dbo.mu.Lock()
+	defer dbo.mu.Unlock()
+	return dbo.Queries[name]
+}
+
+func (dbo *DBO) CreateQuery(name, query string) *Query {
+	dbo.mu.Lock()
+	defer dbo.mu.Unlock()
+	q := &Query{query, dbo, nil}
+	dbo.Queries[name] = q
+	return q
 }
 
 func (q *Query) SetParser(parser *Parser) {
