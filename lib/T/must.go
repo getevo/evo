@@ -38,6 +38,10 @@ func (v m) Quote() string {
 	return strconv.Quote(string(v))
 }
 
+func (v m) String() string {
+	return fmt.Sprint(v)
+}
+
 func (v m) Bool() bool {
 	return v[0] == '1' || v[0] == 't' || v[0] == 'T'
 }

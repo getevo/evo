@@ -3,28 +3,12 @@ package keycloak
 import (
 	"fmt"
 	"github.com/getevo/evo"
+	"github.com/getevo/evo/lib/data"
 	"github.com/getevo/evo/lib/log"
 	"gopkg.in/square/go-jose.v2/jwt"
 )
 
-type User struct {
-	Exp               int64  `json:"exp"`
-	IAT               int64  `json:"iat"`
-	JTI               string `json:"jti"`
-	ISS               string `json:"iss"`
-	Sub               string `json:"sub"`
-	Typ               string `json:"typ"`
-	Azp               string `json:"azp"`
-	SessionState      string `json:"session_state"`
-	Acr               string `json:"acr"`
-	Scope             string `json:"scope"`
-	EmailVerified     bool   `json:"email_verified"`
-	Name              string `json:"name"`
-	PreferredUsername string `json:"preferred_username"`
-	GivenName         string `json:"given_name"`
-	FamilyName        string `json:"family_name"`
-	Email             string `json:"email"`
-}
+type User struct{}
 
 func (p User) Save(u *evo.User) error {
 	log.Info("implement me")
@@ -51,10 +35,7 @@ func (p User) SetGroup(u *evo.User, group interface{}) error {
 
 }
 func (p User) AfterFind(u *evo.User) error {
-	u.Name = p.Name
-	u.Email = p.Email
-	u.Username = p.PreferredUsername
-	u.Name = p.Name + " " + p.FamilyName
+
 	return nil
 }
 func (p User) SyncPermissions(app string, perms evo.Permissions) {
@@ -73,17 +54,17 @@ func (p User) FromRequest(request *evo.Request) {
 		if err != nil {
 			log.Error(err)
 			request.WriteResponse(false, fmt.Errorf("unauthorized"), 401)
+			return
 		}
-		var claims User
+		var claims data.Map
 		err = token.Claims(Certificates.Keys[0], &claims)
 		if err != nil {
 			log.Error(err)
 			request.WriteResponse(false, fmt.Errorf("unauthorized"), 401)
+			return
 		}
-
-		request.User.Name = claims.Name + " " + claims.FamilyName
+		claims.ToStruct(request.User)
 		request.User.Anonymous = false
-		request.User.Email = claims.Email
-		request.User.Username = claims.PreferredUsername
+		request.User.Params = claims
 	}
 }

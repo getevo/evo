@@ -64,18 +64,19 @@ type RolePermission struct {
 // @doc type 			model
 type User struct {
 	Model
-	Name      string     `json:"name" form:"name"`
-	Username  string     `json:"username" form:"username"  validate:"empty=false | format=username" gorm:"type:varchar(32);unique_index"`
-	Password  string     `json:"-" form:"-" validate:"empty=false & format=strict_html"`
-	Email     string     `json:"email" form:"email" validate:"empty=false & format=email" gorm:"type:varchar(32);unique_index"`
-	Roles     []*Role    `json:"roles" form:"roles"  validate:"-"`
-	Group     *UserGroup `json:"-" form:"-" gorm:"-"  validate:"-"`
-	GroupID   uint       `json:"group_id" form:"group_id"`
-	Anonymous bool       `json:"anonymous" form:"anonymous" gorm:"-"`
-	Active    bool       `json:"active" form:"active"`
-	Seen      time.Time  `json:"seen" form:"seen"`
-	Admin     bool       `json:"admin" form:"admin"`
-	Params    data.Map   `gorm:"type:json" form:"params" json:"params"`
+	GivenName  string     `json:"given_name" form:"given_name" mapstructure:"given_name"`
+	FamilyName string     `json:"family_name" form:"family_name" mapstructure:"family_name"`
+	Username   string     `json:"username" form:"username"  mapstructure:"preferred_username"  validate:"empty=false | format=username" gorm:"type:varchar(32);unique_index"`
+	Password   string     `json:"-" form:"-" validate:"empty=false & format=strict_html"`
+	Email      string     `json:"email" form:"email" mapstructure:"email" validate:"empty=false & format=email" gorm:"type:varchar(32);unique_index"`
+	Roles      []*Role    `json:"roles" form:"roles"  validate:"-"`
+	Group      *UserGroup `json:"-" form:"-" gorm:"-"  validate:"-"`
+	GroupID    uint       `json:"group_id" form:"group_id"`
+	Anonymous  bool       `json:"anonymous" form:"anonymous" gorm:"-"`
+	Active     bool       `json:"active" form:"active"`
+	Seen       time.Time  `json:"seen" form:"seen"`
+	Admin      bool       `json:"admin" form:"admin"`
+	Params     data.Map   `gorm:"type:json" mapstructure:"-" form:"params" json:"params"`
 }
 
 // TableName return role model table name

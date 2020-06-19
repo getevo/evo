@@ -47,6 +47,7 @@ func (App) Register() {
 		log.Fatal(err)
 	}
 	evo.SetUserInterface(User{})
+
 }
 
 // WhenReady called after setup all apps

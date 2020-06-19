@@ -4,12 +4,21 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
+	"github.com/mitchellh/mapstructure"
 )
 
 // TODO: Merge with concurrent map
 
 // Map gorm compatible dynamic map
 type Map map[string]interface{}
+
+func (p Map) Get(v string) interface{} {
+	return p[v]
+}
+
+func (p Map) ToStruct(v interface{}) {
+	mapstructure.Decode(p, v)
+}
 
 // Value return json value to store by gorm
 func (p Map) Value() (driver.Value, error) {
