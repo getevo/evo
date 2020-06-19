@@ -48,8 +48,9 @@ func (App) Menus() []menu.Menu {
 	return []menu.Menu{}
 }
 func (App) WhenReady() {
-
-	db.AutoMigrate(MyModel{}, MyGroup{})
+	if evo.Arg.Migrate {
+		db.AutoMigrate(MyModel{}, MyGroup{})
+	}
 
 	/*	db.Debug().Create(&MyGroup{
 			Name:"Group 1",

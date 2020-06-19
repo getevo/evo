@@ -100,7 +100,7 @@ func (c Controller) Login(r *evo.Request) {
 			token, err = jwt.Generate(map[string]interface{}{
 				"id":       user.ID,
 				"username": user.Username,
-				"name":     user.Name,
+				"name":     user.GivenName,
 				"seen":     user.Seen,
 				"active":   user.Active,
 				//"params":   user.Params,
@@ -148,10 +148,11 @@ func (c Controller) CreateUser(r *evo.Request) {
 		err := user.Save()
 		if err == nil {
 			r.WriteResponse(map[string]interface{}{
-				"id":       user.ID,
-				"username": user.Username,
-				"name":     user.Name,
-				"param":    user.Params,
+				"id":          user.ID,
+				"username":    user.Username,
+				"given_name":  user.GivenName,
+				"family_name": user.FamilyName,
+				"param":       user.Params,
 			},
 			)
 		} else {
@@ -237,10 +238,11 @@ func (c Controller) EditUser(r *evo.Request) {
 		err := user.Save()
 		if err == nil {
 			r.WriteResponse(map[string]interface{}{
-				"id":       user.ID,
-				"username": user.Username,
-				"name":     user.Name,
-				"param":    user.Params,
+				"id":          user.ID,
+				"username":    user.Username,
+				"given_name":  user.GivenName,
+				"family_name": user.FamilyName,
+				"param":       user.Params,
 			})
 		} else {
 			r.WriteResponse(err)

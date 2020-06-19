@@ -94,7 +94,10 @@ func InitUserModel(database *gorm.DB, config interface{}) {
 	j := text.ToJSON(config)
 	json.Unmarshal([]byte(j), &config)
 	db = database
-	db.AutoMigrate(&User{}, &UserGroup{}, &Role{}, &Permission{}, &RolePermission{})
+
+	if Arg.Migrate {
+		db.AutoMigrate(&User{}, &UserGroup{}, &Role{}, &Permission{}, &RolePermission{})
+	}
 	updateRolePermissions()
 
 }

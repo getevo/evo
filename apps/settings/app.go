@@ -63,7 +63,9 @@ func (App) Register() {
 	}
 	Path = evo.GuessAsset(App{})
 	views = evo.RegisterView("settings", Path+"/views")
-	db.AutoMigrate(&Settings{})
+	if evo.Arg.Migrate {
+		db.AutoMigrate(&Settings{})
+	}
 }
 
 // Router setup routers

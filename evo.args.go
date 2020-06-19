@@ -7,8 +7,9 @@ import (
 )
 
 type args struct {
-	Config string `arg:"-c" help:"Configuration path" default:"config.yml"`
-	Pack   bool   `arg:"-p" help:"Copy assets to build dir"`
+	Config  string `arg:"-c" help:"Configuration path" default:"config.yml"`
+	Pack    bool   `arg:"-p" help:"Copy assets to build dir"`
+	Migrate bool   `arg:"-m" help:"Migrate Database structure"`
 }
 
 var Arg args
