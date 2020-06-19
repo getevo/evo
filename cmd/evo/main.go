@@ -81,7 +81,6 @@ func build() {
 	var builder = watcher.NewBuilder(cfg.WorkingDir, cfg.BinName, cfg.WorkingDir, cfg.BuildArgs)
 	var runner = watcher.NewRunner(os.Stdout, os.Stderr, filepath.Join(cfg.WorkingDir, builder.Binary()), cfg.ProgramArgs)
 	watcher.NewWatcher(cfg.WorkingDir, func() {
-		fmt.Println("Change detected")
 		if onBuild {
 			fmt.Println("skip build due another build")
 			return
@@ -99,27 +98,36 @@ func build() {
 		}
 		onBuild = true
 		err := builder.Build()
-		if err != nil {
-			panic(err)
-		}
-
 		onBuild = false
-		_, err = runner.Run()
 		if err != nil {
-			panic(err)
+
+			fmt.Println("\n\nBUILD FAILED:")
+			log.Error(err)
+			fmt.Println("\n\n")
+			return
+		} else {
+
+			onBuild = false
+			_, err = runner.Run()
+			if err != nil {
+				log.Error(err)
+			}
 		}
 	})
 
 	onBuild = true
 	err := builder.Build()
-	if err != nil {
-		panic(err)
-	}
-
 	onBuild = false
-	_, err = runner.Run()
 	if err != nil {
-		panic(err)
+		log.Error(err)
+	} else {
+
+		_, err = runner.Run()
+		if err != nil {
+			fmt.Println("\n\nBUILD FAILED:")
+			log.Error(err)
+			fmt.Println("\n\n")
+		}
 	}
 
 	for {

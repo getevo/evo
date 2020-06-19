@@ -2,7 +2,7 @@
 // @doc name		auth
 // @doc description authentication api
 // @doc author		reza
-// @doc include		github.com/getevo/evo/user
+// @doc include		github.com/getevo/evo/user.model.go
 package auth
 
 import (
@@ -10,7 +10,6 @@ import (
 	"github.com/getevo/evo"
 	"github.com/getevo/evo/apps/query"
 	"github.com/getevo/evo/menu"
-	"github.com/getevo/evo/user"
 	"github.com/jinzhu/gorm"
 )
 
@@ -31,7 +30,7 @@ func (App) Register() {
 	fmt.Println("Auth Registered")
 
 	userFilter := query.Filter{
-		Object: &user.User{},
+		Object: &evo.User{},
 		Slug:   "user",
 		Allowed: map[string]string{
 			"id":         ``,
@@ -70,7 +69,7 @@ func (App) Router() {
 
 	// @doc type 		api
 	// @doc name 		user create
-	// @doc body   		Model:#user.User
+	// @doc body   		Model:#evo.User
 	// @doc return 		Map:id,username,name,param
 	// @doc required	Permission:#auth.user.create
 	auth.Post("/user/create", controller.CreateUser)
@@ -78,7 +77,7 @@ func (App) Router() {
 	// @doc type 		api
 	// @doc name 		user edit
 	// @doc describe    :id (user id)
-	// @doc body   		Model:#user.User
+	// @doc body   		Model:#evo.User
 	// @doc return 		Map:id,username,name,param
 	// @doc required	Permission:#auth.user.edit
 	auth.Post("/user/edit/:id", controller.EditUser)
@@ -87,7 +86,7 @@ func (App) Router() {
 	// @doc name 		me
 	// @doc description return current logged in user
 	// @doc path   		/user/me
-	// @doc return 		Model:#user.User
+	// @doc return 		Model:#evo.User
 	auth.Get("/user/me", controller.GetMe)
 
 	// @doc type 		api
@@ -95,21 +94,21 @@ func (App) Router() {
 	// @doc description return list of users for given offset and range
 	// @doc describe    :limit (limit number of showing users)
 	// @doc describe    :offset (starting offset)
-	// @doc return 		Model:[]user.User
-	// @doc required	Permission:auth.user.view
+	// @doc return 		Model:[]evo.User
+	// @doc required	Permission:#auth.user.view
 	auth.Get("/user/all/:offset/:limit", controller.GetAllUsers)
 
 	// @doc type 		api
 	// @doc name 		get user
 	// @doc description get single user by id
 	// @doc describe    :id (user id)
-	// @doc return 		Model:#user.User
+	// @doc return 		Model:#evo.User
 	// @doc required	Permission:#auth.user.view
 	auth.Get("/user/:id", controller.GetUser) //this should be always last router else it will match before others
 
 	// @doc type 		api
 	// @doc name 		create role
-	// @doc body   		Model:#user.Role
+	// @doc body   		Model:#evo.Role
 	// @doc return 		Map:id,name,code_name,parent
 	// @doc required	Permission:#auth.role.create
 	auth.Post("/role/create", controller.CreateRole)
@@ -117,7 +116,7 @@ func (App) Router() {
 	// @doc type 		api
 	// @doc name 		edit role
 	// @doc describe    :id (role id)
-	// @doc body   		Model:#user.Role
+	// @doc body   		Model:#evo.Role
 	// @doc return 		Map:id,name,code_name,parent
 	// @doc required	Permission:#auth.user.edit
 	auth.Post("/role/edit/:id", controller.EditRole)
@@ -133,7 +132,7 @@ func (App) Router() {
 	// @doc name 		get role
 	// @doc describe    :id (role id)
 	// @doc description get single role
-	// @doc return 		Model:#user.Role
+	// @doc return 		Model:#evo.Role
 	// @doc required	Permission:#auth.role.view
 	auth.Get("/role/:id", controller.GetRole)
 
@@ -147,16 +146,16 @@ func (App) Router() {
 
 	// @doc type 		api
 	// @doc name 		group create
-	// @doc return 		Model:#user.Group
-	// @doc body   		Model:#user.Group
+	// @doc return 		Model:#evo.Group
+	// @doc body   		Model:#evo.Group
 	// @doc required	Permission:#auth.group.create
 	auth.Post("/group/create", controller.CreateGroup)
 
 	// @doc type 		api
 	// @doc name 		group edit
 	// @doc describe    :id (group id)
-	// @doc return 		Model:#user.Group
-	// @doc body   		Model:#user.Group
+	// @doc return 		Model:#evo.Group
+	// @doc body   		Model:#evo.Group
 	// @doc required	Permission:#auth.group.create
 	auth.Post("/group/edit/:id", controller.EditGroup)
 
@@ -184,9 +183,9 @@ func (App) Router() {
 }
 
 // Permissions setup permissions of app
-func (App) Permissions() []user.Permission {
+func (App) Permissions() []evo.Permission {
 	// @doc type permission
-	return []user.Permission{
+	return []evo.Permission{
 		{Title: "Access Users", CodeName: "user.view", Description: "Access list to view list of users"},
 		{Title: "Create Users", CodeName: "user.create", Description: "Create new user"},
 		{Title: "Edit users", CodeName: "user.edit", Description: "Edit user data"},

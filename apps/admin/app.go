@@ -8,7 +8,6 @@ import (
 	"github.com/getevo/evo/apps/settings"
 	"github.com/getevo/evo/lib/fontawesome"
 	"github.com/getevo/evo/menu"
-	"github.com/getevo/evo/user"
 )
 
 // Register register the admin in io apps
@@ -54,8 +53,8 @@ func (App) Router() {
 }
 
 // Permissions setup permissions of app
-func (App) Permissions() []user.Permission {
-	return []user.Permission{
+func (App) Permissions() []evo.Permission {
+	return []evo.Permission{
 		{Title: "Login to admin", CodeName: "login", Description: "Able login to admin panel"},
 		{Title: "Edit own dashboard", CodeName: "dashboard", Description: "Able edit own dashboard otherwise it inherit dashboard assigned by admin"},
 	}

@@ -6,13 +6,13 @@
 		<base href="{{ base }}" >
 		<title>{{ title }}</title>
 		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<link rel="stylesheet" href="plugins/fontawesome-free/css/all.min.css">
-		<link rel="stylesheet" href="plugins/icheck-bootstrap/icheck-bootstrap.min.css">
+		<link rel="stylesheet" href="assets/fontawesome-free/css/all.min.css">
+		<link rel="stylesheet" href="assets/icheck-bootstrap/icheck-bootstrap.min.css">
 		<link rel="stylesheet" href="assets/css/bootstrap.min.css">
 		<link rel="stylesheet" href="assets/css/bible.css">
 		<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
-		<script src="plugins/jquery/jquery.min.js"></script>
-		<script src="plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+		<script src="assets/jquery/jquery.min.js"></script>
+		<script src="assets/bootstrap/js/bootstrap.bundle.min.js"></script>
 		<script language="javascript">
 			var data = {{ body|raw }};
 		</script>

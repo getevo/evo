@@ -6,7 +6,6 @@ import (
 	"github.com/getevo/evo"
 	"github.com/getevo/evo/lib/gpath"
 	"github.com/getevo/evo/menu"
-	"github.com/getevo/evo/user"
 	"github.com/jinzhu/gorm"
 )
 
@@ -32,7 +31,7 @@ func (App) Register() {
 func (App) Router() {
 	evo.Get("/admin/list", FilterViewController)
 	evo.Get("test1", func(request *evo.Request) {
-		u := user.User{}
+		u := evo.User{}
 		db.Find(&u)
 		request.WriteResponse(u)
 	})
@@ -41,8 +40,8 @@ func (App) Router() {
 	})
 }
 
-func (App) Permissions() []user.Permission {
-	return []user.Permission{}
+func (App) Permissions() []evo.Permission {
+	return []evo.Permission{}
 }
 
 func (App) Menus() []menu.Menu {

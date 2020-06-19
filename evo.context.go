@@ -8,9 +8,7 @@ import (
 	"github.com/getevo/evo/errors"
 	"github.com/getevo/evo/lib/jwt"
 	"github.com/getevo/evo/lib/log"
-	"github.com/getevo/evo/user"
 	"github.com/gofiber/fiber"
-	"net/http"
 	"net/url"
 	"reflect"
 	"strings"
@@ -18,12 +16,13 @@ import (
 )
 
 type Request struct {
-	Variables fiber.Map
-	Context   *fiber.Ctx
-	JWT       *jwt.Payload
-	User      *user.User
-	Response  Response
-	flashes   []flash
+	Variables  fiber.Map
+	Context    *fiber.Ctx
+	JWT        *jwt.Payload
+	Additional interface{}
+	User       *User
+	Response   Response
+	flashes    []flash
 }
 type flash struct {
 	Type    string `json:"type"`
@@ -79,40 +78,12 @@ func Upgrade(ctx *fiber.Ctx) *Request {
 	r.Context = ctx
 	r.Response = Response{}
 	r.Response.Error = e.Errors{}
-
-	if r.Cookies("access_token") != "" {
-		token, err := jwt.Verify(r.Cookies("access_token"))
-		if err == nil {
-			r.JWT = &token
-			r.User = getUser(&token)
-		} else {
-			r.SetCookie("access_token", "")
-			r.Status(http.StatusUnauthorized)
-			r.Send("invalid JWT token")
-			log.Error(err)
-		}
-	} else {
-		r.JWT = &jwt.Payload{Empty: true, Data: map[string]interface{}{}}
-	}
+	var u User
+	u.FromRequest(&r)
 	if r.User == nil {
-		r.User = &user.User{Anonymous: true}
+		r.User = &User{Anonymous: true}
 	}
 	return &r
-}
-
-func getUser(payload *jwt.Payload) *user.User {
-	var user user.User
-	// return user using jwt
-	if payload.Data != nil {
-		if id, ok := payload.Data["id"]; ok {
-			Database.Where("id = ?", id).Take(&user)
-			if user.ID == 0 {
-				user.Anonymous = true
-			}
-		}
-	}
-
-	return &user
 }
 
 func (r *Request) Flash(params ...string) {

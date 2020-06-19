@@ -1,12 +1,66 @@
-package user
+package evo
 
 import (
 	"fmt"
 	"github.com/iesreza/validate"
+	"github.com/jinzhu/gorm"
 )
 
+var db *gorm.DB
+
+/*var config struct {
+	App struct {
+		StrongPass int
+	}
+}*/
+
+// Save save user instance
+func (u *User) Save() error {
+	return userInterface.Save(u)
+}
+
+// AfterFind after find event
+func (u *User) AfterFind() (err error) {
+	return userInterface.AfterFind(u)
+}
+
+// SetPassword set user password
+func (u *User) SetPassword(password string) error {
+	return userInterface.SetPassword(u, password)
+}
+
+// HasRole check if user has role
+func (u *User) HasRole(v interface{}) bool {
+	return userInterface.HasRole(u, v)
+}
+
+// HasPerm check if user has permission
+func (u *User) HasPerm(v string) bool {
+	return userInterface.HasPerm(u, v)
+}
+
+// Image return user image
+func (u *User) Image() string {
+	return userInterface.Image(u)
+}
+
+// SetGroup set user group
+func (u *User) SetGroup(group interface{}) error {
+	return userInterface.SetGroup(u, group)
+}
+
+// Sync synchronize permissions on startup
+func (perms Permissions) Sync(app string) {
+	userInterface.SyncPermissions(app, perms)
+}
+
+// SetGroup set user group
+func (u *User) FromRequest(r *Request) {
+	userInterface.FromRequest(r)
+}
+
 // Save save the group instance
-func (g *Group) Save() error {
+func (g *UserGroup) Save() error {
 	var set []*Role
 	var remove []*Role
 	for _, rl := range g.RoleSet {
@@ -37,7 +91,7 @@ func (g *Group) Save() error {
 	if err != nil {
 		return err
 	}
-	temp := Group{}
+	temp := UserGroup{}
 	if !db.Where("code_name = ?", g.CodeName).Take(&temp).RecordNotFound() {
 		if g.ID == 0 || (g.ID > 0 && g.ID != temp.ID) {
 			return fmt.Errorf("codename exist")
@@ -57,7 +111,7 @@ func (g *Group) Save() error {
 }
 
 // HasPerm check the group if has permission
-func (g *Group) HasPerm(v string) bool {
+func (g *UserGroup) HasPerm(v string) bool {
 	for _, role := range g.Roles {
 		if role.HasPerm(v) {
 			return true
@@ -67,7 +121,7 @@ func (g *Group) HasPerm(v string) bool {
 }
 
 // AfterFind after find event
-func (g *Group) AfterFind() (err error) {
+func (g *UserGroup) AfterFind() (err error) {
 	var roles []*Role
 	db.Model(g).Related(&roles, "Roles")
 	g.Roles = roles

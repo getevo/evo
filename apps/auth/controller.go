@@ -7,7 +7,6 @@ import (
 	"github.com/getevo/evo/lib/T"
 	"github.com/getevo/evo/lib/constant"
 	"github.com/getevo/evo/lib/jwt"
-	"github.com/getevo/evo/user"
 	"github.com/iesreza/validate"
 	"gopkg.in/hlandau/passlib.v1"
 	"net/http"
@@ -26,8 +25,8 @@ type AuthParams struct {
 	Redirect string `json:"redirect" form:"redirect"`
 }
 
-func GetUserByID(id interface{}) *user.User {
-	user := user.User{}
+func GetUserByID(id interface{}) *evo.User {
+	user := evo.User{}
 	if db.Where("id = ?", id).Find(&user).RecordNotFound() {
 		user.Anonymous = true
 		return &user
@@ -36,31 +35,31 @@ func GetUserByID(id interface{}) *user.User {
 	return &user
 }
 
-func GetUserByUsername(username interface{}) *user.User {
-	user := user.User{}
+func GetUserByUsername(username interface{}) *evo.User {
+	user := evo.User{}
 	if db.Where("username = ?", username).Find(&user).RecordNotFound() {
 		return nil
 	}
 	return &user
 }
 
-func GetUserByEmail(email interface{}) *user.User {
-	user := user.User{}
+func GetUserByEmail(email interface{}) *evo.User {
+	user := evo.User{}
 	if db.Where("email = ?", email).Find(&user).RecordNotFound() {
 		return nil
 	}
 	return &user
 }
 
-func GetGroup(v interface{}) *user.Group {
-	group := user.Group{}
+func GetGroup(v interface{}) *evo.UserGroup {
+	group := evo.UserGroup{}
 	if db.Where("id = ? OR code_name", v, v).Find(&group).RecordNotFound() {
 		return nil
 	}
 	return &group
 }
 
-func AuthUserByPassword(username, password string) (*user.User, error) {
+func AuthUserByPassword(username, password string) (*evo.User, error) {
 	user := GetUserByUsername(username)
 	if user == nil {
 		return user, fmt.Errorf("username not found")
@@ -76,7 +75,7 @@ func AuthUserByPassword(username, password string) (*user.User, error) {
 
 func (c Controller) Login(r *evo.Request) {
 	var err error
-	var user *user.User
+	var user *evo.User
 	var token string
 
 	r.Accepts("text/html", "application/json")
@@ -142,7 +141,7 @@ func (c Controller) CreateUser(r *evo.Request) {
 		r.WriteResponse(constant.ERROR_UNAUTHORIZED)
 		return
 	}
-	var user = user.User{}
+	var user = evo.User{}
 	err := r.BodyParser(&user)
 
 	if err == nil {
@@ -166,7 +165,7 @@ func (c Controller) CreateUser(r *evo.Request) {
 
 func (c Controller) CreateRole(r *evo.Request) {
 
-	var role = user.Role{}
+	var role = evo.Role{}
 	if !r.User.HasPerm("auth.create.role") {
 		r.WriteResponse(constant.ERROR_UNAUTHORIZED)
 		return
@@ -194,7 +193,7 @@ func (c Controller) CreateRole(r *evo.Request) {
 
 func (c Controller) CreateGroup(r *evo.Request) {
 
-	var group = user.Group{}
+	var group = evo.UserGroup{}
 	if !r.User.HasPerm("auth.create.group") {
 		r.WriteResponse(constant.ERROR_UNAUTHORIZED)
 		return
@@ -222,7 +221,7 @@ func (c Controller) EditUser(r *evo.Request) {
 		r.WriteResponse(constant.ERROR_UNAUTHORIZED)
 		return
 	}
-	var user user.User
+	var user evo.User
 	var id = T.Must(r.Params("id")).UInt()
 	if db.Where("id = ?", id).Find(&user).RecordNotFound() {
 		r.WriteResponse(constant.ERROR_INVALID_ID)
@@ -256,7 +255,7 @@ func (c Controller) EditRole(r *evo.Request) {
 		r.WriteResponse(constant.ERROR_UNAUTHORIZED)
 		return
 	}
-	var role user.Role
+	var role evo.Role
 	var id = r.Params("id")
 
 	if db.Where("id = ? OR code_name = ?", id, id).Find(&role).RecordNotFound() {
@@ -287,7 +286,7 @@ func (c Controller) EditGroup(r *evo.Request) {
 		r.WriteResponse(constant.ERROR_UNAUTHORIZED)
 		return
 	}
-	var group user.Group
+	var group evo.UserGroup
 	var id = r.Params("id")
 	if db.Where("id = ? OR code_name = ?", id, id).Find(&group).RecordNotFound() {
 		r.WriteResponse(e.Field("id", constant.ERROR_INVALID_ID))
@@ -318,7 +317,7 @@ func (c Controller) GetGroups(r *evo.Request) {
 		r.WriteResponse(constant.ERROR_UNAUTHORIZED)
 		return
 	}
-	var groups []user.Group
+	var groups []evo.UserGroup
 	err := db.Find(&groups).Error
 	if err != nil {
 		r.WriteResponse(e.Field("id", constant.ERROR_INVALID_ID))
@@ -333,7 +332,7 @@ func (c Controller) GetGroup(r *evo.Request) {
 		r.WriteResponse(constant.ERROR_UNAUTHORIZED)
 		return
 	}
-	var group user.Group
+	var group evo.UserGroup
 	var id = r.Params("id")
 	if db.Where("id = ? OR code_name = ?", id, id).Find(&group).RecordNotFound() {
 		r.WriteResponse(e.Field("id", constant.ERROR_INVALID_ID))
@@ -349,7 +348,7 @@ func (c Controller) GetRoles(r *evo.Request) {
 		r.WriteResponse(constant.ERROR_UNAUTHORIZED)
 		return
 	}
-	var roles []user.Role
+	var roles []evo.Role
 	err := db.Find(&roles).Error
 	if err != nil {
 		r.WriteResponse(err)
@@ -364,7 +363,7 @@ func (c Controller) GetRole(r *evo.Request) {
 		r.WriteResponse(constant.ERROR_UNAUTHORIZED)
 		return
 	}
-	var role user.Role
+	var role evo.Role
 	var id = r.Params("id")
 	if db.Where("id = ? OR code_name = ?", id, id).Find(&role).RecordNotFound() {
 		r.WriteResponse(e.Field("id", constant.ERROR_INVALID_ID))
@@ -380,13 +379,13 @@ func (c Controller) GetRoleGroups(r *evo.Request) {
 		r.WriteResponse(constant.ERROR_UNAUTHORIZED)
 		return
 	}
-	var role user.Role
+	var role evo.Role
 	var id = r.Params("id")
 	if db.Where("id = ? OR code_name = ?", id, id).Find(&role).RecordNotFound() {
 		r.WriteResponse(e.Field("id", constant.ERROR_INVALID_ID))
 		return
 	} else {
-		var groups []user.Group
+		var groups []evo.UserGroup
 		db.Joins(`INNER JOIN group_roles ON "group".id = group_roles.group_id`).Where("group_roles.role_id = ?", role.ID).Find(&groups)
 		r.WriteResponse(groups)
 	}
@@ -398,7 +397,7 @@ func (c Controller) GetUser(r *evo.Request) {
 		r.WriteResponse(constant.ERROR_UNAUTHORIZED)
 		return
 	}
-	var user user.User
+	var user evo.User
 	var id = r.Params("id")
 	if db.Where("id = ? OR username = ? OR email = ?", id, id, id).Find(&user).RecordNotFound() {
 		r.WriteResponse(constant.ERROR_OBJECT_NOT_EXIST)
@@ -419,7 +418,7 @@ func (c Controller) GetAllUsers(r *evo.Request) {
 		r.WriteResponse(constant.ERROR_UNAUTHORIZED)
 		return
 	}
-	var users []user.User
+	var users []evo.User
 	err := db.Offset(r.Params("offset")).Limit(r.Params("limit")).Find(&users).Error
 	if err != nil {
 		r.WriteResponse(err)
@@ -434,7 +433,7 @@ func (c Controller) GetAllPermissions(r *evo.Request) {
 		r.WriteResponse(constant.ERROR_UNAUTHORIZED)
 		return
 	}
-	var perms []user.Permission
+	var perms []evo.Permission
 	err := db.Find(&perms).Error
 	if err != nil {
 		r.WriteResponse(e.Context(err))

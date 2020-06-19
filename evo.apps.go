@@ -5,7 +5,6 @@ import (
 	"github.com/getevo/evo/lib/log"
 	"github.com/getevo/evo/lib/ref"
 	"github.com/getevo/evo/menu"
-	"github.com/getevo/evo/user"
 	"go/build"
 	"reflect"
 	"strings"
@@ -15,7 +14,7 @@ type App interface {
 	Register()
 	Router()
 	WhenReady()
-	Permissions() []user.Permission
+	Permissions() []Permission
 	Pack()
 	Menus() []menu.Menu
 }
@@ -36,7 +35,7 @@ func Register(app App) {
 	apps[name] = app
 	app.Register()
 	app.Router()
-	permissions := user.Permissions(app.Permissions())
+	permissions := Permissions(app.Permissions())
 	permissions.Sync(name)
 	n := app.Menus()
 	AppMenus = append(AppMenus, n...)
@@ -77,7 +76,7 @@ func GuessAsset(app App) string {
 	}
 
 	if gpath.IsDirExist(build.Default.GOPATH + "/src/" + src) {
-		log.Info("Load bundle from " + gpath.WorkingDir() + "/" + pack)
+		log.Info("Load bundle from " + build.Default.GOPATH + "/src/" + src)
 		return build.Default.GOPATH + "/src/" + src
 	}
 

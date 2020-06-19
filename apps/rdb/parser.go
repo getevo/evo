@@ -9,12 +9,13 @@ import (
 type Source uint8
 
 const (
-	Get    Source = 0
-	Post   Source = 1
-	URL    Source = 3
-	Header Source = 4
-	Cookie Source = 5
-	Any    Source = 6
+	Get      Source = 0
+	Post     Source = 1
+	URL      Source = 3
+	Header   Source = 4
+	Cookie   Source = 5
+	Any      Source = 6
+	Constant Source = 7
 )
 
 var validate = validator.New()
@@ -48,6 +49,10 @@ func (parser *Parser) Parse(r *evo.Request) ([]string, error) {
 
 	for _, item := range parser.Params {
 		switch item.Source {
+		case Constant:
+			res = append(res, item.Default)
+			continue
+			break
 		case Get:
 			data = r.Query(item.Key)
 			break

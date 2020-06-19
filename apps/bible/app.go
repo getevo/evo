@@ -6,7 +6,6 @@ import (
 	"github.com/CloudyKit/jet"
 	"github.com/getevo/evo"
 	"github.com/getevo/evo/menu"
-	"github.com/getevo/evo/user"
 )
 
 func Register() {
@@ -19,12 +18,13 @@ var config *evo.Configuration
 var views *jet.Set
 var Path string
 
-// Register the adminlte
+// Register the bible
 func (App) Register() {
 	fmt.Println("Bible Registered")
 	config = evo.GetConfig()
 	Path = evo.GuessAsset(App{})
 	views = evo.RegisterView("bible", Path+"/views")
+
 }
 
 // WhenReady called after setup all apps
@@ -42,7 +42,7 @@ func (App) Router() {
 }
 
 // Permissions setup permissions of app
-func (App) Permissions() []user.Permission { return []user.Permission{} }
+func (App) Permissions() []evo.Permission { return []evo.Permission{} }
 
 // Menus setup menus
 func (App) Menus() []menu.Menu {

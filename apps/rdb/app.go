@@ -6,7 +6,6 @@ import (
 	"github.com/getevo/evo/lib/concurrent"
 	"github.com/getevo/evo/lib/fontawesome"
 	"github.com/getevo/evo/menu"
-	"github.com/getevo/evo/user"
 	"github.com/jinzhu/gorm"
 )
 
@@ -41,8 +40,8 @@ func (App) Router() {
 }
 
 // Permissions setup permissions of app
-func (App) Permissions() []user.Permission {
-	return []user.Permission{
+func (App) Permissions() []evo.Permission {
+	return []evo.Permission{
 		{Title: "Access Settings", CodeName: "view", Description: "Access list to view list of settings"},
 		{Title: "Modify Settings", CodeName: "modify", Description: "Modify Settings"},
 	}

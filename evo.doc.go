@@ -3,7 +3,6 @@ package evo
 import (
 	"github.com/getevo/evo/lib/gpath"
 	"github.com/getevo/evo/menu"
-	"github.com/getevo/evo/user"
 	"go/build"
 	"os"
 	"path/filepath"
@@ -15,16 +14,16 @@ import (
 var Docs = []DocApp{}
 
 type DocApp struct {
-	Name        string            `json:"name"`
-	Description string            `json:"description"`
-	Author      string            `json:"author"`
-	Namespace   string            `json:"namespace"`
-	Path        string            `json:"path"`
-	Models      []*DocModel       `json:"models"`
-	APIs        []*DocAPI         `json:"apis"`
-	Permissions []user.Permission `json:"permissions"`
-	Menus       []menu.Menu       `json:"menus"`
-	Package     string            `json:"package"`
+	Name        string       `json:"name"`
+	Description string       `json:"description"`
+	Author      string       `json:"author"`
+	Namespace   string       `json:"namespace"`
+	Path        string       `json:"path"`
+	Models      []*DocModel  `json:"models"`
+	APIs        []*DocAPI    `json:"apis"`
+	Permissions []Permission `json:"permissions"`
+	Menus       []menu.Menu  `json:"menus"`
+	Package     string       `json:"package"`
 }
 
 type DocAPI struct {
@@ -146,13 +145,19 @@ func parseDoc(app *DocApp, content []string, path string) {
 }
 
 func includeDoc(doc *DocApp, path string) {
-	filepath.Walk(build.Default.GOPATH+"/src/"+path, func(path string, info os.FileInfo, err error) error {
-		if err == nil && !info.IsDir() && strings.HasSuffix(info.Name(), ".go") {
-			content := strings.Split(string(gpath.SafeFileContent(path)), "\n")
-			parseDoc(doc, content, path)
-		}
-		return nil
-	})
+	p := build.Default.GOPATH + "/src/" + path
+	if gpath.IsDir(p) {
+		filepath.Walk(p, func(path string, info os.FileInfo, err error) error {
+			if err == nil && !info.IsDir() && strings.HasSuffix(info.Name(), ".go") {
+				content := strings.Split(string(gpath.SafeFileContent(path)), "\n")
+				parseDoc(doc, content, path)
+			}
+			return nil
+		})
+	} else if gpath.IsFileExist(p) {
+		content := strings.Split(string(gpath.SafeFileContent(p)), "\n")
+		parseDoc(doc, content, p)
+	}
 
 }
 

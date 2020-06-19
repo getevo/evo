@@ -46,12 +46,12 @@ func Static(prefix, path string) {
 // Use registers a middleware route.
 // Middleware matches requests beginning with the provided prefix.
 // Providing a prefix is optional, it defaults to "/"
-func Use(path string, handlers ...func(request *Request)) *fiber.Route {
+func Use(handlers ...func(request *Request)) *fiber.Route {
 	if app == nil {
 		panic("Access object before call Setup()")
 	}
 	var route *fiber.Route
-	route = app.Use(path, func(ctx *fiber.Ctx) {
+	route = app.Use(func(ctx *fiber.Ctx) {
 		r := Upgrade(ctx)
 		for _, handler := range handlers {
 			handler(r)

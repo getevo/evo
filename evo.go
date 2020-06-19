@@ -10,7 +10,6 @@ import (
 	"github.com/getevo/evo/lib/log"
 	"github.com/getevo/evo/lib/text"
 	"github.com/getevo/evo/lib/utils"
-	"github.com/getevo/evo/user"
 	"github.com/gofiber/cors"
 	"github.com/gofiber/fiber"
 	"github.com/gofiber/limiter"
@@ -107,7 +106,7 @@ func Setup() {
 	jwt.Register(text.ToJSON(config.JWT))
 	if config.Database.Enabled {
 		GetDBO()
-		user.InitUserModel(Database, config)
+		InitUserModel(Database, config)
 	}
 
 }
