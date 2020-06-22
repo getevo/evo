@@ -3,7 +3,7 @@ package evo
 import (
 	"fmt"
 	"github.com/getevo/evo/lib/log"
-	"github.com/iesreza/validate"
+	"github.com/getevo/evo/lib/validate"
 )
 
 var memoryRolePermissions = cMap{}

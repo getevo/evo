@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/getevo/evo/lib/jwt"
 	"github.com/getevo/evo/lib/log"
-	"github.com/iesreza/validate"
+	"github.com/getevo/evo/lib/validate"
 	"github.com/nbutton23/zxcvbn-go"
 	"gopkg.in/hlandau/passlib.v1"
 	"net/http"

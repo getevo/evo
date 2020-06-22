@@ -5,6 +5,7 @@ import (
 	"github.com/getevo/evo/lib/log"
 	"github.com/getevo/evo/lib/text"
 	"github.com/gofiber/fiber"
+	"github.com/gofiber/utils"
 	"mime/multipart"
 	"reflect"
 	"time"
@@ -372,4 +373,18 @@ func (r *Request) SetCookie(key string, val interface{}, params ...interface{}) 
 		}
 	}
 	r.Cookie(cookie)
+}
+
+type Error struct {
+	Code    int
+	Message string
+}
+
+// NewError creates a new HTTPError instance.
+func NewError(code int, message ...string) *Error {
+	e := &Error{code, utils.StatusMessage(code)}
+	if len(message) > 0 {
+		e.Message = message[0]
+	}
+	return e
 }

@@ -9,7 +9,7 @@ import (
 	"github.com/getevo/evo/lib/T"
 	"github.com/getevo/evo/lib/constant"
 	"github.com/getevo/evo/lib/sanitize"
-	"github.com/iesreza/validate"
+	"github.com/getevo/evo/lib/validate"
 	"github.com/jinzhu/gorm"
 	"reflect"
 	"strings"

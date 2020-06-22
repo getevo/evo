@@ -1,8 +1,9 @@
 package evo
 
 import (
+	"encoding/json"
 	"fmt"
-	"github.com/iesreza/validate"
+	"github.com/getevo/evo/lib/validate"
 	"github.com/jinzhu/gorm"
 )
 
@@ -13,6 +14,16 @@ var db *gorm.DB
 		StrongPass int
 	}
 }*/
+
+// TODO: parse using reflect
+// Save save user instance
+func (u *User) ParseParams(out interface{}) error {
+	b, err := json.Marshal(u.Params)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(b, out)
+}
 
 // Save save user instance
 func (u *User) Save() error {

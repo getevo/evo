@@ -16,6 +16,13 @@ func (p Map) Get(v string) interface{} {
 	return p[v]
 }
 
+func (p Map) Has(v string) (interface{}, bool) {
+	if v, ok := p[v]; ok {
+		return v, ok
+	}
+	return nil, false
+}
+
 func (p Map) ToStruct(v interface{}) {
 	mapstructure.Decode(p, v)
 }

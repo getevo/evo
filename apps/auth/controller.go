@@ -7,7 +7,7 @@ import (
 	"github.com/getevo/evo/lib/T"
 	"github.com/getevo/evo/lib/constant"
 	"github.com/getevo/evo/lib/jwt"
-	"github.com/iesreza/validate"
+	"github.com/getevo/evo/lib/validate"
 	"gopkg.in/hlandau/passlib.v1"
 	"net/http"
 	"time"

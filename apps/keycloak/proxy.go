@@ -66,5 +66,6 @@ func (p User) FromRequest(request *evo.Request) {
 		claims.ToStruct(request.User)
 		request.User.Anonymous = false
 		request.User.Params = claims
+
 	}
 }
