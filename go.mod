@@ -16,7 +16,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1
 	github.com/disintegration/imaging v1.6.2
 	github.com/fatih/structtag v1.2.0
-	github.com/gbrlsnchs/jwt v1.1.0
+	github.com/gbrlsnchs/jwt v1.1.0 // indirect
 	github.com/gbrlsnchs/jwt/v3 v3.0.0-rc.2
 	github.com/getevo/go-arg v1.4.0
 	github.com/go-ole/go-ole v1.2.4 // indirect
@@ -42,12 +42,14 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/pkg/sftp v1.11.0
 	github.com/shirou/gopsutil v2.20.5+incompatible
-	github.com/urfave/cli v1.22.4
+	github.com/urfave/cli v1.22.4 // indirect
 	github.com/urfave/cli/v2 v2.2.0
 	github.com/wzshiming/ctc v1.2.3
 	github.com/xhit/go-str2duration v1.0.1
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
+	golang.org/x/lint v0.0.0-20190909230951-414d861bb4ac
 	golang.org/x/text v0.3.3
+	golang.org/x/tools v0.0.0-20200407041343-bf15fae40dea
 	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543
 	gopkg.in/hlandau/easymetric.v1 v1.0.0 // indirect
 	gopkg.in/hlandau/measurable.v1 v1.0.1 // indirect
