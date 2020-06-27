@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 	"github.com/getevo/evo/cmd/evo/watcher"
+	"github.com/getevo/evo/lib/cli"
 	"github.com/getevo/evo/lib/gpath"
 	"github.com/getevo/evo/lib/log"
-	"github.com/urfave/cli"
 	"os"
 	"path/filepath"
 	"time"
