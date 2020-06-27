@@ -2,6 +2,7 @@ package rdb
 
 import (
 	"database/sql"
+	"fmt"
 	"github.com/getevo/evo"
 	"github.com/getevo/evo/lib/log"
 	_ "github.com/go-sql-driver/mysql"
@@ -103,4 +104,60 @@ func (q *Query) All(out interface{}, params ...interface{}) error {
 		return err
 	}
 	return carta.Map(rows, out)
+}
+
+func (q *Query) ToMap(params ...interface{}) ([]map[string]interface{}, error) {
+	var out []map[string]interface{}
+	if len(params) == 1 {
+
+		if request, ok := params[0].(*evo.Request); ok {
+			parameters, err := q.Parser.Parse(request)
+			if err != nil {
+				return out, err
+			}
+			var parametersInterface []interface{}
+			for _, item := range parameters {
+				parametersInterface = append(parametersInterface, item)
+			}
+			return q.ToMap(parametersInterface...)
+		}
+	}
+	var err error
+	var rows *sql.Rows
+	if q.DBO.Debug {
+		log.Infof(strings.Replace(q.QueryString, "?", "%s", len(params)), params...)
+	}
+
+	if rows, err = q.DBO.Conn.Query(q.QueryString, params...); err != nil {
+		return out, err
+	}
+	fmt.Println(rows)
+	cols, _ := rows.Columns()
+
+	for rows.Next() {
+		// Create a slice of interface{}'s to represent each column,
+		// and a second slice to contain pointers to each item in the columns slice.
+		columns := make([]interface{}, len(cols))
+		columnPointers := make([]interface{}, len(cols))
+		for i, _ := range columns {
+			columnPointers[i] = &columns[i]
+		}
+
+		// Scan the result into the column pointers...
+		if err := rows.Scan(columnPointers...); err != nil {
+			return out, err
+		}
+
+		// Create our map, and retrieve the value for each column from the pointers slice,
+		// storing it in the map with the name of the column as the key.
+		m := make(map[string]interface{})
+		for i, colName := range cols {
+			val := columnPointers[i].(*interface{})
+			m[colName] = *val
+		}
+		out = append(out, m)
+
+	}
+	return out, nil
+
 }

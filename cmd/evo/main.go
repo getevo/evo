@@ -88,12 +88,11 @@ func build() {
 		runner.Kill()
 		var counter = 0
 		for runner.IsRunning() {
-			time.Sleep(1 * time.Second)
 			counter++
 			if counter > 2 {
 				fmt.Println("Unable to kill process. try again ...")
 				runner.Kill()
-				return
+				break
 			}
 		}
 		onBuild = true
@@ -104,7 +103,7 @@ func build() {
 			fmt.Println("\n\nBUILD FAILED:")
 			log.Error(err)
 			fmt.Println("\n\n")
-			return
+
 		} else {
 
 			onBuild = false
