@@ -48,6 +48,7 @@ EVO is a powerful package for quickly writing modular web applications/services 
 - Keycloak login
 - Social Login
 - Websocket integration
+- Docker Integration
 
 ## Shoulders of Giants
 EVO stands on shoulder of great projects or inspired by them.

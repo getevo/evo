@@ -2,7 +2,6 @@ package jwt
 
 import (
 	"encoding/json"
-	"github.com/gbrlsnchs/jwt"
 	"github.com/lithammer/shortuuid"
 	"time"
 )
@@ -18,43 +17,47 @@ type Config struct {
 
 // Payload jwt payload
 type Payload struct {
-	jwt.Payload
-	Data  map[string]interface{} `json:"data,omitempty"`
-	Empty bool                   `json:"empty,omitempty"`
+	Issuer         string                 `json:"iss,omitempty"`
+	Subject        string                 `json:"sub,omitempty"`
+	Audience       Audience               `json:"aud,omitempty"`
+	ExpirationTime *Time                  `json:"exp,omitempty"`
+	NotBefore      *Time                  `json:"nbf,omitempty"`
+	IssuedAt       *Time                  `json:"iat,omitempty"`
+	JWTID          string                 `json:"jti,omitempty"`
+	Data           map[string]interface{} `json:"data,omitempty"`
+	Empty          bool                   `json:"empty,omitempty"`
 }
 
-var Hash *jwt.HMACSHA
+var Hash *HMACSHA
 var config Config
 
 // Register register jwt with given config
 func Register(c string) {
 	json.Unmarshal([]byte(c), &config)
-	Hash = jwt.NewHS256([]byte(config.Secret))
+	Hash = NewHS256([]byte(config.Secret))
 }
 
 // Generate generates jwt map
 func Generate(data map[string]interface{}, extend ...time.Duration) (string, error) {
 	now := time.Now()
 	pl := Payload{
-		Payload: jwt.Payload{
-			Issuer:         config.Issuer,
-			Subject:        config.Subject,
-			Audience:       jwt.Audience(config.Audience),
-			ExpirationTime: jwt.NumericDate(now.Add(config.Age)),
-			NotBefore:      jwt.NumericDate(now),
-			IssuedAt:       jwt.NumericDate(now),
-			JWTID:          shortuuid.New(),
-		},
+		Issuer:         config.Issuer,
+		Subject:        config.Subject,
+		Audience:       Audience(config.Audience),
+		ExpirationTime: NumericDate(now.Add(config.Age)),
+		NotBefore:      NumericDate(now),
+		IssuedAt:       NumericDate(now),
+		JWTID:          shortuuid.New(),
 		Empty: false,
 		Data:  data,
 	}
 	if len(extend) > 0 {
-		pl.Payload.ExpirationTime = jwt.NumericDate(now.Add(extend[0]))
+		pl.ExpirationTime = NumericDate(now.Add(extend[0]))
 	} else if d, exist := pl.Get("_extend_duration"); exist {
 		duration := d.(time.Duration)
-		pl.Payload.ExpirationTime = jwt.NumericDate(now.Add(duration))
+		pl.ExpirationTime = NumericDate(now.Add(duration))
 	}
-	token, err := jwt.Sign(pl, Hash)
+	token, err := Sign(pl, Hash)
 	if err != nil {
 		return "", err
 	}
@@ -65,7 +68,7 @@ func Generate(data map[string]interface{}, extend ...time.Duration) (string, err
 func Verify(token string) (Payload, error) {
 
 	var pl Payload
-	_, err := jwt.Verify([]byte(token), Hash, &pl)
+	_, err := verify([]byte(token), Hash, &pl)
 	if err != nil {
 		return pl, err
 	}

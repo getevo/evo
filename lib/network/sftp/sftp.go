@@ -132,7 +132,7 @@ func (s *SFTP) Download(remote, local string) (int64, error) {
 	}
 	defer srcFile.Close()
 	// copy source file to destination file
-	bytes, err := evo.Copy(dstFile, srcFile)
+	bytes, err := io.Copy(dstFile, srcFile)
 	if err != nil {
 		return bytes, err
 	}
@@ -197,7 +197,7 @@ func (s *SFTP) Upload(local, remote string, overwrite UploadAction) (int64, erro
 	defer srcFile.Close()
 	// copy source file to destination file
 	var bytes int64
-	bytes, err = evo.Copy(dstFile, srcFile)
+	bytes, err = io.Copy(dstFile, srcFile)
 	if err != nil {
 		return bytes, err
 	}

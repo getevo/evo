@@ -144,7 +144,6 @@ func (r *runner) runBin() error {
 		return err
 	}
 
-	// TODO: handle or log errors
 	go io.Copy(r.writerStdout, stdout) // nolint errcheck
 	go io.Copy(r.writerStderr, stderr) // nolint errcheck
 
