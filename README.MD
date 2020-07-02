@@ -50,7 +50,7 @@ EVO is a powerful package for quickly writing modular web applications/services 
 - Websocket integration
 
 ## Shoulders of Giants
-IO stands on shoulder of great projects or inspired by them.
+EVO stands on shoulder of great projects or inspired by them.
 
 ##### [Fiber](https://github.com/gofiber/fiber "Fiber")  
 An Express-inspired web framework written in Go

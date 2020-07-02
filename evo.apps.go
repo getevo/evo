@@ -23,7 +23,7 @@ var onReady = []func(){}
 var apps = map[string]interface{}{}
 var AppMenus = []menu.Menu{}
 
-// Register register app to use by IO
+// Register register app to use by EVO
 func Register(app App) {
 	name := ref.Parse(app).Package
 
