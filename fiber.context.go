@@ -375,6 +375,15 @@ func (r *Request) SetCookie(key string, val interface{}, params ...interface{}) 
 	r.Cookie(cookie)
 }
 
+func (r *Request) Unauthorized() bool {
+	if r.User.Anonymous {
+		r.Status(401)
+		r.WriteResponse("unauthorzied", 401)
+		return true
+	}
+	return false
+}
+
 type Error struct {
 	Code    int
 	Message string

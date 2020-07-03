@@ -52,19 +52,20 @@ func (p User) FromRequest(request *evo.Request) {
 	if accessToken != "" {
 		token, err := jwt.ParseSigned(accessToken)
 		if err != nil {
-			log.Error(err)
-			request.WriteResponse(false, fmt.Errorf("unauthorized"), 401)
+			//log.Error(err)
+			//request.WriteResponse(false, fmt.Errorf("unauthorized"), 401)
 			return
 		}
 		var claims data.Map
 		err = token.Claims(Certificates.Keys[0], &claims)
 		if err != nil {
-			log.Error(err)
-			request.WriteResponse(false, fmt.Errorf("unauthorized"), 401)
+			//log.Error(err)
+			//request.WriteResponse(false, fmt.Errorf("unauthorized"), 401)
 			return
 		}
 		claims.ToStruct(request.User)
 		request.User.Anonymous = false
+		request.User.ID = uint(claims.Get("user_id").(float64))
 		request.User.Params = claims
 
 	}

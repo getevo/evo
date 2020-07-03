@@ -182,7 +182,6 @@ func (r *Request) WriteResponse(resp ...interface{}) {
 		r._writeResponse(r.Response)
 		return
 	}
-
 	var message = false
 	for _, item := range resp {
 		ref := reflect.ValueOf(item)
@@ -196,6 +195,7 @@ func (r *Request) WriteResponse(resp ...interface{}) {
 				r.Response.Error.Push(&v)
 				r._writeResponse(r.Response)
 			} else {
+				r.Response.Success = true
 				r.Response.Data = item
 			}
 
@@ -234,6 +234,7 @@ func (r *Request) WriteResponse(resp ...interface{}) {
 			break
 		default:
 			r.Response.Data = item
+			r.Response.Success = true
 		}
 
 	}
