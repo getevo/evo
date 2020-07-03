@@ -32,7 +32,7 @@ var (
 	statics [][2]string
 )
 
-// Setup setup the IO app
+// Setup setup the EVO app
 func Setup() {
 	parseArgs(true)
 	fmt.Printf("Input args %+v \n", Arg)
@@ -124,7 +124,7 @@ func CustomError(code int, path string) error {
 
 }
 
-// Run start IO Server
+// Run start EVO Server
 func Run() {
 
 	if Arg.Pack {
