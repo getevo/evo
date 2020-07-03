@@ -16,7 +16,6 @@ require (
 	github.com/davecgh/go-spew v1.1.1
 	github.com/disintegration/imaging v1.6.2
 	github.com/fatih/structtag v1.2.0
-	github.com/gbrlsnchs/jwt v1.1.0 // indirect
 	github.com/gbrlsnchs/jwt/v3 v3.0.0-rc.2
 	github.com/getevo/go-arg v1.4.0
 	github.com/go-ole/go-ole v1.2.4 // indirect
@@ -33,19 +32,21 @@ require (
 	github.com/gofiber/utils v0.0.8
 	github.com/jackskj/carta v0.2.0
 	github.com/jinzhu/gorm v1.9.14
+	github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88 // indirect
 	github.com/leodido/go-urn v1.2.0
 	github.com/lithammer/shortuuid v3.0.0+incompatible
 	github.com/magefile/mage v1.9.0
 	github.com/mitchellh/mapstructure v1.3.2
 	github.com/nbutton23/zxcvbn-go v0.0.0-20180912185939-ae427f1e4c1d
+	github.com/onsi/ginkgo v1.13.0 // indirect
 	github.com/otiai10/copy v1.2.0
 	github.com/pkg/errors v0.9.1
 	github.com/pkg/sftp v1.11.0
 	github.com/shirou/gopsutil v2.20.5+incompatible
-	github.com/urfave/cli v1.22.4 // indirect
 	github.com/urfave/cli/v2 v2.2.0
 	github.com/wzshiming/ctc v1.2.3
 	github.com/xhit/go-str2duration v1.0.1
+	github.com/yudai/pp v2.0.1+incompatible // indirect
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	golang.org/x/lint v0.0.0-20190909230951-414d861bb4ac
 	golang.org/x/text v0.3.3
