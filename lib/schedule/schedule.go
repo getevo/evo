@@ -58,7 +58,9 @@ func New(precision ...interface{}) *scheduler {
 	}()
 	return sch
 }
-
+func (s *scheduler) GetJobs() map[string]*job {
+	return s.Jobs
+}
 func (s *scheduler) appendJob(j *job) {
 	direct := reflect.ValueOf(j.Object)
 	i := 1
@@ -75,11 +77,11 @@ func (s *scheduler) appendJob(j *job) {
 
 func (s *scheduler) Every(duration time.Duration, object Runnable) *job {
 	j := &job{
-		Duration:duration,
-		Next:   time.Now().Add(duration),
-		Object: object,
-		Repeat: -1,
-		Active:true,
+		Duration: duration,
+		Next:     time.Now().Add(duration),
+		Object:   object,
+		Repeat:   -1,
+		Active:   true,
 	}
 	s.appendJob(j)
 	return j
@@ -87,11 +89,11 @@ func (s *scheduler) Every(duration time.Duration, object Runnable) *job {
 
 func (s *scheduler) RepeatN(times int, duration time.Duration, object Runnable) *job {
 	j := &job{
-		Duration:duration,
-		Next:   time.Now().Add(duration),
-		Object: object,
-		Repeat: times,
-		Active:true,
+		Duration: duration,
+		Next:     time.Now().Add(duration),
+		Object:   object,
+		Repeat:   times,
+		Active:   true,
 	}
 	s.appendJob(j)
 	return j
@@ -99,11 +101,11 @@ func (s *scheduler) RepeatN(times int, duration time.Duration, object Runnable) 
 
 func (s *scheduler) Once(duration time.Duration, object Runnable) *job {
 	j := &job{
-		Duration:duration,
-		Next:   time.Now().Add(duration),
-		Object: object,
-		Repeat: 1,
-		Active:true,
+		Duration: duration,
+		Next:     time.Now().Add(duration),
+		Object:   object,
+		Repeat:   1,
+		Active:   true,
 	}
 	s.appendJob(j)
 	return j
