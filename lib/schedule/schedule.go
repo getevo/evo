@@ -30,7 +30,9 @@ type job struct {
 }
 
 func New(precision ...interface{}) *scheduler {
-	sch := &scheduler{}
+	sch := &scheduler{
+		Jobs: map[string]*job{},
+	}
 	var duration time.Duration
 	duration = 1 * time.Second
 	if len(precision) > 1 {
