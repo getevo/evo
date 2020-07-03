@@ -5,7 +5,6 @@ import (
 	"github.com/getevo/evo/lib/gpath"
 	"github.com/getevo/evo/lib/text"
 	"github.com/mitchellh/mapstructure"
-	"github.com/xhit/go-str2duration"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
@@ -186,11 +185,11 @@ func parseConfig() *Configuration {
 	config.App.Static = gpath.RSlash(config.App.Static)
 
 	//yaml string to time.duration bug
-	s2dParser := str2duration.NewStr2DurationParser()
+	/*s2dParser := str2duration.NewStr2DurationParser()
 	age, err := s2dParser.Str2Duration(config.JWT.AgeString)
 	if err == nil {
 		config.JWT.Age = age
-	}
+	}*/
 	return config
 }
 
