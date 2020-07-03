@@ -40,6 +40,7 @@ func New(precision ...interface{}) *scheduler {
 			duration = v
 		}
 	}
+
 	go func() {
 		for {
 			now := time.Now().Unix()
@@ -51,7 +52,7 @@ func New(precision ...interface{}) *scheduler {
 					}
 				}
 			}
-			sch.mu.Lock()
+			sch.mu.Unlock()
 			time.Sleep(duration)
 		}
 	}()
@@ -74,6 +75,7 @@ func (s *scheduler) appendJob(j *job) {
 
 func (s *scheduler) Every(duration time.Duration, object Runnable) *job {
 	j := &job{
+		Duration:duration,
 		Next:   time.Now().Add(duration),
 		Object: object,
 		Repeat: -1,
@@ -85,6 +87,7 @@ func (s *scheduler) Every(duration time.Duration, object Runnable) *job {
 
 func (s *scheduler) RepeatN(times int, duration time.Duration, object Runnable) *job {
 	j := &job{
+		Duration:duration,
 		Next:   time.Now().Add(duration),
 		Object: object,
 		Repeat: times,
@@ -96,6 +99,7 @@ func (s *scheduler) RepeatN(times int, duration time.Duration, object Runnable) 
 
 func (s *scheduler) Once(duration time.Duration, object Runnable) *job {
 	j := &job{
+		Duration:duration,
 		Next:   time.Now().Add(duration),
 		Object: object,
 		Repeat: 1,
@@ -121,17 +125,19 @@ func (j *job) Start() *job {
 }
 
 func (j *job) RunNow() *job {
+
 	if j.Repeat == 0 || !j.Active {
 		return j
 	}
+
 	j.Next = time.Now().Add(j.Duration)
 	if j.Repeat > 0 {
 		j.Repeat--
 	}
 	j.Previous = time.Now()
 	j.PreviousError = (j.Object).Run()
-
 	j.Next = time.Now().Add(j.Duration)
+
 	if j.Repeat == 0 {
 		j.Active = false
 		j.delete = true
