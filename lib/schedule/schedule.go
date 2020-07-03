@@ -38,19 +38,21 @@ func New(precision ...interface{}) *scheduler {
 			duration = v
 		}
 	}
-	for {
-		now := time.Now().Unix()
-		sch.mu.Lock()
-		for _, j := range sch.Jobs {
-			if j.Active && j.Next.Unix() <= now {
-				if j.RunNow().delete {
-					delete(sch.Jobs, j.name)
+	go func() {
+		for {
+			now := time.Now().Unix()
+			sch.mu.Lock()
+			for _, j := range sch.Jobs {
+				if j.Active && j.Next.Unix() <= now {
+					if j.RunNow().delete {
+						delete(sch.Jobs, j.name)
+					}
 				}
 			}
+			sch.mu.Lock()
+			time.Sleep(duration)
 		}
-		sch.mu.Lock()
-		time.Sleep(duration)
-	}
+	}()
 	return sch
 }
 
