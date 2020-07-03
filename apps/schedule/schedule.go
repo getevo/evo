@@ -73,6 +73,7 @@ func (s *scheduler) Every(duration time.Duration, object Runnable) *job {
 		Next:   time.Now().Add(duration),
 		Object: object,
 		Repeat: -1,
+		Active:true,
 	}
 	s.appendJob(j)
 	return j
@@ -83,6 +84,7 @@ func (s *scheduler) RepeatN(times int, duration time.Duration, object Runnable) 
 		Next:   time.Now().Add(duration),
 		Object: object,
 		Repeat: times,
+		Active:true,
 	}
 	s.appendJob(j)
 	return j
@@ -93,6 +95,7 @@ func (s *scheduler) Once(duration time.Duration, object Runnable) *job {
 		Next:   time.Now().Add(duration),
 		Object: object,
 		Repeat: 1,
+		Active:true,
 	}
 	s.appendJob(j)
 	return j
@@ -100,6 +103,16 @@ func (s *scheduler) Once(duration time.Duration, object Runnable) *job {
 
 func (j *job) Concurrent() *job {
 	j.IsConcurrent = true
+	return j
+}
+
+func (j *job) Stop() *job {
+	j.Active = false
+	return j
+}
+
+func (j *job) Start() *job {
+	j.Active = true
 	return j
 }
 
