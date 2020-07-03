@@ -35,7 +35,6 @@ require (
 	github.com/gofiber/requestid v0.1.0
 	github.com/gofiber/utils v0.0.9
 	github.com/jackskj/carta v0.2.0
-	github.com/jcmturner/gokrb5/v8 v8.4.0 // indirect
 	github.com/jinzhu/gorm v1.9.14
 	github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88 // indirect
 	github.com/klauspost/compress v1.10.10 // indirect
@@ -53,7 +52,6 @@ require (
 	github.com/shirou/gopsutil v2.20.5+incompatible
 	github.com/urfave/cli/v2 v2.2.0
 	github.com/wzshiming/ctc v1.2.3
-	github.com/xhit/go-str2duration v1.1.0
 	github.com/yudai/pp v2.0.1+incompatible // indirect
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	golang.org/x/lint v0.0.0-20190909230951-414d861bb4ac
