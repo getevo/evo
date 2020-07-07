@@ -13,6 +13,17 @@ help triage, reproduce, or fix bugs that people have filed, to add to our
 documentation, or to help out in any other way.
 
 
+Setup your machine
+---------------------
+
+`EVO` is written in [Go](https://golang.org/).
+
+Prerequisites:
+
+- `make`
+- [Go 1.14+](https://golang.org/doc/install)
+
+
 Helping out in the issue database
 ---------------------------------
 
