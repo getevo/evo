@@ -1,4 +1,8 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/iesreza/io)](https://goreportcard.com/report/github.com/iesreza/io)
+
+![Discord](https://img.shields.io/discord/731563126876536873)
+
+
 ## EVO Web Application Development Framework
 EVO is a powerful package for quickly writing modular web applications/services in Golang aimed both backend and frontend.
 
