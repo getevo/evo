@@ -1,5 +1,4 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/iesreza/io)](https://goreportcard.com/report/github.com/iesreza/io)
-
 ![Discord](https://img.shields.io/discord/731563126876536873)
 
 
@@ -73,6 +72,10 @@ _____
 mapstructure is a Go library for decoding generic map values to structures and vice versa, while providing helpful error handling.
 _____
 
+
+## Contact
+- Join the community and chat with us in real-time on [Discord](https://discord.gg/mCfYm6A).
+- Submit requests and issues on GitHub.
 
 
 ## Contributors
