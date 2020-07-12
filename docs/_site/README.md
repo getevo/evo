@@ -1,68 +1,88 @@
-<p align="right">
-    <a href="https://badge.fury.io/rb/just-the-docs"><img src="https://badge.fury.io/rb/just-the-docs.svg" alt="Gem version"></a> <a href="https://github.com/pmarsceill/just-the-docs/actions?query=workflow%3A%22Master+branch+CI%22"><img src="https://github.com/pmarsceill/just-the-docs/workflows/Master%20branch%20CI/badge.svg" alt="Build status"></a>
-</p>
-<br><br>
-<p align="center">
-    <h1 align="center">Just the Docs</h1>
-    <p align="center">A modern, highly customizable, and responsive Jekyll theme for documentation with built-in search.<br>Easily hosted on GitHub Pages with few dependencies.</p>
-    <p align="center"><strong><a href="https://pmarsceill.github.io/just-the-docs/">See it in action!</a></strong></p>
-    <br><br><br>
-</p>
+[![Go Report Card](https://goreportcard.com/badge/github.com/iesreza/io)](https://goreportcard.com/report/github.com/iesreza/io)
+![Discord](https://img.shields.io/discord/731563126876536873)
 
-![jtd](https://user-images.githubusercontent.com/896475/47384541-89053c80-d6d5-11e8-98dc-dba16e192de9.gif)
 
-## Installation
+## EVO Web Application Development Framework
+EVO is a powerful package for quickly writing modular web applications/services in Golang aimed both backend and frontend.
 
-Add this line to your Jekyll site's Gemfile:
 
-```ruby
-gem "just-the-docs"
-```
+## Features
+ - Think once, Code less, Do more!
+ - Aim both frontend and backend
+ - Extremely simple to use.
+ - Awesome superfast path matching and routing.
+ - Modular & Extensible
+ - A lot of tweaks and improvments
+ - A lot of useful functions
+ - A lot of UI components and integrations
+ - A lot of usable/reusable apps to include and use
+ - Live reload
+ - High performance
+ - Superfast template engine
+ - Actively maintained
+- Docker Integration
+ 
+## Builtin Apps 
+- Admin `simple extensible user panel`
+- Auth `fully featured user/group/role/permission management set of apies`
+- AdminLTE `adminlte template ready to use!`
+- Query `dynamic multi purpose data query api`
+- Settings `create settings view for all of your apps`
 
-And add this line to your Jekyll site's `_config.yml`:
 
-```yaml
-theme: just-the-docs
-```
+## Documentation
 
-And then execute:
+[Documentation (WIKI)](https://github.com/getevo/evo/wiki)  
 
-    $ bundle
+#### Quick Start
+ - Installation
+ - Create new project
+ - Examples
 
-Or install it yourself as:
+## Todo
+- i18n
+- User Management app
+- Journal App
+- Log App
+- Swagger
+- [Documentation (WIKI)](https://github.com/getevo/evo/wiki)  
+- Sample Apps
+- Clear Libraries
+- Improve Manager
+- Keycloak login
+- Social Login
+- Websocket integration
+- CodeTest integration 
 
-    $ gem install just-the-docs
+## Shoulders of Giants
+EVO stands on shoulder of great projects or inspired by them.
 
-## Usage
+##### [Fiber](https://github.com/gofiber/fiber "Fiber")  
+An Express-inspired web framework written in Go
+_____
+##### [GORM](https://github.com/jinzhu/gorm "GORM")  
+The fantastic ORM library for Golang
+_____
 
-[View the documentation](https://pmarsceill.github.io/just-the-docs/) for usage information.
 
-## Contributing
+##### [Jet Template Engine for Go](https://github.com/CloudyKit/jet "Jet Template Engine for Go")  
+Jet is a template engine developed to be easy to use, powerful, dynamic, yet secure and very fast.
+_____
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/pmarsceill/just-the-docs. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](http://contributor-covenant.org) code of conduct.
+##### [mapstructure](https://github.com/mitchellh/mapstructure "mapstructure")  
+mapstructure is a Go library for decoding generic map values to structures and vice versa, while providing helpful error handling.
+_____
 
-### Submitting code changes:
 
-- Open a [Pull Request](https://github.com/pmarsceill/just-the-docs/pulls)
-- Ensure all CI tests pass
-- Await code review
-- Bump the version number in `just-the-docs.gemspec` and `package.json` according to [semantic versioning](https://semver.org/).
+## Contact
+- Join the community and chat with us in real-time on [Discord](https://discord.gg/mCfYm6A).
+- Submit requests and issues on GitHub.
 
-### Design and development principles of this theme:
 
-1. As few dependencies as possible
-2. No build script needed
-3. First class mobile experience
-4. Make the content shine
 
-## Development
 
-To set up your environment to develop this theme, run `bundle install`.
+## Contributors
 
-Your theme is set up just like a normal Jekyll site! To test your theme, run `bundle exec jekyll serve` and open your browser at `http://localhost:4000`. This starts a Jekyll server using your theme. Add pages, documents, data, etc. like normal to test your theme's contents. As you make modifications to your theme and to your content, your site will regenerate and you should see the changes in the browser after a refresh, just like normal.
-
-When the theme is released, only the files in `_layouts`, `_includes`, and `_sass` tracked with Git will be released.
-
-## License
-
-The theme is available as open source under the terms of the [MIT License](http://opensource.org/licenses/MIT).
+[<img alt="Reza" src="https://avatars1.githubusercontent.com/u/49395861?s=460&v=4" width="100">](https://github.com/iesreza) | [<img alt="Allan Nava" src="https://avatars0.githubusercontent.com/u/22498435?s=460&u=f715d7ae5a09d3ddaf1c278886ec86e59e86ed64&v=4" width="100">](https://github.com/Allan-Nava) |
+:---:|:---:|
+[Reza](https://github.com/iesreza)|[Allan](https://github.com/Allan-Nava)

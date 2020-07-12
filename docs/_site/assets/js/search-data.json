@@ -17,138 +17,60 @@
     "url": "http://localhost:4000/docs/configuration.html#custom-configuration-for-apps",
     "relUrl": "/docs/configuration.html#custom-configuration-for-apps"
   },"3": {
-    "doc": "Customization",
-    "title": "Customization",
-    "content": " ",
-    "url": "http://localhost:4000/docs/customization.html",
-    "relUrl": "/docs/customization.html"
-  },"4": {
-    "doc": "Customization",
-    "title": "Table of contents",
-    "content": ". | Color schemes | Custom schemes . | Define a custom scheme | Use a custom scheme | Switchable custom scheme | . | Override and completely custom styles | . ",
-    "url": "http://localhost:4000/docs/customization.html#table-of-contents",
-    "relUrl": "/docs/customization.html#table-of-contents"
-  },"5": {
-    "doc": "Customization",
-    "title": "Color schemes",
-    "content": "New . Just the Docs supports two color schemes: light (default), and dark. To enable a color scheme, set the color_scheme parameter in your site’s _config.yml file: . Example . # Color scheme supports \"light\" (default) and \"dark\" color_scheme: dark . Preview dark color scheme . ",
-    "url": "http://localhost:4000/docs/customization.html#color-schemes",
-    "relUrl": "/docs/customization.html#color-schemes"
-  },"6": {
-    "doc": "Customization",
-    "title": "Custom schemes",
-    "content": "Define a custom scheme . You can add custom schemes. If you want to add a scheme named foo (can be any name) just add a file _sass/color_schemes/foo.scss (replace foo by your scheme name) where you override theme variables to change colors, fonts, spacing, etc. Available variables are listed in the _variables.scss file. For example, to change the link color from the purple default to blue, include the following inside your scheme file: . Example . $link-color: $blue-000; . Note: Editing the variables directly in _sass/support/variables.scss is not recommended and can cause other dependencies to fail. Please use scheme files. Use a custom scheme . To use the custom color scheme, only set the color_scheme parameter in your site’s _config.yml file: . color_scheme: foo . Switchable custom scheme . If you want to be able to change the scheme dynamically, for example via javascript, just add a file assets/css/just-the-docs-foo.scss (replace foo by your scheme name) with the following content:` . --- --- {% include css/just-the-docs.scss.liquid color_scheme=\"foo\" %} . This allows you to switch the scheme via the following javascript. jtd.setTheme('foo'); . ",
-    "url": "http://localhost:4000/docs/customization.html#custom-schemes",
-    "relUrl": "/docs/customization.html#custom-schemes"
-  },"7": {
-    "doc": "Customization",
-    "title": "Override and completely custom styles",
-    "content": "For styles that aren’t defined as variables, you may want to modify specific CSS classes. Additionally, you may want to add completely custom CSS specific to your content. To do this, put your styles in the file _sass/custom/custom.scss. This will allow for all overrides to be kept in a single file, and for any upstream changes to still be applied. For example, if you’d like to add your own styles for printing a page, you could add the following styles. Example . // Print-only styles. @media print { .side-bar, .page-header { display: none; } .main-content { max-width: auto; margin: 1em;} } . ",
-    "url": "http://localhost:4000/docs/customization.html#override-and-completely-custom-styles",
-    "relUrl": "/docs/customization.html#override-and-completely-custom-styles"
-  },"8": {
     "doc": "Markdown kitchen sink",
     "title": "Markdown kitchen sink",
     "content": " ",
     "url": "http://localhost:4000/docs/index-test.html",
     "relUrl": "/docs/index-test.html"
-  },"9": {
+  },"4": {
     "doc": "Home",
     "title": "This wiki is primarily aimed at engineers building or making contributions to EVO.",
     "content": "If you are new to EVO, then you will find more general information on the EVO project, including tutorials and samples. If you want to know what we’re likely to do in the future, our roadmap may be of interest. If you intend to contribute to EVO, welcome! You are encouraged to start with our contributor guide, which helps onboard new team members. It points to the most relevant pages on this wiki. ",
     "url": "http://localhost:4000/#this-wiki-is-primarily-aimed-at-engineers-building-or-making-contributions-to-evo",
     "relUrl": "/#this-wiki-is-primarily-aimed-at-engineers-building-or-making-contributions-to-evo"
-  },"10": {
+  },"5": {
     "doc": "Home",
     "title": "Index of notable sections",
     "content": "Why EVO . Architecture . Simple Example . Learn By Example . Apps . ",
     "url": "http://localhost:4000/#index-of-notable-sections",
     "relUrl": "/#index-of-notable-sections"
-  },"11": {
+  },"6": {
     "doc": "Home",
     "title": "Home",
     "content": " ",
     "url": "http://localhost:4000/",
     "relUrl": "/"
-  },"12": {
-    "doc": "Navigation Structure",
-    "title": "Navigation Structure",
-    "content": " ",
-    "url": "http://localhost:4000/docs/navigation-structure.html",
-    "relUrl": "/docs/navigation-structure.html"
-  },"13": {
-    "doc": "Navigation Structure",
-    "title": "Table of contents",
-    "content": ". | Main navigation | Ordering pages | Excluding pages | Pages with children . | Child pages | Auto-generating Table of Contents | Children with children | . | Auxiliary Links | In-page navigation with Table of Contents . | Collapsible Table of Contents | . | . ",
-    "url": "http://localhost:4000/docs/navigation-structure.html#table-of-contents",
-    "relUrl": "/docs/navigation-structure.html#table-of-contents"
-  },"14": {
-    "doc": "Navigation Structure",
-    "title": "Main navigation",
-    "content": "The main navigation for your Just the Docs site is on the left side of the page at large screens and on the top (behind a tap) on small screens. The main navigation can be structured to accommodate a multi-level menu system (pages with children and grandchildren). By default, all pages will appear as top level pages in the main nav unless a parent page is defined (see Pages with Children). ",
-    "url": "http://localhost:4000/docs/navigation-structure.html#main-navigation",
-    "relUrl": "/docs/navigation-structure.html#main-navigation"
-  },"15": {
-    "doc": "Navigation Structure",
-    "title": "Ordering pages",
-    "content": "To specify a page order, use the nav_order parameter in your pages’ YAML front matter. Example . --- layout: default title: Customization nav_order: 4 --- . The specified nav_order parameters on a site should be all integers or all strings. Pages without a nav_order parameter are ordered alphabetically by their title, and appear after the explicitly-ordered pages at each level. By default, all Capital letters are sorted before all lowercase letters; adding nav_sort: case_insensitive in the configuration file ignores case when sorting strings (but also sorts numbers lexicographically: 10 comes before 1). ",
-    "url": "http://localhost:4000/docs/navigation-structure.html#ordering-pages",
-    "relUrl": "/docs/navigation-structure.html#ordering-pages"
-  },"16": {
-    "doc": "Navigation Structure",
-    "title": "Excluding pages",
-    "content": "For specific pages that you do not wish to include in the main navigation, e.g. a 404 page or a landing page, use the nav_exclude: true parameter in the YAML front matter for that page. Example . --- layout: default title: 404 nav_exclude: true --- . ",
-    "url": "http://localhost:4000/docs/navigation-structure.html#excluding-pages",
-    "relUrl": "/docs/navigation-structure.html#excluding-pages"
-  },"17": {
-    "doc": "Navigation Structure",
-    "title": "Pages with children",
-    "content": "Sometimes you will want to create a page with many children (a section). First, it is recommended that you keep pages that are related in a directory together… For example, in these docs, we keep all of the written documentation in the ./docs directory and each of the sections in subdirectories like ./docs/ui-components and ./docs/utilities. This gives us an organization like: . +-- .. |-- (Jekyll files) |-- docs |-- ui-components | |-- index.md (parent page) | |-- buttons.md | |-- code.md | |-- labels.md | |-- tables.md | +-- typography.md | |-- utilities | |-- index.md (parent page) | |-- color.md | |-- layout.md | |-- responsive-modifiers.md | +-- typography.md | |-- (other md files, pages with no children) | +-- .. |-- (Jekyll files) +-- .. On the parent pages, add this YAML front matter parameter: . | has_children: true (tells us that this is a parent page) | . Example . --- layout: default title: UI Components nav_order: 2 has_children: true --- . Here we’re setting up the UI Components landing page that is available at /docs/ui-components, which has children and is ordered second in the main nav. Child pages . On child pages, simply set the parent: YAML front matter to whatever the parent’s page title is and set a nav order (this number is now scoped within the section). Example . --- layout: default title: Buttons parent: UI Components nav_order: 2 --- . The Buttons page appears as a child of UI Components and appears second in the UI Components section. Auto-generating Table of Contents . By default, all pages with children will automatically append a Table of Contents which lists the child pages after the parent page’s content. To disable this auto Table of Contents, set has_toc: false in the parent page’s YAML front matter. Example . --- layout: default title: UI Components nav_order: 2 has_children: true has_toc: false --- . Children with children . Child pages can also have children (grandchildren). This is achieved by using a similar pattern on the child and grandchild pages. | Add the has_children attribute to the child | Add the parent and grand_parent attribute to the grandchild | . Example . --- layout: default title: Buttons parent: UI Components nav_order: 2 has_children: true --- . --- layout: default title: Buttons Child Page parent: Buttons grand_parent: UI Components nav_order: 1 --- . This would create the following navigation structure: . +-- .. |-- UI Components |-- .. | |-- Buttons | |-- Button Child Page | |-- .. | +-- .. ",
-    "url": "http://localhost:4000/docs/navigation-structure.html#pages-with-children",
-    "relUrl": "/docs/navigation-structure.html#pages-with-children"
-  },"18": {
-    "doc": "Navigation Structure",
-    "title": "Auxiliary Links",
-    "content": "To add auxiliary links to your site (in the upper right on all pages), add it to the aux_links configuration option in your site’s _config.yml file. Example . # Aux links for the upper right navigation aux_links: \"Just the Docs on GitHub\": - \"//github.com/pmarsceill/just-the-docs\" . ",
-    "url": "http://localhost:4000/docs/navigation-structure.html#auxiliary-links",
-    "relUrl": "/docs/navigation-structure.html#auxiliary-links"
-  },"19": {
-    "doc": "Navigation Structure",
-    "title": "In-page navigation with Table of Contents",
-    "content": "To generate a Table of Contents on your docs pages, you can use the {:toc} method from Kramdown, immediately after an &lt;ol&gt; in Markdown. This will automatically generate an ordered list of anchor links to various sections of the page based on headings and heading levels. There may be occasions where you’re using a heading and you don’t want it to show up in the TOC, so to skip a particular heading use the {: .no_toc } CSS class. Example . # Navigation Structure {: .no_toc } ## {: .no_toc .text-delta } 1. TOC {:toc} . This example skips the page name heading (#) from the TOC, as well as the heading for the Table of Contents itself (##) because it is redundant, followed by the table of contents itself. To get an unordered list, replace 1. TOC above by - TOC. Collapsible Table of Contents . The Table of Contents can be made collapsible using the &lt;details&gt; and &lt;summary&gt; elements , as in the following example. The attribute open (expands the Table of Contents by default) and the styling with {: .text-delta } are optional. &lt;details open markdown=\"block\"&gt; &lt;summary&gt; &lt;/summary&gt; {: .text-delta } 1. TOC {:toc} &lt;/details&gt; . The result is shown at the top of this page ({:toc} can be used only once on each page). ",
-    "url": "http://localhost:4000/docs/navigation-structure.html#in-page-navigation-with-table-of-contents",
-    "relUrl": "/docs/navigation-structure.html#in-page-navigation-with-table-of-contents"
-  },"20": {
+  },"7": {
     "doc": "Readonly Database",
     "title": "Readonly Database",
     "content": "RDB or Readonly Database is a fast-multi database access data reader and binder, which let the developer to access multiple database connections at same time and query them to read data very fast then cast result to structured data. ** Note: RDB is not an ORM. RDB is used for api systems to make reusable raw queries and bind http request to query and cast result to struct without to much overhead ** . Example: . 1- Create connection and add to rdp pool for later use: . rdb.Register() err := rdb.CreateConnection(\"localhost\", \"mysql\", \"root:password@localhost/mydb?charset=utf8&amp;parseTime=True\") if err != nil { log.Fatal(err) } . 2- Access db object: . var db = rdb.GetDBO(\"localhost\") if db == nil { log.Fatal(\"Null db\") } . 3- Define Reusable Query, http parser and struct: . for query and structure refer to [[jackskj/carta|https://github.com/jackskj/carta]] and for data validation refer to [[go-playground/validator|https://github.com/go-playground/validator]] . query := db.Query(` SELECT id as blog_id, title as blog_title, P.id as posts_id, P.name as posts_name, A.id as author_id, A.username as author_username FROM blog left outer join author A on blog.author_id = A.id left outer join post P on blog.id = P.blog_id WHERE blog.id_category = ? `) type Blog struct { Id int `db:\"blog_id\"` Title string `db:\"blog_title\"` Posts []Post Author Author } type Post struct { Id int `db:\"posts_id\"` Name string `db:\"posts_name\"` } type Author struct { Id int `db:\"author_id\"` Username string `db:\"author_username\"` } //optional: use http parser to auto acquire params from http call parser := &amp;rdb.Parser{ Params: []rdb.Param{ // { parameter name , parameter source (URL,Get,Post,Header,Any) , validator based on https://github.com/go-playground/validator } {\"id\", rdb.URL, \"numeric\"}, }, } query.SetParser(parser) . 4- Manipulating parsed params if needed: . parser.Processor = func(params []string) []string { params[0] = strconv.Itoa( lib.ParseSafeInt(params[0]) + 1 ) // add 1 to first arg return params } . 5- Create API: . //with parser evo.Get(\"/api/blog/:id\", func(request *evo.Request) { posts := []Blog{} err := query.All(&amp;posts, request) if err != nil { log.Error(err) } request.WriteResponse(data) }) // without http parser evo.Get(\"/api/blog/:id\", func(request *evo.Request) { posts := []Blog{} err := query.All(&amp;posts, request.Param(\"id\")) if err != nil { log.Error(err) } request.WriteResponse(data) }) . RDB will take argument, generate the sql and query to db then map the SQL rows while keeping track of those relationships. Results: . rows: blog_id | blog_title | posts_id | posts_name | author_id | author_username 1 | Foo | 1 | Bar | 1 | John 1 | Foo | 2 | Baz | 1 | John 2 | Egg | 3 | Beacon | 2 | Ed blogs: [{ \"blog_id\": 1, \"blog_title\": \"Foo\", \"author\": { \"author_id\": 1, \"author_username\": \"John\" }, \"posts\": [{ \"post_id\": 1, \"posts_name\": \"Bar\" }, { \"post_id\": 2, \"posts_name\": \"Baz\" }] }, { \"blog_id\": 2, \"blog_title\": \"Egg\", \"author\": { \"author_id\": 2, \"author_username\": \"Ed\" }, \"posts\": [{ \"post_id\": 3, \"posts_name\": \"Beacon\" }] }] . Column and Field Names . RDB will match your SQL columns with corresponding fields. You can use a “db” tag to represent a specific column name. Example: . type Blog struct { // When tag is not used, the snake case of the fiels is used BlogId int // expected column name : \"blog_id\" // When tag is specified, it takes priority Abc string `db:\"blog_title\"` // expected column name: \"blog_title\" // If you define multiple fiels with the same struct, // you can use a tag to identify a column prefix // (with underscore concatination) // possible column names: \"writer_author_id\", \"author_id\" Writer Author `db: \"writer\"` // possible column names: \"rewiewer_author_id\", \"author_id\", Reviewer Author `db: \"reviewer\"` } type Author struct { AuthorId int `db:\"author_id\"` } . Data Types and Relationships . Any primative types, time.Time, protobuf Timestamp, and sql.NullX can be loaded. These types are one-to-one mapped with your SQL columns . To define more complex SQL relationships use slices and structs as in example below: . type Blog struct { BlogId int // Will map directly with \"blog_id\" column // If your SQL data can be \"null\", use pointers or sql.NullX AuthorId *int CreatedOn *timestamp.Timestamp // protobuf timestamp UpdatedOn *time.Time SonsorId sql.NullInt64 // To define has-one relationship, use nested structs // or pointer to a struct Author *Author // To define has-many relationship, use slices // options include: *[]*Post, []*Post, *[]Post, []Post Posts []*Post // If your has-many relationship corresponds to one column, // you can use a slice of a settable type TagIds []int `db:\"tag_id\"` CommentIds []sql.NullInt64 `db:\"comment_id\"` } . Important Note . RDB removes any duplicate rows. This is a side effect of the data mapping as it is unclear which object to instantiate if the same data arrives more than once. If this is not a desired outcome, you should include a uniquely identifiable columns in your query and the corresponding fields in your structs. To prevent relatively expensive reflect operations, RDB caches the structure of your struct using the column names of your query response as well as the type of your struct. RDB or Readonly Database is a fast-multi database access data reader and binder, which let the developer to access multiple database connections at same time and query them to read data very fast then cast result to structured data. ** Note: RDB is not an ORM. RDB is used for api systems to make reusable raw queries and bind http request to query and cast result to struct without to much overhead ** . Example: . 1- Create connection and add to rdp pool for later use: . rdb.Register() err := rdb.CreateConnection(\"localhost\", \"mysql\", \"root:password@localhost/mydb?charset=utf8&amp;parseTime=True\") if err != nil { log.Fatal(err) } . 2- Access db object: . var db = rdb.GetDBO(\"localhost\") if db == nil { log.Fatal(\"Null db\") } . 3- Define Reusable Query, http parser and struct: . for query and structure refer to [[jackskj/carta|https://github.com/jackskj/carta]] and for data validation refer to [[go-playground/validator|https://github.com/go-playground/validator]] . query := db.Query(` SELECT id as blog_id, title as blog_title, P.id as posts_id, P.name as posts_name, A.id as author_id, A.username as author_username FROM blog left outer join author A on blog.author_id = A.id left outer join post P on blog.id = P.blog_id WHERE blog.id_category = ? `) type Blog struct { Id int `db:\"blog_id\"` Title string `db:\"blog_title\"` Posts []Post Author Author } type Post struct { Id int `db:\"posts_id\"` Name string `db:\"posts_name\"` } type Author struct { Id int `db:\"author_id\"` Username string `db:\"author_username\"` } //optional: use http parser to auto acquire params from http call parser := &amp;rdb.Parser{ Params: []rdb.Param{ // { parameter name , parameter source (URL,Get,Post,Header,Any) , validator based on https://github.com/go-playground/validator } {\"id\", rdb.URL, \"numeric\"}, }, } query.SetParser(parser) . 4- Manipulating parsed params if needed: . parser.Processor = func(params []string) []string { params[0] = strconv.Itoa( lib.ParseSafeInt(params[0]) + 1 ) // add 1 to first arg return params } . 5- Create API: . //with parser evo.Get(\"/api/blog/:id\", func(request *evo.Request) { posts := []Blog{} err := query.All(&amp;posts, request) if err != nil { log.Error(err) } request.WriteResponse(data) }) // without http parser evo.Get(\"/api/blog/:id\", func(request *evo.Request) { posts := []Blog{} err := query.All(&amp;posts, request.Param(\"id\")) if err != nil { log.Error(err) } request.WriteResponse(data) }) . RDB will take argument, generate the sql and query to db then map the SQL rows while keeping track of those relationships. Results: . rows: blog_id | blog_title | posts_id | posts_name | author_id | author_username 1 | Foo | 1 | Bar | 1 | John 1 | Foo | 2 | Baz | 1 | John 2 | Egg | 3 | Beacon | 2 | Ed blogs: [{ \"blog_id\": 1, \"blog_title\": \"Foo\", \"author\": { \"author_id\": 1, \"author_username\": \"John\" }, \"posts\": [{ \"post_id\": 1, \"posts_name\": \"Bar\" }, { \"post_id\": 2, \"posts_name\": \"Baz\" }] }, { \"blog_id\": 2, \"blog_title\": \"Egg\", \"author\": { \"author_id\": 2, \"author_username\": \"Ed\" }, \"posts\": [{ \"post_id\": 3, \"posts_name\": \"Beacon\" }] }] . Column and Field Names . RDB will match your SQL columns with corresponding fields. You can use a “db” tag to represent a specific column name. Example: . type Blog struct { // When tag is not used, the snake case of the fiels is used BlogId int // expected column name : \"blog_id\" // When tag is specified, it takes priority Abc string `db:\"blog_title\"` // expected column name: \"blog_title\" // If you define multiple fiels with the same struct, // you can use a tag to identify a column prefix // (with underscore concatination) // possible column names: \"writer_author_id\", \"author_id\" Writer Author `db: \"writer\"` // possible column names: \"rewiewer_author_id\", \"author_id\", Reviewer Author `db: \"reviewer\"` } type Author struct { AuthorId int `db:\"author_id\"` } . Data Types and Relationships . Any primative types, time.Time, protobuf Timestamp, and sql.NullX can be loaded. These types are one-to-one mapped with your SQL columns . To define more complex SQL relationships use slices and structs as in example below: . type Blog struct { BlogId int // Will map directly with \"blog_id\" column // If your SQL data can be \"null\", use pointers or sql.NullX AuthorId *int CreatedOn *timestamp.Timestamp // protobuf timestamp UpdatedOn *time.Time SonsorId sql.NullInt64 // To define has-one relationship, use nested structs // or pointer to a struct Author *Author // To define has-many relationship, use slices // options include: *[]*Post, []*Post, *[]Post, []Post Posts []*Post // If your has-many relationship corresponds to one column, // you can use a slice of a settable type TagIds []int `db:\"tag_id\"` CommentIds []sql.NullInt64 `db:\"comment_id\"` } . Important Note . RDB removes any duplicate rows. This is a side effect of the data mapping as it is unclear which object to instantiate if the same data arrives more than once. If this is not a desired outcome, you should include a uniquely identifiable columns in your query and the corresponding fields in your structs. To prevent relatively expensive reflect operations, RDB caches the structure of your struct using the column names of your query response as well as the type of your struct. ",
     "url": "http://localhost:4000/docs/rdb.html",
     "relUrl": "/docs/rdb.html"
-  },"21": {
+  },"8": {
     "doc": "Search",
     "title": "Search",
     "content": " ",
     "url": "http://localhost:4000/docs/search.html",
     "relUrl": "/docs/search.html"
-  },"22": {
+  },"9": {
     "doc": "Search",
     "title": "Table of contents",
     "content": ". | Enable search in configuration . | Search granularity | Search previews | Search tokenizer | Display URL in search results | Display search button | . | Hiding pages from search | Generate search index when used as a gem | . Just the Docs uses lunr.js to add a client-side search interface powered by a JSON index that Jekyll generates. All search results are shown in an auto-complete style interface (there is no search results page). By default, all generated HTML pages are indexed using the following data points: . | Page title | Page content | Page URL | . ",
     "url": "http://localhost:4000/docs/search.html#table-of-contents",
     "relUrl": "/docs/search.html#table-of-contents"
-  },"23": {
+  },"10": {
     "doc": "Search",
     "title": "Enable search in configuration",
     "content": "In your site’s _config.yml, enable search: . # Enable or disable the site search # Supports true (default) or false search_enabled: true . Search granularity . Pages are split into sections that can be searched individually. The sections are defined by the headings on the page. Each section is displayed in a separate search result. # Split pages into sections that can be searched individually # Supports 1 - 6, default: 2 search.heading_level: 2 . Search previews . A search result can contain previews that show where the search words are found in the specific section. # Maximum amount of previews per search result # Default: 3 search.previews: 3 # Maximum amount of words to display before a matched word in the preview # Default: 5 search.preview_words_before: 5 # Maximum amount of words to display after a matched word in the preview # Default: 10 search.preview_words_after: 10 . Search tokenizer . The default is for hyphens to separate tokens in search terms: gem-based is equivalent to gem based, matching either word. To allow search for hyphenated words: . # Set the search token separator # Default: /[\\s\\-/]+/ # Example: enable support for hyphenated search words search.tokenizer_separator: /[\\s/]+/ . Display URL in search results . # Display the relative url in search results # Supports true (default) or false search.rel_url: false . Display search button . The search button displays in the bottom right corner of the screen and triggers the search input when clicked. # Enable or disable the search button that appears in the bottom right corner of every page # Supports true or false (default) search.button: true . ",
     "url": "http://localhost:4000/docs/search.html#enable-search-in-configuration",
     "relUrl": "/docs/search.html#enable-search-in-configuration"
-  },"24": {
+  },"11": {
     "doc": "Search",
     "title": "Hiding pages from search",
     "content": "Sometimes you might have a page that you don’t want to be indexed for the search nor to show up in search results, e.g, a 404 page. To exclude a page from search, add the search_exclude: true parameter to the page’s YAML front matter: . Example . --- layout: default title: Page not found nav_exclude: true search_exclude: true --- . ",
     "url": "http://localhost:4000/docs/search.html#hiding-pages-from-search",
     "relUrl": "/docs/search.html#hiding-pages-from-search"
-  },"25": {
+  },"12": {
     "doc": "Search",
     "title": "Generate search index when used as a gem",
     "content": "If you use Just the Docs as a remote theme, you do not need the following steps. If you use the theme as a gem, you must initialize the search by running this rake command that comes with just-the-docs: . $ bundle exec just-the-docs rake search:init . This command creates the assets/js/zzzz-search-data.json file that Jekyll uses to create your search index. Alternatively, you can create the file manually with this content. ",
