@@ -285,6 +285,8 @@ body { position: relative; padding-bottom: 4rem; overflow-y: scroll; }
 
 .main-content .anchor-heading:hover svg, .main-content h1:hover > .anchor-heading svg, .main-content h2:hover > .anchor-heading svg, .main-content h3:hover > .anchor-heading svg, .main-content h4:hover > .anchor-heading svg, .main-content h5:hover > .anchor-heading svg, .main-content h6:hover > .anchor-heading svg { visibility: visible; }
 
+.main-content summary { cursor: pointer; }
+
 .main-content h1, .main-content h2, .main-content h3, .main-content h4, .main-content h5, .main-content h6 { position: relative; margin-top: 1.5em; margin-bottom: 0.25em; }
 
 .main-content h1:first-child, .main-content h2:first-child, .main-content h3:first-child, .main-content h4:first-child, .main-content h5:first-child, .main-content h6:first-child { margin-top: 0.5rem; }
@@ -557,7 +559,7 @@ h6, .text-zeta { font-size: 11px !important; color: #44434d; }
 
 .search-active .search-overlay { width: 100%; height: 100%; opacity: 1; transition: opacity ease 400ms, width 0s, height 0s; }
 
-@media (min-width: 50rem) { .search-active .main { position: fixed; } }
+@media (min-width: 50rem) { .search-active .main { position: fixed; right: 0; left: 0; } }
 
 .search-active .main-header { padding-top: 4rem; }
 
