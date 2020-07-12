@@ -20,6 +20,7 @@ EVO is a powerful package for quickly writing modular web applications/services 
  - High performance
  - Superfast template engine
  - Actively maintained
+- Docker Integration
  
 ## Builtin Apps 
 - Admin `simple extensible user panel`
@@ -51,7 +52,6 @@ EVO is a powerful package for quickly writing modular web applications/services 
 - Keycloak login
 - Social Login
 - Websocket integration
-- Docker Integration
 
 ## Shoulders of Giants
 EVO stands on shoulder of great projects or inspired by them.
