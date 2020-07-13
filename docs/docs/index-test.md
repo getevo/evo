@@ -1,5 +1,5 @@
 ---
 layout: default
-title: Markdown kitchen sink
+title: Index Test
 nav_order: 99
 ---

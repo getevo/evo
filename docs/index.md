@@ -16,8 +16,9 @@ If you want to know what we're likely to do in the future, our roadmap may be of
 If you intend to contribute to EVO, welcome! You are encouraged to start with our contributor guide, which helps onboard new team members. It points to the most relevant pages on this wiki.
 
 ## Index of notable sections
-### Why EVO
-### Architecture
-### Simple Example
-### Learn By Example
-### Apps
+
+### [Why EVO](https://getevo.github.io/evo/docs/why-evo/)
+### [Architecture](https://getevo.github.io/evo/docs/why-evo/)
+### [Simple Example](https://getevo.github.io/evo/docs/why-evo/)
+### [Learn By Example](https://getevo.github.io/evo/docs/why-evo/)
+### [Apps](https://getevo.github.io/evo/docs/why-evo/)
