@@ -20,5 +20,5 @@ If you intend to contribute to EVO, welcome! You are encouraged to start with ou
 - [Why EVO](https://getevo.github.io/evo/docs/why-evo/)
 - [Architecture](https://getevo.github.io/evo/docs/why-evo/)
 - [Simple Example](https://getevo.github.io/evo/docs/why-evo/)
-- [Learn By Example](https://getevo.github.io/evo/docs/why-evo/)
+- [Learn By Example](https://getevo.github.io/evo/docs/examples/)
 - [Apps](https://getevo.github.io/evo/docs/why-evo/)
