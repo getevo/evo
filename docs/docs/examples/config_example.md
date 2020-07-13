@@ -1,10 +1,8 @@
 ---
 layout: default
 title: Config Example
-parent: examples
+parent: Examples
 ---
 
 # Config examples
-{: .no_toc }
 
----

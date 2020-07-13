@@ -1,7 +1,7 @@
 {"0": {
     "doc": "Config Example",
     "title": "Config examples",
-    "content": ". ",
+    "content": " ",
     "url": "http://localhost:4000/docs/examples/config_example/#config-examples",
     "relUrl": "/docs/examples/config_example/#config-examples"
   },"1": {
@@ -31,7 +31,7 @@
   },"5": {
     "doc": "Examples",
     "title": "Examples",
-    "content": "CSS utility classes come in handy when you to want to override default styles to create additional whitespace (margins/padding), correct unexpected shifts in font size or weight, add color, or hide (or show) something at a specific screen size. ",
+    "content": " ",
     "url": "http://localhost:4000/docs/examples",
     "relUrl": "/docs/examples"
   },"6": {
