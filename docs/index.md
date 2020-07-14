@@ -18,7 +18,7 @@ If you intend to contribute to EVO, welcome! You are encouraged to start with ou
 ## Index of notable sections
 
 - [Why EVO](https://getevo.github.io/evo/docs/why-evo/)
+- [Configuration](https://getevo.github.io/evo/docs/configuration/)
 - [Architecture](https://getevo.github.io/evo/docs/why-evo/)
-- [Simple Example](https://getevo.github.io/evo/docs/why-evo/)
 - [Learn By Example](https://getevo.github.io/evo/docs/examples/)
 - [Apps](https://getevo.github.io/evo/docs/why-evo/)

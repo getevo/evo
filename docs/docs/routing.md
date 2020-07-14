@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Routing
-nav_order: 5
+nav_order: 6
 ---
 
 EVO inherit the ultimate power of [Fiber](https://github.com/gofiber/fiber) in background. So all the routing system is inherited from Fiber.
