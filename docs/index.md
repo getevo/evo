@@ -4,7 +4,7 @@ title: Home
 nav_order: 1
 description: "EVO Docs"
 permalink: /
-last_modified_date: 2020-07-13T17:54:08+0000
+last_modified_date: 2020-07-20T17:54:08+0000
 ---
 
 # This wiki is primarily aimed at engineers building or making contributions to EVO.
@@ -21,4 +21,4 @@ If you intend to contribute to EVO, welcome! You are encouraged to start with ou
 - [Configuration](https://getevo.github.io/evo/docs/configuration/)
 - [Architecture](https://getevo.github.io/evo/docs/why-evo/)
 - [Learn By Example](https://getevo.github.io/evo/docs/examples/)
-- [Apps](https://getevo.github.io/evo/docs/why-evo/)
+- [Apps](https://getevo.github.io/evo/docs/apps/)
