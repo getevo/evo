@@ -217,7 +217,7 @@ func (r *Request) WriteResponse(resp ...interface{}) {
 		case reflect.Bool:
 			r.Response.Success = item.(bool)
 			break
-		case reflect.Int32:
+		case reflect.Int32, reflect.Int16, reflect.Int64:
 			if r.Response.Code == 0 || len(r.Response.Error) > 0 {
 				r.Response.Code = item.(int)
 			} else {

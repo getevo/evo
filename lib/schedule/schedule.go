@@ -17,22 +17,23 @@ type scheduler struct {
 }
 
 type job struct {
-	Previous      time.Time
-	PreviousError error
-	Next          time.Time
-	Object        Runnable
-	Duration      time.Duration
-	Repeat        int
-	IsConcurrent  bool
+	Previous      time.Time     `json:"previous"`
+	PreviousError error         `json:"previous_error"`
+	Next          time.Time     `json:"next"`
+	Object        Runnable      `json:"job"`
+	Duration      time.Duration `json:"duration"`
+	Repeat        int           `json:"repeat"`
+	IsConcurrent  bool          `json:"is_concurrent"`
 	Active        bool
 	delete        bool
-	name          string
+	Name          string `json:"Name"`
 }
 
 func New(precision ...interface{}) *scheduler {
 	sch := &scheduler{
 		Jobs: map[string]*job{},
 	}
+
 	var duration time.Duration
 	duration = 1 * time.Second
 	if len(precision) > 1 {
@@ -48,7 +49,7 @@ func New(precision ...interface{}) *scheduler {
 			for _, j := range sch.Jobs {
 				if j.Active && j.Next.Unix() <= now {
 					if j.RunNow().delete {
-						delete(sch.Jobs, j.name)
+						delete(sch.Jobs, j.Name)
 					}
 				}
 			}
@@ -66,12 +67,17 @@ func (s *scheduler) appendJob(j *job) {
 	i := 1
 	name := direct.Type().String() + " " + strconv.Itoa(i)
 	s.mu.Lock()
-	for _, ok := s.Jobs[name]; ok; {
-		i++
-		name = direct.Type().String() + " " + strconv.Itoa(i)
+	for {
+		if _, ok := s.Jobs[name]; ok {
+			i++
+			name = direct.Type().String() + " " + strconv.Itoa(i)
+		} else {
+			break
+		}
+
 	}
 	s.Jobs[name] = j
-	j.name = name
+	j.Name = name
 	s.mu.Unlock()
 }
 

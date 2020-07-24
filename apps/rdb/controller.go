@@ -2,7 +2,6 @@ package rdb
 
 import (
 	"database/sql"
-	"fmt"
 	"github.com/getevo/evo"
 	"github.com/getevo/evo/lib/log"
 	_ "github.com/go-sql-driver/mysql"
@@ -65,7 +64,11 @@ func GetDBO(name string) *DBO {
 func (dbo *DBO) GetQuery(name string) *Query {
 	dbo.mu.Lock()
 	defer dbo.mu.Unlock()
-	return dbo.Queries[name]
+	if v, ok := dbo.Queries[name]; ok {
+		return v
+	}
+	log.Error("query %s not found", name)
+	return nil
 }
 
 func (dbo *DBO) CreateQuery(name, query string) *Query {
@@ -83,7 +86,7 @@ func (q *Query) SetParser(parser *Parser) {
 func (q *Query) All(out interface{}, params ...interface{}) error {
 
 	if len(params) == 1 {
-		if request, ok := params[0].(*evo.Request); ok {
+		if request, ok := params[0].(*evo.Request); ok && q.Parser != nil {
 			parameters, err := q.Parser.Parse(request)
 			if err != nil {
 				return err
@@ -124,14 +127,14 @@ func (q *Query) ToMap(params ...interface{}) ([]map[string]interface{}, error) {
 	}
 	var err error
 	var rows *sql.Rows
-	if q.DBO.Debug {
-		log.Infof(strings.Replace(q.QueryString, "?", "%s", len(params)), params...)
-	}
+	/*	if q.DBO.Debug {
+		//log.Infof(strings.Replace(q.QueryString, "?", "%s", len(params)), params...)
+	}*/
 
 	if rows, err = q.DBO.Conn.Query(q.QueryString, params...); err != nil {
 		return out, err
 	}
-	fmt.Println(rows)
+
 	cols, _ := rows.Columns()
 
 	for rows.Next() {
@@ -139,7 +142,7 @@ func (q *Query) ToMap(params ...interface{}) ([]map[string]interface{}, error) {
 		// and a second slice to contain pointers to each item in the columns slice.
 		columns := make([]interface{}, len(cols))
 		columnPointers := make([]interface{}, len(cols))
-		for i, _ := range columns {
+		for i := range columns {
 			columnPointers[i] = &columns[i]
 		}
 
