@@ -11,7 +11,7 @@ import (
 // - group.Use(handler)
 // - group.Use("/api", handler)
 // - group.Use("/api", handler, handler)
-/*func (grp *group) Use(args ...interface{}) *fiber.Route {
+/*func (grp *group) Use(args ...interface{}) fiber.Router {
 	var path = ""
 	var handlers []func(request *Request)
 	for i := 0; i < len(args); i++ {
@@ -28,8 +28,8 @@ import (
 }*/
 
 // Get ...
-func (grp *group) Get(path string, handlers ...func(request *Request)) *fiber.Route {
-	var route *fiber.Route
+func (grp *group) Get(path string, handlers ...func(request *Request)) fiber.Router {
+	var route fiber.Router
 
 	route = grp.app.Get(path, func(ctx *fiber.Ctx) {
 		r := Upgrade(ctx)
@@ -43,8 +43,8 @@ func (grp *group) Get(path string, handlers ...func(request *Request)) *fiber.Ro
 }
 
 // Head ...
-func (grp *group) Head(path string, handlers ...func(request *Request)) *fiber.Route {
-	var route *fiber.Route
+func (grp *group) Head(path string, handlers ...func(request *Request)) fiber.Router {
+	var route fiber.Router
 	route = grp.app.Head(path, func(ctx *fiber.Ctx) {
 		r := Upgrade(ctx)
 		for _, handler := range handlers {
@@ -57,8 +57,8 @@ func (grp *group) Head(path string, handlers ...func(request *Request)) *fiber.R
 }
 
 // Post ...
-func (grp *group) Post(path string, handlers ...func(request *Request)) *fiber.Route {
-	var route *fiber.Route
+func (grp *group) Post(path string, handlers ...func(request *Request)) fiber.Router {
+	var route fiber.Router
 	for _, handler := range handlers {
 		route = grp.app.Post(path, func(ctx *fiber.Ctx) {
 			r := Upgrade(ctx)
@@ -69,8 +69,8 @@ func (grp *group) Post(path string, handlers ...func(request *Request)) *fiber.R
 }
 
 // Put ...
-func (grp *group) Put(path string, handlers ...func(request *Request)) *fiber.Route {
-	var route *fiber.Route
+func (grp *group) Put(path string, handlers ...func(request *Request)) fiber.Router {
+	var route fiber.Router
 	route = grp.app.Put(path, func(ctx *fiber.Ctx) {
 		r := Upgrade(ctx)
 		for _, handler := range handlers {
@@ -82,8 +82,8 @@ func (grp *group) Put(path string, handlers ...func(request *Request)) *fiber.Ro
 }
 
 // Delete ...
-func (grp *group) Delete(path string, handlers ...func(request *Request)) *fiber.Route {
-	var route *fiber.Route
+func (grp *group) Delete(path string, handlers ...func(request *Request)) fiber.Router {
+	var route fiber.Router
 	route = grp.app.Delete(path, func(ctx *fiber.Ctx) {
 		r := Upgrade(ctx)
 		for _, handler := range handlers {
@@ -95,8 +95,8 @@ func (grp *group) Delete(path string, handlers ...func(request *Request)) *fiber
 }
 
 // Connect ...
-func (grp *group) Connect(path string, handlers ...func(request *Request)) *fiber.Route {
-	var route *fiber.Route
+func (grp *group) Connect(path string, handlers ...func(request *Request)) fiber.Router {
+	var route fiber.Router
 	for _, handler := range handlers {
 		route = grp.app.Connect(path, func(ctx *fiber.Ctx) {
 			r := Upgrade(ctx)
@@ -107,8 +107,8 @@ func (grp *group) Connect(path string, handlers ...func(request *Request)) *fibe
 }
 
 // Options ...
-func (grp *group) Options(path string, handlers ...func(request *Request)) *fiber.Route {
-	var route *fiber.Route
+func (grp *group) Options(path string, handlers ...func(request *Request)) fiber.Router {
+	var route fiber.Router
 	route = grp.app.Options(path, func(ctx *fiber.Ctx) {
 		r := Upgrade(ctx)
 		for _, handler := range handlers {
@@ -121,8 +121,8 @@ func (grp *group) Options(path string, handlers ...func(request *Request)) *fibe
 }
 
 // Trace ...
-func (grp *group) Trace(path string, handlers ...func(request *Request)) *fiber.Route {
-	var route *fiber.Route
+func (grp *group) Trace(path string, handlers ...func(request *Request)) fiber.Router {
+	var route fiber.Router
 
 	route = grp.app.Trace(path, func(ctx *fiber.Ctx) {
 		r := Upgrade(ctx)
@@ -136,8 +136,8 @@ func (grp *group) Trace(path string, handlers ...func(request *Request)) *fiber.
 }
 
 // Patch ...
-func (grp *group) Patch(path string, handlers ...func(request *Request)) *fiber.Route {
-	var route *fiber.Route
+func (grp *group) Patch(path string, handlers ...func(request *Request)) fiber.Router {
+	var route fiber.Router
 	route = grp.app.Patch(path, func(ctx *fiber.Ctx) {
 		r := Upgrade(ctx)
 		for _, handler := range handlers {
@@ -163,8 +163,8 @@ func (grp *group) All(path string, handlers ...func(request *Request)) {
 }
 
 // Group is used for Routes with common prefix to define a new sub-router with optional middleware.
-func (grp *group) Group(prefix string, handlers ...func(request *Request)) *group {
-	var route *fiber.Group
+func (grp *group) Group(prefix string, handlers ...func(request *Request)) fiber.Router {
+	var route fiber.Router
 	if len(handlers) > 0 {
 		route = grp.app.Group(prefix, func(ctx *fiber.Ctx) {
 			r := Upgrade(ctx)
@@ -176,8 +176,6 @@ func (grp *group) Group(prefix string, handlers ...func(request *Request)) *grou
 	} else {
 		route = grp.app.Group(prefix)
 	}
-	gp := group{
-		app: route,
-	}
-	return &gp
+
+	return route
 }
