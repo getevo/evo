@@ -5,11 +5,11 @@ import (
 )
 
 type group struct {
-	app *fiber.Group
+	app fiber.Router
 }
 
 // Group is used for Routes with common prefix to define a new sub-router with optional middleware.
-func Group(path string, handlers ...func(request *Request)) fiber.Router {
+func Group(path string, handlers ...func(request *Request)) group {
 	if app == nil {
 		panic("Access object before call Setup()")
 	}
@@ -26,7 +26,10 @@ func Group(path string, handlers ...func(request *Request)) fiber.Router {
 		route = app.Group(path)
 	}
 
-	return route
+	gp := group{
+		app: route,
+	}
+	return gp
 }
 
 /*func Group(prefix string, handlers ...func(*fiber.Ctx)) *fiber.Group {

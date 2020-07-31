@@ -163,7 +163,7 @@ func (grp *group) All(path string, handlers ...func(request *Request)) {
 }
 
 // Group is used for Routes with common prefix to define a new sub-router with optional middleware.
-func (grp *group) Group(prefix string, handlers ...func(request *Request)) fiber.Router {
+func (grp *group) Group(prefix string, handlers ...func(request *Request)) group {
 	var route fiber.Router
 	if len(handlers) > 0 {
 		route = grp.app.Group(prefix, func(ctx *fiber.Ctx) {
@@ -176,6 +176,8 @@ func (grp *group) Group(prefix string, handlers ...func(request *Request)) fiber
 	} else {
 		route = grp.app.Group(prefix)
 	}
-
-	return route
+	gp := group{
+		app: route,
+	}
+	return gp
 }
