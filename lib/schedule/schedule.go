@@ -143,12 +143,15 @@ func (j *job) RunNow() *job {
 		j.Repeat--
 	}
 	j.Previous = time.Now()
-	j.PreviousError = (j.Object).Run()
-	j.Next = time.Now().Add(j.Duration)
+	go func() {
+		j.PreviousError = (j.Object).Run()
+		j.Next = time.Now().Add(j.Duration)
 
-	if j.Repeat == 0 {
-		j.Active = false
-		j.delete = true
-	}
+		if j.Repeat == 0 {
+			j.Active = false
+			j.delete = true
+		}
+	}()
+
 	return j
 }

@@ -191,3 +191,14 @@ func FromUnix(sec int64) *Date {
 		Base: t,
 	}
 }
+
+func Parse(in interface{}) (*Date,error) {
+	if v,ok := in.(int64); ok{
+		return FromUnix(v),nil
+	}else if v,ok := in.(time.Time); ok{
+		return FromTime(v),nil
+	}else if v,ok := in.(string); ok{
+		return FromString(v)
+	}
+	return nil,fmt.Errorf("unrecognized date input")
+}

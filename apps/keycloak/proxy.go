@@ -45,11 +45,17 @@ func (p User) SyncPermissions(app string, perms evo.Permissions) {
 // SetGroup set user group
 func (p User) FromRequest(request *evo.Request) {
 	request.User = &evo.User{Anonymous: true}
-	accessToken := request.Get("access_token")
+	accessToken := request.Get("Authorization")
+
+
 	if accessToken == "" {
-		accessToken = request.Cookies("access_token")
+		accessToken = request.Cookies("Authorization")
 	}
 	if accessToken != "" {
+		if accessToken[0:6] == "Bearer"{
+			accessToken = accessToken[7:]
+		}
+
 		token, err := jwt.ParseSigned(accessToken)
 		if err != nil {
 			//log.Error(err)
@@ -58,14 +64,19 @@ func (p User) FromRequest(request *evo.Request) {
 		}
 		var claims data.Map
 		err = token.Claims(Certificates.Keys[0], &claims)
+
 		if err != nil {
 			//log.Error(err)
 			//request.WriteResponse(false, fmt.Errorf("unauthorized"), 401)
 			return
 		}
 		claims.ToStruct(request.User)
-		request.User.Anonymous = false
-		request.User.ID = uint(claims.Get("user_id").(float64))
+		if claims.Get("user_id") != nil{
+			request.User.Anonymous = false
+			request.User.ID = uint(claims.Get("user_id").(float64))
+		}else{
+			request.User.Anonymous = true
+		}
 		request.User.Params = claims
 
 	}
