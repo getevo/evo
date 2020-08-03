@@ -126,7 +126,7 @@ func (r *Request) FormValue(key string) (value string) {
 }
 
 // FormValue returns the first value by key from a MultipartForm.
-func (r *Request) FormValueI(key string, params ...string) *value {
+func (r *Request) FormValueI(key string, params ...string) value {
 	return Value(r.Context.FormValue(key), params...)
 }
 
@@ -143,7 +143,7 @@ func (r *Request) Get(key string) string {
 
 // Get returns the HTTP request header specified by field.
 // Field names are case-insensitive
-func (r *Request) GetI(key string, params ...string) *value {
+func (r *Request) GetI(key string, params ...string) value {
 	return Value(r.Context.Get(key), params...)
 }
 
@@ -227,7 +227,7 @@ func (r *Request) Params(key string) string {
 
 // Params is used to get the route parameters.
 // Defaults to empty string "", if the param doesn't exist.
-func (r *Request) ParamsI(key string, params ...string) *value {
+func (r *Request) ParamsI(key string, params ...string) value {
 	return Value(r.Context.Params(key), params...)
 }
 
@@ -243,7 +243,7 @@ func (r *Request) Protocol() string {
 }
 
 // Query returns the query string parameter in the url.
-func (r *Request) QueryI(key string, params ...string) *value {
+func (r *Request) QueryI(key string, params ...string) value {
 	return Value(r.Context.Query(key), params...)
 }
 
