@@ -136,5 +136,5 @@ func (v value) String() string {
 }
 
 func (v value) Bool() bool {
-	return (*v)[0] == '1' || (*v)[0] == 't' || (*v)[0] == 'T'
+	return v[0] == '1' || v[0] == 't' || v[0] == 'T'
 }
