@@ -3,7 +3,6 @@ package evo
 import (
 	"fmt"
 	"github.com/getevo/evo/lib"
-	"github.com/getevo/evo/lib/log"
 	"regexp"
 	"strconv"
 	"strings"
@@ -18,118 +17,85 @@ func Value(s string, params ...string) *value {
 	v := value(s)
 	var _def *value
 	for k := len(params) - 1; k > 0; k-- {
-		item := params[k]
-		item = strings.TrimSpace(strings.ToLower(item))
-
-		if item == "alpha" {
+		params[k] = strings.TrimSpace(params[k])
+		if params[k] == "alpha" {
 			for _, r := range s {
 				if !unicode.IsLetter(r) {
 					return _def
 				}
 			}
-		} else if item == "numeric" {
+		} else if params[k] == "numeric" {
 			if _, err := strconv.Atoi(s); err != nil {
 				return _def
 			}
-		} else if item == "alphanumeric" || item == "alphanum" {
+		} else if params[k] == "alphanumeric" || params[k] == "alphanum" {
 			if !isAlphaNumeric(s) {
 				return _def
 			}
-		} else if len(item) > 2 && item[0:2] == ">=" {
-			if cp, err := strconv.Atoi(strings.TrimSpace(item[2:])); err != nil {
-				log.Error("invalid validation string %s", item)
-				return _def
-			} else {
-				if i, err := strconv.Atoi(s); err != nil {
+		}else if fields := strings.Fields(params[k]); len(fields) >= 2 {
+			if len(fields) == 3 && fields[0] == "len"{
+				if i, err := strconv.Atoi(fields[2]); err != nil {
 					return _def
-				} else {
-					if i < cp {
+				}else {
+					switch fields[1] {
+					case ">":
+						if len(s) <= i {
+							return _def
+						}
+					case "<":
+						if len(s) >= i {
+							return _def
+						}
+					case ">=":
+						if len(s) < i {
+							return _def
+						}
+					case "<=":
+						if len(s) > i {
+							return _def
+						}
+					case "=":
+						if len(s) != i {
+							return _def
+						}
+					}
+				}
+			}else if len(fields) == 2{
+				if i, err := strconv.Atoi(fields[1]); err != nil {
+					return _def
+				}else {
+					if v, err := strconv.Atoi(s); err != nil {
 						return _def
+					}else {
+						switch fields[0] {
+						case ">":
+							if v <= i {
+								return _def
+							}
+						case "<":
+							if v >= i {
+								return _def
+							}
+						case ">=":
+							if v < i {
+								return _def
+							}
+						case "<=":
+							if v > i {
+								return _def
+							}
+						case "=":
+							if v != i {
+								return _def
+							}
+						}
 					}
 				}
 			}
-
-		} else if len(item) > 2 && item[0:2] == "<=" {
-			if cp, err := strconv.Atoi(strings.TrimSpace(item[2:])); err != nil {
-				log.Error("invalid validation string %s", item)
-				return _def
-			} else {
-				if i, err := strconv.Atoi(s); err != nil {
-					return _def
-				} else {
-					if i > cp {
-						return _def
-					}
-				}
-			}
-		} else if len(item) > 1 && item[0] == '>' {
-			if cp, err := strconv.Atoi(strings.TrimSpace(item[2:])); err != nil {
-				log.Error("invalid validation string %s", item)
-				return _def
-			} else {
-				if i, err := strconv.Atoi(s); err != nil {
-					return _def
-				} else {
-					if i <= cp {
-						return _def
-					}
-				}
-			}
-		} else if len(item) > 1 && item[0] == '<' {
-
-			if cp, err := strconv.Atoi(strings.TrimSpace(item[2:])); err != nil {
-				log.Error("invalid validation string %s", item)
-				return _def
-			} else {
-				if i, err := strconv.Atoi(s); err != nil {
-					return _def
-				} else {
-					if i >= cp {
-						return _def
-					}
-				}
-			}
-		} else if len(item) > 3 && item[0:3] == "len" {
-			fields := strings.Fields(item)
-			if i, err := strconv.Atoi(fields[2]); len(fields) != 3 || err != nil {
-				return _def
-			} else {
-				switch fields[1] {
-				case ">":
-					if len(s) <= i {
-						return _def
-					}
-				case "<":
-					if len(s) >= i {
-						return _def
-					}
-				case ">=":
-					if len(s) < i {
-						return _def
-					}
-				case "<=":
-					if len(s) > i {
-						return _def
-					}
-				case "=":
-					if len(s) != i {
-						return _def
-					}
-				default:
-					log.Error("invalid validation string %s", item)
-					return _def
-
-				}
-			}
-		} else if len(item) > 5 && item[0:5] == "regex" {
-			if !regexp.MustCompile(strings.TrimSpace(item[5:])).MatchString(s) {
-				return _def
-			}
-		} else if k == len(params) {
-			v := value(item)
+		}else{
+			v := value(params[k])
 			_def = &v
 		}
-
 	}
 
 	return &v
