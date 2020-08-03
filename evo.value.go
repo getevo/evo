@@ -24,7 +24,11 @@ func Value(s string, params ...string) value {
 					return _def
 				}
 			}
-		} else if params[k] == "numeric" {
+		} else if strings.HasPrefix(params[k],"regex"){
+			if !regexp.MustCompile(strings.TrimSpace(params[k][5:])).MatchString(s) {
+				return _def
+			}
+		}else if params[k] == "numeric" {
 			if _, err := strconv.Atoi(s); err != nil {
 				return _def
 			}
@@ -91,10 +95,6 @@ func Value(s string, params ...string) value {
 						}
 					}
 				}
-			}
-		}else if strings.HasPrefix(params[k],"regex"){
-			if !regexp.MustCompile(strings.TrimSpace(params[k][5:])).MatchString(s) {
-				return _def
 			}
 		}else{
 			v := value(params[k])
