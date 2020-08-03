@@ -106,24 +106,24 @@ func Value(s string, params ...string) value {
 }
 
 func (v value) Int() int {
-	return lib.ParseSafeInt(string(*v))
+	return lib.ParseSafeInt(string(v))
 }
 
 func (v value) Float() float64 {
-	return lib.ParseSafeFloat(string(*v))
+	return lib.ParseSafeFloat(string(v))
 }
 
 func (v value) Int64() int64 {
-	return lib.ParseSafeInt64(string(*v))
+	return lib.ParseSafeInt64(string(v))
 }
 
 func (v value) UInt() uint {
-	u, _ := strconv.ParseUint(string(*v), 10, 32)
+	u, _ := strconv.ParseUint(string(v), 10, 32)
 	return uint(u)
 }
 
 func (v value) UInt64() uint64 {
-	u, _ := strconv.ParseUint(string(*v), 10, 64)
+	u, _ := strconv.ParseUint(string(v), 10, 64)
 	return u
 }
 
