@@ -125,6 +125,11 @@ func (r *Request) FormValue(key string) (value string) {
 	return r.Context.FormValue(key)
 }
 
+// FormValue returns the first value by key from a MultipartForm.
+func (r *Request) FormValueI(key string, params ...string) value {
+	return Value(r.Context.FormValue(key), params...)
+}
+
 //Fresh not implemented yet
 func (r *Request) Fresh() bool {
 	return r.Context.Fresh()
@@ -132,8 +137,14 @@ func (r *Request) Fresh() bool {
 
 // Get returns the HTTP request header specified by field.
 // Field names are case-insensitive
-func (r *Request) Get(key string) (value string) {
+func (r *Request) Get(key string) string {
 	return r.Context.Get(key)
+}
+
+// Get returns the HTTP request header specified by field.
+// Field names are case-insensitive
+func (r *Request) GetI(key string, params ...string) value {
+	return Value(r.Context.Get(key), params...)
 }
 
 // Hostname contains the hostname derived from the Host HTTP header.
@@ -210,8 +221,14 @@ func (r *Request) OriginalURL() string {
 
 // Params is used to get the route parameters.
 // Defaults to empty string "", if the param doesn't exist.
-func (r *Request) Params(key string) (value string) {
+func (r *Request) Params(key string) string {
 	return r.Context.Params(key)
+}
+
+// Params is used to get the route parameters.
+// Defaults to empty string "", if the param doesn't exist.
+func (r *Request) ParamsI(key string, params ...string) value {
+	return Value(r.Context.Params(key), params...)
 }
 
 // Path returns the path part of the request URL.
@@ -223,6 +240,11 @@ func (r *Request) Path(override ...string) string {
 // Protocol contains the request protocol string: http or https for TLS requests.
 func (r *Request) Protocol() string {
 	return r.Context.Protocol()
+}
+
+// Query returns the query string parameter in the url.
+func (r *Request) QueryI(key string, params ...string) value {
+	return Value(r.Context.Query(key), params...)
 }
 
 // Query returns the query string parameter in the url.
