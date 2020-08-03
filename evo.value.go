@@ -128,7 +128,7 @@ func (v value) UInt64() uint64 {
 }
 
 func (v value) Quote() string {
-	return strconv.Quote(string(*v))
+	return strconv.Quote(string(v))
 }
 
 func (v value) String() string {
