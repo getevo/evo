@@ -92,6 +92,10 @@ func Value(s string, params ...string) value {
 					}
 				}
 			}
+		}else if strings.HasPrefix(params[k],"regex"){
+			if !regexp.MustCompile(strings.TrimSpace(params[k][5:])).MatchString(s) {
+				return _def
+			}
 		}else{
 			v := value(params[k])
 			_def = v
