@@ -13,9 +13,9 @@ type value string
 
 var isAlphaNumeric = regexp.MustCompile(`^[a-zA-Z0-9_]*$`).MatchString
 
-func Value(s string, params ...string) *value {
+func Value(s string, params ...string) value {
 	v := value(s)
-	var _def *value
+	var _def value
 	for k := len(params) - 1; k > 0; k-- {
 		params[k] = strings.TrimSpace(params[k])
 		if params[k] == "alpha" {
@@ -94,11 +94,11 @@ func Value(s string, params ...string) *value {
 			}
 		}else{
 			v := value(params[k])
-			_def = &v
+			_def = v
 		}
 	}
 
-	return &v
+	return v
 }
 
 func (v *value) Int() int {
