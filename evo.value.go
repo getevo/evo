@@ -16,112 +16,118 @@ var isAlphaNumeric = regexp.MustCompile(`^[a-zA-Z0-9_]*$`).MatchString
 
 func Value(s string, params ...string) *value {
 	v := value(s)
-
-	for _, item := range params {
+	var _def *value
+	for k := len(params) - 1; k > 0; k-- {
+		item := params[k]
 		item = strings.TrimSpace(strings.ToLower(item))
+
 		if item == "alpha" {
 			for _, r := range s {
 				if !unicode.IsLetter(r) {
-					return nil
+					return _def
 				}
 			}
 		} else if item == "numeric" {
 			if _, err := strconv.Atoi(s); err != nil {
-				return nil
+				return _def
 			}
 		} else if item == "alphanumeric" || item == "alphanum" {
 			if !isAlphaNumeric(s) {
-				return nil
+				return _def
 			}
-		} else if item[0:2] == ">=" {
+		} else if len(item) > 2 && item[0:2] == ">=" {
 			if cp, err := strconv.Atoi(strings.TrimSpace(item[2:])); err != nil {
 				log.Error("invalid validation string %s", item)
-				return nil
+				return _def
 			} else {
 				if i, err := strconv.Atoi(s); err != nil {
-					return nil
+					return _def
 				} else {
 					if i < cp {
-						return nil
+						return _def
 					}
 				}
 			}
 
-		} else if item[0:2] == "<=" {
+		} else if len(item) > 2 && item[0:2] == "<=" {
 			if cp, err := strconv.Atoi(strings.TrimSpace(item[2:])); err != nil {
 				log.Error("invalid validation string %s", item)
-				return nil
+				return _def
 			} else {
 				if i, err := strconv.Atoi(s); err != nil {
-					return nil
+					return _def
 				} else {
 					if i > cp {
-						return nil
+						return _def
 					}
 				}
 			}
-		} else if item[0] == '>' {
+		} else if len(item) > 1 && item[0] == '>' {
 			if cp, err := strconv.Atoi(strings.TrimSpace(item[2:])); err != nil {
 				log.Error("invalid validation string %s", item)
-				return nil
+				return _def
 			} else {
 				if i, err := strconv.Atoi(s); err != nil {
-					return nil
+					return _def
 				} else {
 					if i <= cp {
-						return nil
+						return _def
 					}
 				}
 			}
-		} else if item[0] == '<' {
+		} else if len(item) > 1 && item[0] == '<' {
+
 			if cp, err := strconv.Atoi(strings.TrimSpace(item[2:])); err != nil {
 				log.Error("invalid validation string %s", item)
-				return nil
+				return _def
 			} else {
 				if i, err := strconv.Atoi(s); err != nil {
-					return nil
+					return _def
 				} else {
 					if i >= cp {
-						return nil
+						return _def
 					}
 				}
 			}
-		} else if item[0:3] == "len" {
+		} else if len(item) > 3 && item[0:3] == "len" {
 			fields := strings.Fields(item)
-			if i, err := strconv.Atoi(fields[2]); err != nil {
-				return nil
+			if i, err := strconv.Atoi(fields[2]); len(fields) != 3 || err != nil {
+				return _def
 			} else {
 				switch fields[1] {
 				case ">":
 					if len(s) <= i {
-						return nil
+						return _def
 					}
 				case "<":
 					if len(s) >= i {
-						return nil
+						return _def
 					}
 				case ">=":
 					if len(s) < i {
-						return nil
+						return _def
 					}
 				case "<=":
 					if len(s) > i {
-						return nil
+						return _def
 					}
 				case "=":
 					if len(s) != i {
-						return nil
+						return _def
 					}
 				default:
 					log.Error("invalid validation string %s", item)
-					return nil
+					return _def
 
 				}
 			}
-		} else if item[0:5] == "regex" {
+		} else if len(item) > 5 && item[0:5] == "regex" {
 			if !regexp.MustCompile(strings.TrimSpace(item[5:])).MatchString(s) {
-				return nil
+				return _def
 			}
+		} else if k == len(params) {
+			v := value(item)
+			_def = &v
 		}
 
 	}
