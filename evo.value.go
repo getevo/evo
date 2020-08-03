@@ -105,36 +105,36 @@ func Value(s string, params ...string) value {
 	return v
 }
 
-func (v *value) Int() int {
+func (v value) Int() int {
 	return lib.ParseSafeInt(string(*v))
 }
 
-func (v *value) Float() float64 {
+func (v value) Float() float64 {
 	return lib.ParseSafeFloat(string(*v))
 }
 
-func (v *value) Int64() int64 {
+func (v value) Int64() int64 {
 	return lib.ParseSafeInt64(string(*v))
 }
 
-func (v *value) UInt() uint {
+func (v value) UInt() uint {
 	u, _ := strconv.ParseUint(string(*v), 10, 32)
 	return uint(u)
 }
 
-func (v *value) UInt64() uint64 {
+func (v value) UInt64() uint64 {
 	u, _ := strconv.ParseUint(string(*v), 10, 64)
 	return u
 }
 
-func (v *value) Quote() string {
+func (v value) Quote() string {
 	return strconv.Quote(string(*v))
 }
 
-func (v *value) String() string {
+func (v value) String() string {
 	return fmt.Sprint(v)
 }
 
-func (v *value) Bool() bool {
+func (v value) Bool() bool {
 	return (*v)[0] == '1' || (*v)[0] == 't' || (*v)[0] == 'T'
 }
