@@ -91,7 +91,7 @@ func Value(s string, params ...string) *value {
 			if i, err := strconv.Atoi(fields[2]); err != nil {
 				return nil
 			} else {
-				switch fields[2] {
+				switch fields[1] {
 				case ">":
 					if len(s) <= i {
 						return nil
