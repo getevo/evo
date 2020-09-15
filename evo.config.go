@@ -36,6 +36,12 @@ var ProcessID int
 var DefaultPath = map[string][]string{}
 
 type Configuration struct {
+	Log struct {
+		WriteFile bool   `yaml:"writefile"`
+		Path      string `yaml:"path"`
+		Level     string `yaml:"level"`
+	} `yaml:"log"`
+
 	App struct {
 		Name       string `yaml:"name"`
 		Static     string `yaml:"static"`

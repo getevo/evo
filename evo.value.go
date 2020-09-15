@@ -15,20 +15,22 @@ var isAlphaNumeric = regexp.MustCompile(`^[a-zA-Z0-9_]*$`).MatchString
 
 func Value(s string, params ...string) value {
 	v := value(s)
+
 	var _def value
 	for k := len(params) - 1; k > 0; k-- {
 		params[k] = strings.TrimSpace(params[k])
+
 		if params[k] == "alpha" {
 			for _, r := range s {
 				if !unicode.IsLetter(r) {
 					return _def
 				}
 			}
-		} else if strings.HasPrefix(params[k],"regex"){
+		} else if strings.HasPrefix(params[k], "regex") {
 			if !regexp.MustCompile(strings.TrimSpace(params[k][5:])).MatchString(s) {
 				return _def
 			}
-		}else if params[k] == "numeric" {
+		} else if params[k] == "numeric" {
 			if _, err := strconv.Atoi(s); err != nil {
 				return _def
 			}
@@ -36,11 +38,13 @@ func Value(s string, params ...string) value {
 			if !isAlphaNumeric(s) {
 				return _def
 			}
-		}else if fields := strings.Fields(params[k]); len(fields) >= 2 {
-			if len(fields) == 3 && fields[0] == "len"{
+		} else if fields := strings.Fields(params[k]); len(fields) >= 2 {
+
+			if len(fields) == 3 && fields[0] == "len" {
 				if i, err := strconv.Atoi(fields[2]); err != nil {
+
 					return _def
-				}else {
+				} else {
 					switch fields[1] {
 					case ">":
 						if len(s) <= i {
@@ -64,13 +68,13 @@ func Value(s string, params ...string) value {
 						}
 					}
 				}
-			}else if len(fields) == 2{
+			} else if len(fields) == 2 {
 				if i, err := strconv.Atoi(fields[1]); err != nil {
 					return _def
-				}else {
+				} else {
 					if v, err := strconv.Atoi(s); err != nil {
 						return _def
-					}else {
+					} else {
 						switch fields[0] {
 						case ">":
 							if v <= i {
@@ -96,9 +100,9 @@ func Value(s string, params ...string) value {
 					}
 				}
 			}
-		}else{
-			v := value(params[k])
-			_def = v
+		} else {
+			vi := value(params[k])
+			_def = vi
 		}
 	}
 
@@ -131,7 +135,7 @@ func (v value) Quote() string {
 	return strconv.Quote(string(v))
 }
 
-func (v value) String() string {
+func (v value) ToString() string {
 	return fmt.Sprint(v)
 }
 

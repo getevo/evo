@@ -46,6 +46,15 @@ func main() {
 					return nil
 				},
 			},
+
+			{
+				Name:  "format",
+				Usage: "format codes",
+				Action: func(c *cli.Context) error {
+					format()
+					return nil
+				},
+			},
 		},
 	}
 
@@ -102,8 +111,6 @@ func build() {
 
 			fmt.Println("\n\nBUILD FAILED:")
 			log.Error(err)
-			fmt.Println("\n\n")
-
 		} else {
 
 			onBuild = false
@@ -125,7 +132,7 @@ func build() {
 		if err != nil {
 			fmt.Println("\n\nBUILD FAILED:")
 			log.Error(err)
-			fmt.Println("\n\n")
+			//fmt.Println("")
 		}
 	}
 

@@ -399,8 +399,9 @@ func (r *Request) SetCookie(key string, val interface{}, params ...interface{}) 
 
 func (r *Request) Unauthorized() bool {
 	if r.User.Anonymous {
+		log.Error("unauthorized request")
 		r.Status(401)
-		r.WriteResponse("unauthorzied", 401)
+		r.WriteResponse(fmt.Errorf("unauthorzied"), 401)
 		return true
 	}
 	return false
