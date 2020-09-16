@@ -1,0 +1,19 @@
+name: GO Lang CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Go-CI setup
+      uses: rkoCyrus/Go-CI@1.01
+      # You can add argument if needed
+    - name: Run make
+      run: make
