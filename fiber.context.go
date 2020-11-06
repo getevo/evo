@@ -1,13 +1,16 @@
 package evo
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/getevo/evo/lib/log"
 	"github.com/getevo/evo/lib/text"
 	"github.com/gofiber/fiber"
 	"github.com/gofiber/utils"
+	"io"
 	"mime/multipart"
 	"reflect"
+	"strconv"
 	"time"
 )
 
@@ -170,8 +173,17 @@ func (r *Request) Is(extension string) (match bool) {
 
 // JSON converts any interface or string to JSON using Jsoniter.
 // This method also sets the content header to application/json.
-func (r *Request) JSON(json interface{}) error {
-	return r.Context.JSON(json)
+func (r *Request) JSON(data interface{}) error {
+	raw, err := json.Marshal(data)
+	// Check for errors
+	if err != nil {
+		return err
+	}
+	// Set http headers
+	r.Context.Fasthttp.Response.Header.SetContentType(fiber.MIMEApplicationJSON)
+	r.Write(raw)
+
+	return nil
 }
 
 // JSONP sends a JSON response with JSONP support.
@@ -356,8 +368,33 @@ func (r *Request) Vary(fields ...string) {
 }
 
 // Write appends any input to the HTTP body response.
-func (r *Request) Write(bodies ...interface{}) {
-	r.Context.Write(bodies...)
+func (r *Request) Write(body interface{}) {
+	var cache = true
+	var data []byte
+	switch body := body.(type) {
+	case string:
+		data = []byte(body)
+	case []byte:
+		data = body
+	case int:
+		data = []byte(strconv.Itoa(body))
+	case bool:
+		data = []byte(strconv.FormatBool(body))
+	case io.Reader:
+		r.Context.Fasthttp.Response.SetBodyStream(body, -1)
+		r.Context.Set(HeaderContentLength, strconv.Itoa(len(r.Context.Fasthttp.Response.Body())))
+		cache = false
+	default:
+		data = []byte(fmt.Sprintf("%v", body))
+	}
+	if cache && r.CacheKey != "" {
+		Cache.Set(r.CacheKey, cached{
+			content: data,
+			header:  r.Context.Fasthttp.Response.Header,
+			code:    r.Context.Fasthttp.Response.StatusCode(),
+		}, r.CacheDuration)
+	}
+	r.Context.Fasthttp.Response.SetBody(data)
 }
 
 // XHR returns a Boolean property, that is true, if the request’s X-Requested-With header field is XMLHttpRequest,
@@ -401,7 +438,7 @@ func (r *Request) Unauthorized() bool {
 	if r.User.Anonymous {
 		log.Error("unauthorized request")
 		r.Status(401)
-		r.WriteResponse(fmt.Errorf("unauthorzied"), 401)
+		r.WriteResponse(fmt.Errorf("unauthorized"), 401)
 		return true
 	}
 	return false

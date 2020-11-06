@@ -16,13 +16,15 @@ import (
 )
 
 type Request struct {
-	Variables  fiber.Map
-	Context    *fiber.Ctx
-	JWT        *jwt.Payload
-	Additional interface{}
-	User       *User
-	Response   Response
-	flashes    []flash
+	Variables     fiber.Map
+	Context       *fiber.Ctx
+	JWT           *jwt.Payload
+	Additional    interface{}
+	User          *User
+	Response      Response
+	CacheKey      string
+	CacheDuration time.Duration
+	flashes       []flash
 }
 type flash struct {
 	Type    string `json:"type"`
@@ -177,6 +179,24 @@ func (r *Request) RenderView(input interface{}, views ...string) *bytes.Buffer {
 	return &buff
 }
 
+func (r *Request) Cached(duration time.Duration, key ...string) bool {
+	r.CacheKey = ""
+	r.CacheDuration = duration
+	for _, item := range key {
+		r.CacheKey += item
+	}
+	if v, ok := Cache.Get(r.CacheKey); ok {
+		if resp, ok := v.(cached); ok {
+			r.Context.Fasthttp.Response.Header = resp.header
+			r.Context.Fasthttp.SetStatusCode(resp.code)
+			r.Context.Fasthttp.Response.SetBody(resp.content)
+
+			return true
+		}
+	}
+	return false
+}
+
 func (r *Request) WriteResponse(resp ...interface{}) {
 	if len(resp) == 0 {
 		r._writeResponse(r.Response)
@@ -248,7 +268,7 @@ func (r *Request) _writeResponse(resp Response) {
 	} else {
 		r.Response.Success = true
 	}
-	r.JSON(resp)
+	r.JSON(r.Response)
 }
 
 func (r *Request) SetError(err interface{}) {
