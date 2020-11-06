@@ -54,6 +54,7 @@ EVO is a powerful package for quickly writing modular web applications/services 
 - Social Login
 - Websocket integration
 - CodeTest integration 
+- Implementation test case of code
 
 ## Shoulders of Giants
 EVO stands on shoulder of great projects or inspired by them.

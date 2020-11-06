@@ -1,0 +1,26 @@
+# This is a basic workflow to help you get started with Actions
+
+name: GO ENV
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+#
+jobs:
+  build:
+    runs-on: ubuntu-16.04
+    strategy:
+      matrix:
+        go: [ '1.14', '1.13' ]
+    name: Go ${{ matrix.go }} sample
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup go
+        uses: actions/setup-go@v1
+        with:
+          go-version: ${{ matrix.go }}
+      - run: go run evo.go
