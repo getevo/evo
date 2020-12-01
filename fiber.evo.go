@@ -5,7 +5,7 @@ import (
 )
 
 type group struct {
-	app fiber.Router
+	app *fiber.Router
 }
 
 // Group is used for Routes with common prefix to define a new sub-router with optional middleware.
@@ -13,21 +13,23 @@ func Group(path string, handlers ...func(request *Request)) group {
 	if app == nil {
 		panic("Access object before call Setup()")
 	}
+
 	var route fiber.Router
 	if len(handlers) > 0 {
-		route = app.Group(path, func(ctx *fiber.Ctx) {
+		route = app.Group(path, func(ctx *fiber.Ctx) error {
 			r := Upgrade(ctx)
 			for _, handler := range handlers {
 				handler(r)
 			}
-			r = nil
+
+			return nil
 		})
 	} else {
 		route = app.Group(path)
 	}
 
 	gp := group{
-		app: route,
+		app: &route,
 	}
 	return gp
 }
@@ -47,17 +49,18 @@ func Static(prefix, path string) {
 // Use registers a middleware route.
 // Middleware matches requests beginning with the provided prefix.
 // Providing a prefix is optional, it defaults to "/"
-func Use(handlers ...func(request *Request)) fiber.Router {
+func Use(path string, handler func(*Request) error) fiber.Router {
 	if app == nil {
 		panic("Access object before call Setup()")
 	}
 	var route fiber.Router
-	route = app.Use(func(ctx *fiber.Ctx) {
+	route = app.Use(path, func(ctx *fiber.Ctx) error {
 		r := Upgrade(ctx)
-		for _, handler := range handlers {
-			handler(r)
+		if err := handler(r); err != nil {
+			return err
 		}
-		r = nil
+
+		return nil
 	})
 
 	return route
@@ -69,12 +72,13 @@ func Connect(path string, handlers ...func(request *Request)) fiber.Router {
 		panic("Access object before call Setup()")
 	}
 	var route fiber.Router
-	route = app.Connect(path, func(ctx *fiber.Ctx) {
+	route = app.Connect(path, func(ctx *fiber.Ctx) error {
 		r := Upgrade(ctx)
 		for _, handler := range handlers {
 			handler(r)
 		}
-		r = nil
+
+		return nil
 	})
 
 	return route
@@ -86,12 +90,13 @@ func Put(path string, handlers ...func(request *Request)) fiber.Router {
 		panic("Access object before call Setup()")
 	}
 	var route fiber.Router
-	route = app.Put(path, func(ctx *fiber.Ctx) {
+	route = app.Put(path, func(ctx *fiber.Ctx) error {
 		r := Upgrade(ctx)
 		for _, handler := range handlers {
 			handler(r)
 		}
-		r = nil
+
+		return nil
 	})
 
 	return route
@@ -103,12 +108,13 @@ func Post(path string, handlers ...func(request *Request)) fiber.Router {
 		panic("Access object before call Setup()")
 	}
 	var route fiber.Router
-	route = app.Post(path, func(ctx *fiber.Ctx) {
+	route = app.Post(path, func(ctx *fiber.Ctx) error {
 		r := Upgrade(ctx)
 		for _, handler := range handlers {
 			handler(r)
 		}
-		r = nil
+
+		return nil
 	})
 
 	return route
@@ -120,12 +126,13 @@ func Delete(path string, handlers ...func(request *Request)) fiber.Router {
 		panic("Access object before call Setup()")
 	}
 	var route fiber.Router
-	route = app.Delete(path, func(ctx *fiber.Ctx) {
+	route = app.Delete(path, func(ctx *fiber.Ctx) error {
 		r := Upgrade(ctx)
 		for _, handler := range handlers {
 			handler(r)
 		}
-		r = nil
+
+		return nil
 	})
 
 	return route
@@ -137,12 +144,13 @@ func Head(path string, handlers ...func(request *Request)) fiber.Router {
 		panic("Access object before call Setup()")
 	}
 	var route fiber.Router
-	route = app.Head(path, func(ctx *fiber.Ctx) {
+	route = app.Head(path, func(ctx *fiber.Ctx) error {
 		r := Upgrade(ctx)
 		for _, handler := range handlers {
 			handler(r)
 		}
-		r = nil
+
+		return nil
 	})
 
 	return route
@@ -154,12 +162,13 @@ func Patch(path string, handlers ...func(request *Request)) fiber.Router {
 		panic("Access object before call Setup()")
 	}
 	var route fiber.Router
-	route = app.Patch(path, func(ctx *fiber.Ctx) {
+	route = app.Patch(path, func(ctx *fiber.Ctx) error {
 		r := Upgrade(ctx)
 		for _, handler := range handlers {
 			handler(r)
 		}
-		r = nil
+
+		return nil
 	})
 
 	return route
@@ -171,12 +180,13 @@ func Options(path string, handlers ...func(request *Request)) fiber.Router {
 		panic("Access object before call Setup()")
 	}
 	var route fiber.Router
-	route = app.Options(path, func(ctx *fiber.Ctx) {
+	route = app.Options(path, func(ctx *fiber.Ctx) error {
 		r := Upgrade(ctx)
 		for _, handler := range handlers {
 			handler(r)
 		}
-		r = nil
+
+		return nil
 	})
 
 	return route
@@ -189,10 +199,11 @@ func Trace(path string, handlers ...func(request *Request)) fiber.Router {
 	}
 	var route fiber.Router
 	for _, handler := range handlers {
-		route = app.Trace(path, func(ctx *fiber.Ctx) {
+		route = app.Trace(path, func(ctx *fiber.Ctx) error {
 			r := Upgrade(ctx)
 			handler(r)
-			r = nil
+
+			return nil
 		})
 	}
 	return route
@@ -203,15 +214,16 @@ func Get(path string, handlers ...func(request *Request)) fiber.Router {
 	if app == nil {
 		panic("Access object before call Setup()")
 	}
-	
+
 	var route fiber.Router
-	
-	route = app.Get(path, func(ctx *fiber.Ctx) {
+
+	route = app.Get(path, func(ctx *fiber.Ctx) error {
 		r := Upgrade(ctx)
 		for _, handler := range handlers {
 			handler(r)
 		}
-		r = nil
+
+		return nil
 	})
 	return route
 }
@@ -222,12 +234,13 @@ func All(path string, handlers ...func(request *Request)) {
 		panic("Access object before call Setup()")
 	}
 
-	app.All(path, func(ctx *fiber.Ctx) {
+	app.All(path, func(ctx *fiber.Ctx) error {
 		r := Upgrade(ctx)
 		for _, handler := range handlers {
 			handler(r)
 		}
-		r = nil
+
+		return nil
 	})
 }
 

@@ -6,7 +6,7 @@ import (
 )
 
 func Test_FormatStruct(t *testing.T) {
-	b, err := gpath.ReadFile("./test.go_test")
+	b, err := gpath.ReadFile("./test.go")
 	if err != nil {
 		panic(err)
 	}

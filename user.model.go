@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"github.com/getevo/evo/lib/data"
 	"github.com/getevo/evo/lib/text"
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 	"time"
 )
 

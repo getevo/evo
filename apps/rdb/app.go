@@ -6,7 +6,7 @@ import (
 	"github.com/getevo/evo/lib/concurrent"
 	"github.com/getevo/evo/lib/fontawesome"
 	"github.com/getevo/evo/menu"
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 var connections = concurrent.Map{}
@@ -31,7 +31,11 @@ func (App) Register() {
 	fmt.Println("RDB Registered")
 	connections.Init()
 	db = evo.GetDBO()
-	PushDB("default", db.DB())
+	dbs, err := db.DB()
+	if err == nil {
+		PushDB("default", dbs)
+	}
+
 }
 
 // Router setup routers

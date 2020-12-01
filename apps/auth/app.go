@@ -10,7 +10,7 @@ import (
 	"github.com/getevo/evo"
 	"github.com/getevo/evo/apps/query"
 	"github.com/getevo/evo/menu"
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 // Register register app

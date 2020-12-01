@@ -35,7 +35,7 @@ func (c Controller) set(s string, object interface{}) {
 		Ptr:       object,
 	}
 	settings.Set(_type, obj)
-	if db.Where("reference = ?", _type).Take(&obj).RecordNotFound() {
+	if db.Where("reference = ?", _type).Take(&obj).Error, gorm.ErrRecordNotFound){
 		db.Create(&obj)
 		return
 	}

@@ -46,13 +46,11 @@ func (p User) SyncPermissions(app string, perms evo.Permissions) {
 func (p User) FromRequest(request *evo.Request) {
 	request.User = &evo.User{Anonymous: true}
 	accessToken := request.Get("Authorization")
-
-
 	if accessToken == "" {
 		accessToken = request.Cookies("Authorization")
 	}
 	if accessToken != "" {
-		if accessToken[0:6] == "Bearer"{
+		if accessToken[0:6] == "Bearer" {
 			accessToken = accessToken[7:]
 		}
 
@@ -71,10 +69,10 @@ func (p User) FromRequest(request *evo.Request) {
 			return
 		}
 		claims.ToStruct(request.User)
-		if claims.Get("user_id") != nil{
+		if claims.Get("user_id") != nil {
 			request.User.Anonymous = false
 			request.User.ID = uint(claims.Get("user_id").(float64))
-		}else{
+		} else {
 			request.User.Anonymous = true
 		}
 		request.User.Params = claims

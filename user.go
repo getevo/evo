@@ -2,9 +2,10 @@ package evo
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/getevo/evo/lib/validate"
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 var db *gorm.DB
@@ -31,7 +32,7 @@ func (u *User) Save() error {
 }
 
 // AfterFind after find event
-func (u *User) AfterFind() (err error) {
+func (u *User) AfterFind(tx *gorm.DB) (err error) {
 	return userInterface.AfterFind(u)
 }
 
@@ -76,7 +77,7 @@ func (g *UserGroup) Save() error {
 	var remove []*Role
 	for _, rl := range g.RoleSet {
 		item := Role{}
-		if !db.Where("id = ? OR code_name = ?", rl, rl).Take(&item).RecordNotFound() {
+		if !errors.Is(db.Where("id = ? OR code_name = ?", rl, rl).Take(&item).Error, gorm.ErrRecordNotFound) {
 			set = append(set, &item)
 		}
 	}
@@ -103,14 +104,14 @@ func (g *UserGroup) Save() error {
 		return err
 	}
 	temp := UserGroup{}
-	if !db.Where("code_name = ?", g.CodeName).Take(&temp).RecordNotFound() {
+	if !errors.Is(db.Where("code_name = ?", g.CodeName).Take(&temp).Error, gorm.ErrRecordNotFound) {
 		if g.ID == 0 || (g.ID > 0 && g.ID != temp.ID) {
 			return fmt.Errorf("codename exist")
 		}
 	}
 	if g.ID > 0 {
 		if len(remove) > 0 {
-			err = db.Model(g).Association("Roles").Delete(remove).Error
+			err = db.Model(g).Association("Roles").Delete(remove)
 			if err != nil {
 				return err
 			}
@@ -132,9 +133,9 @@ func (g *UserGroup) HasPerm(v string) bool {
 }
 
 // AfterFind after find event
-func (g *UserGroup) AfterFind() (err error) {
+func (g *UserGroup) AfterFind(tx *gorm.DB) (err error) {
 	var roles []*Role
-	db.Model(g).Related(&roles, "Roles")
+	//db.Model(g).Related(&roles, "Roles")
 	g.Roles = roles
 	if len(g.Roles) > 0 {
 		for _, item := range g.Roles {

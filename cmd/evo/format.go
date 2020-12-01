@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/getevo/evo/lib/gpath"
 	"os"
 	"path/filepath"
@@ -28,7 +29,7 @@ func format() {
 	})
 }
 
-var structRegex = regexp.MustCompile(`(?smU)type\s+(\w+)\s+struct\s*{(.+)\n\s*\}`)
+var structRegex = regexp.MustCompile(`(?smU)type\s+(\w+)\s+struct\s*{\s*?(.+)?\s*\}`)
 var structLineRegex = regexp.MustCompile(`(?Us)(\S+)\s+(\S+?)(.*?)`)
 
 func formatStruct(s string) string {
@@ -63,10 +64,15 @@ func formatStruct(s string) string {
 	s = structRegex.ReplaceAllStringFunc(s, func(s string) string {
 		parts := structRegex.FindStringSubmatch(s)
 		if len(parts) != 3 {
+			fmt.Println(parts)
 			return s
 		}
+		if strings.TrimSpace(parts[2]) == "" {
+			return "type " + parts[1] + " struct{}"
+		}
 
-		code := "type " + parts[1] + " struct{"
+		head := "type " + parts[1] + " struct{"
+		var inner = ""
 		lines := strings.Split(parts[2], "\n")
 		for _, line := range lines {
 			res := structLineRegex.FindAllStringSubmatch(line, 1)
@@ -78,15 +84,15 @@ func formatStruct(s string) string {
 				if len(res[0]) == 4 {
 					fieldTag = strings.TrimSpace(res[0][3])
 				}
-				code += "\n\t" + field + "\t" + fieldType + "\t" + fieldTag
+				inner += "\n\t" + field + "\t" + fieldType + "\t" + fieldTag
 			} else if strings.TrimSpace(line) != "" {
-				code += "\n" + line
+				inner += "\n" + line
 			}
 		}
 
-		code += "\n}"
+		tail := "\n}"
 
-		return code
+		return head + inner + tail
 	})
 
 	return s

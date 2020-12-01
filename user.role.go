@@ -1,9 +1,11 @@
 package evo
 
 import (
+	"errors"
 	"fmt"
 	"github.com/getevo/evo/lib/log"
 	"github.com/getevo/evo/lib/validate"
+	"gorm.io/gorm"
 )
 
 var memoryRolePermissions = cMap{}
@@ -18,7 +20,7 @@ func updateRolePermissions() {
 		var permissions Permissions
 		for _, perm := range rolePerms {
 			var p Permission
-			if db.Where("id = ?", perm.PermissionID).Take(&p).RecordNotFound() {
+			if errors.Is(db.Where("id = ?", perm.PermissionID).Take(&p).Error, gorm.ErrRecordNotFound) {
 				log.Warning("Roles: found inconsistency, automatically remove permission id %d to fix.", perm.PermissionID)
 				db.Delete(RolePermission{}, "id = ?", perm.PermissionID)
 			} else {
@@ -30,7 +32,7 @@ func updateRolePermissions() {
 }
 
 // AfterFind after find event
-func (r *Role) AfterFind() (err error) {
+func (r *Role) AfterFind(tx *gorm.DB) (err error) {
 	perms := memoryRolePermissions.Get(r.ID)
 	if perms != nil {
 		r.Permission = perms.(*Permissions)
@@ -50,7 +52,7 @@ func (r *Role) Save() error {
 	var perms Permissions
 	for _, item := range r.PermissionSet {
 		var perm Permission
-		if db.Where("code_name = ?", item).Take(&perm).RecordNotFound() {
+		if errors.Is(db.Where("code_name = ?", item).Take(&perm).Error, gorm.ErrRecordNotFound) {
 			return fmt.Errorf("permission not found")
 		}
 		perms = append(perms, perm)
@@ -60,7 +62,7 @@ func (r *Role) Save() error {
 		return err
 	}
 	temp := Role{}
-	if !db.Where("code_name = ?", r.CodeName).Find(&temp).RecordNotFound() {
+	if !errors.Is(db.Where("code_name = ?", r.CodeName).Find(&temp).Error, gorm.ErrRecordNotFound) {
 		if r.ID == 0 || (r.ID > 0 && r.ID != temp.ID) {
 			return fmt.Errorf("codename exist")
 		}
@@ -93,7 +95,7 @@ func (r *Role) SetPermission(permissions Permissions) error {
 	var listId []uint
 	for k, item := range permissions {
 		var perm RolePermission
-		if db.Where("role_id = ? AND permission_id = ?", r.ID, item.ID).Take(&perm).RecordNotFound() {
+		if errors.Is(db.Where("role_id = ? AND permission_id = ?", r.ID, item.ID).Take(&perm).Error, gorm.ErrRecordNotFound) {
 			err := db.Create(&RolePermission{RoleID: r.ID, PermissionID: item.ID}).Error
 			if err != nil {
 				return err

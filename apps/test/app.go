@@ -6,7 +6,7 @@ import (
 	"github.com/getevo/evo"
 	"github.com/getevo/evo/lib/gpath"
 	"github.com/getevo/evo/menu"
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 func Register() {

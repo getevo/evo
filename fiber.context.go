@@ -52,7 +52,7 @@ func (r *Request) BaseURL() string {
 
 // Body contains the raw body submitted in a POST request.
 func (r *Request) Body() string {
-	return r.Context.Body()
+	return string(r.Context.Body())
 }
 
 // BodyParser binds the request body to a struct.
@@ -84,11 +84,6 @@ func (r *Request) Cookies(key string) (value string) {
 // Override this default with the filename parameter.
 func (r *Request) Download(file string, name ...string) {
 	r.Context.Download(file, name...)
-}
-
-// Error contains the error information passed via the Next(err) method.
-func (r *Request) Error() error {
-	return r.Context.Error()
 }
 
 // Format performs content-negotiation on the Accept HTTP header.
@@ -180,7 +175,7 @@ func (r *Request) JSON(data interface{}) error {
 		return err
 	}
 	// Set http headers
-	r.Context.Fasthttp.Response.Header.SetContentType(fiber.MIMEApplicationJSON)
+	r.Context.Context().Response.Header.SetContentType(fiber.MIMEApplicationJSON)
 	r.Write(raw)
 
 	return nil
@@ -222,8 +217,8 @@ func (r *Request) MultipartForm() (*multipart.Form, error) {
 
 // Next executes the next method in the stack that matches the current route.
 // You can pass an optional error for custom error handling.
-func (r *Request) Next(err ...error) {
-	r.Context.Next(err...)
+func (r *Request) Next() error {
+	return r.Context.Next()
 }
 
 // OriginalURL contains the original request URL.
@@ -297,20 +292,27 @@ func (r *Request) Secure() bool {
 }
 
 // Send sets the HTML response body. The Send body can be of any type.
-func (r *Request) SendHTML(bodies ...interface{}) {
+func (r *Request) SendHTML(body interface{}) {
 	r.Set("Content-Type", "text/html")
-	r.Context.Send(bodies...)
+	if v, ok := body.(string); ok {
+		r.Context.Send([]byte(v))
+	} else if v, ok := body.([]byte); ok {
+		r.Context.Send(v)
+	} else {
+		r.Context.Send([]byte(fmt.Sprint(v)))
+	}
+
 }
 
 // Send sets the HTTP response body. The Send body can be of any type.
-func (r *Request) Send(bodies ...interface{}) {
-	r.Context.Send(bodies...)
+func (r *Request) Send(body string) {
+	r.Context.Send([]byte(body))
 }
 
 // SendBytes sets the HTTP response body for []byte types
 // This means no type assertion, recommended for faster performance
 func (r *Request) SendBytes(body []byte) {
-	r.Context.SendBytes(body)
+	r.Context.Send(body)
 }
 
 // SendFile transfers the file from the given path.
@@ -381,8 +383,8 @@ func (r *Request) Write(body interface{}) {
 	case bool:
 		data = []byte(strconv.FormatBool(body))
 	case io.Reader:
-		r.Context.Fasthttp.Response.SetBodyStream(body, -1)
-		r.Context.Set(HeaderContentLength, strconv.Itoa(len(r.Context.Fasthttp.Response.Body())))
+		r.Context.Context().Response.SetBodyStream(body, -1)
+		r.Context.Set(HeaderContentLength, strconv.Itoa(len(r.Context.Context().Response.Body())))
 		cache = false
 	default:
 		data = []byte(fmt.Sprintf("%v", body))
@@ -390,11 +392,11 @@ func (r *Request) Write(body interface{}) {
 	if cache && r.CacheKey != "" {
 		Cache.Set(r.CacheKey, cached{
 			content: data,
-			header:  r.Context.Fasthttp.Response.Header,
-			code:    r.Context.Fasthttp.Response.StatusCode(),
+			header:  r.Context.Context().Response.Header,
+			code:    r.Context.Context().Response.StatusCode(),
 		}, r.CacheDuration)
 	}
-	r.Context.Fasthttp.Response.SetBody(data)
+	r.Context.Context().Response.SetBody(data)
 }
 
 // XHR returns a Boolean property, that is true, if the request’s X-Requested-With header field is XMLHttpRequest,

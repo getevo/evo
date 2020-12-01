@@ -166,7 +166,10 @@ func (r *Request) RenderView(input interface{}, views ...string) *bytes.Buffer {
 		if len(parts) > 1 {
 			t, err := GetView(parts[0], strings.Join(parts[1:], "."))
 			if err == nil {
-				t.Execute(&buff, vars, map[string]interface{}{})
+				err = t.Execute(&buff, vars, map[string]interface{}{})
+				if err != nil {
+					log.Error(err)
+				}
 			} else {
 				log.Error(err)
 				log.Error(parts)
@@ -187,9 +190,9 @@ func (r *Request) Cached(duration time.Duration, key ...string) bool {
 	}
 	if v, ok := Cache.Get(r.CacheKey); ok {
 		if resp, ok := v.(cached); ok {
-			r.Context.Fasthttp.Response.Header = resp.header
-			r.Context.Fasthttp.SetStatusCode(resp.code)
-			r.Context.Fasthttp.Response.SetBody(resp.content)
+			r.Context.Context().Response.Header = resp.header
+			r.Context.Context().SetStatusCode(resp.code)
+			r.Context.Context().Response.SetBody(resp.content)
 
 			return true
 		}

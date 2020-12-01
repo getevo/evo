@@ -7,7 +7,7 @@ import (
 	"github.com/getevo/evo/lib/concurrent"
 	"github.com/getevo/evo/lib/fontawesome"
 	"github.com/getevo/evo/menu"
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 	"reflect"
 )
 

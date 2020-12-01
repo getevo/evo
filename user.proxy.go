@@ -1,13 +1,16 @@
 package evo
 
 import (
+	"errors"
 	"fmt"
 	"github.com/getevo/evo/lib/jwt"
 	"github.com/getevo/evo/lib/log"
 	"github.com/getevo/evo/lib/validate"
 	"github.com/nbutton23/zxcvbn-go"
 	"gopkg.in/hlandau/passlib.v1"
+	"gorm.io/gorm"
 	"net/http"
+	"strings"
 )
 
 type LocalUserImplementation struct{}
@@ -32,7 +35,7 @@ func SetUserInterface(p UserInterface) {
 func (p LocalUserImplementation) Save(u *User) error {
 	if u.Group == nil && u.GroupID > 0 {
 		gp := UserGroup{}
-		if db.Where("id = ?", u.GroupID).Find(&gp).RecordNotFound() {
+		if errors.Is(db.Where("id = ?", u.GroupID).Find(&gp).Error, gorm.ErrRecordNotFound) {
 			return fmt.Errorf("invalid group id")
 		}
 		u.Group = &gp
@@ -44,13 +47,13 @@ func (p LocalUserImplementation) Save(u *User) error {
 	}
 
 	temp := User{}
-	if !db.Where("username = ?", u.Username).Find(&temp).RecordNotFound() {
+	if !errors.Is(db.Where("username = ?", u.Username).Find(&temp).Error, gorm.ErrRecordNotFound) {
 		if u.ID == 0 || (u.ID > 0 && u.ID != temp.ID) {
 			return fmt.Errorf("username exist")
 		}
 	}
 
-	if !db.Where("email = ?", u.Email).Find(&temp).RecordNotFound() {
+	if !errors.Is(db.Where("email = ?", u.Email).Find(&temp).Error, gorm.ErrRecordNotFound) {
 		if u.ID == 0 || (u.ID > 0 && u.ID != temp.ID) {
 			return fmt.Errorf("email exist")
 		}
@@ -87,7 +90,7 @@ func (p LocalUserImplementation) HasRole(u *User, v interface{}) bool {
 	if val, ok := v.(Role); ok {
 		role = val
 	} else {
-		if db.Where("id = ? OR code_name = ?", val, val).Take(&role).RecordNotFound() {
+		if errors.Is(db.Where("id = ? OR code_name = ?", val, val).Take(&role).Error, gorm.ErrRecordNotFound) {
 			return false
 		}
 	}
@@ -114,7 +117,7 @@ func (p LocalUserImplementation) SetGroup(u *User, group interface{}) error {
 	if val, ok := group.(UserGroup); ok {
 		gp = val
 	} else {
-		if db.Where("id = ? OR code_name = ?", group, group).Take(&gp).RecordNotFound() {
+		if errors.Is(db.Where("id = ? OR code_name = ?", group, group).Take(&gp).Error, gorm.ErrRecordNotFound) {
 			return fmt.Errorf("group not exist")
 		}
 	}
@@ -124,7 +127,7 @@ func (p LocalUserImplementation) SetGroup(u *User, group interface{}) error {
 }
 func (p LocalUserImplementation) AfterFind(u *User) error {
 	gp := UserGroup{}
-	if !db.Where("id = ?", u.GroupID).Find(&gp).RecordNotFound() {
+	if !errors.Is(db.Where("id = ?", u.GroupID).Find(&gp).Error, gorm.ErrRecordNotFound) {
 		u.Group = &gp
 	}
 
@@ -145,7 +148,7 @@ func (p LocalUserImplementation) SyncPermissions(app string, perms Permissions) 
 			continue
 		}
 		p := Permission{}
-		if db.Where("code_name = ?", perm.CodeName).Take(&p).RecordNotFound() {
+		if errors.Is(db.Where("code_name = ?", perm.CodeName).Take(&p).Error, gorm.ErrRecordNotFound) {
 			db.Create(&perm)
 			ids = append(ids, perm.ID)
 		} else {
@@ -169,8 +172,19 @@ func (p LocalUserImplementation) SyncPermissions(app string, perms Permissions) 
 // SetGroup set user group
 func (u LocalUserImplementation) FromRequest(r *Request) {
 	r.User = &User{Anonymous: true}
-	if r.Cookies("access_token") != "" {
-		token, err := jwt.Verify(r.Cookies("access_token"))
+	token := ""
+	token = r.Cookies("access_token")
+	if strings.TrimSpace(token) == "" {
+		token = r.Cookies("auth_token")
+	}
+	if token == "" {
+		token = r.Get("Authorization")
+	}
+	if token == "" {
+		token = r.Cookies("Authorization")
+	}
+	if token != "" {
+		token, err := jwt.Verify(token)
 		if err == nil {
 			r.JWT = &token
 			r.User = getUserFromJWT(&token)

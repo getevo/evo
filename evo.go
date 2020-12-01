@@ -4,21 +4,22 @@ import (
 	"crypto/tls"
 	"fmt"
 	"github.com/AlexanderGrom/go-event"
-	swagger "github.com/arsmn/fiber-swagger"
 	"github.com/getevo/evo/lib/gpath"
 	"github.com/getevo/evo/lib/jwt"
 	"github.com/getevo/evo/lib/log"
 	"github.com/getevo/evo/lib/text"
 	"github.com/getevo/evo/lib/utils"
-	"github.com/gofiber/cors"
 	"github.com/gofiber/fiber"
-	"github.com/gofiber/limiter"
-	"github.com/gofiber/logger"
-	recovermd "github.com/gofiber/recover"
-	"github.com/gofiber/requestid"
+	"github.com/gofiber/fiber/middleware/cors"
+	"github.com/gofiber/fiber/middleware/limiter"
+	"github.com/gofiber/fiber/middleware/logger"
+	recovermd "github.com/gofiber/fiber/middleware/recover"
+	"github.com/gofiber/fiber/middleware/requestid"
+	"net"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 var (
@@ -46,7 +47,7 @@ func Setup() {
 		bodySize = 10 * 1024 * 1024
 	}
 
-	app = fiber.New(&fiber.Settings{
+	app = fiber.New(fiber.Config{
 		Prefork:       config.Tweaks.PreFork,
 		StrictRouting: config.Server.StrictRouting,
 		CaseSensitive: config.Server.CaseSensitive,
@@ -59,8 +60,8 @@ func Setup() {
 		CORS := config.CORS
 		c := cors.Config{
 			AllowCredentials: CORS.AllowCredentials,
-			AllowHeaders:     CORS.AllowHeaders,
-			AllowMethods:     CORS.AllowMethods,
+			AllowHeaders:     strings.Join(CORS.AllowHeaders, ","),
+			AllowMethods:     strings.Join(CORS.AllowMethods, ","),
 			AllowOrigins:     CORS.AllowOrigins,
 			MaxAge:           CORS.MaxAge,
 		}
@@ -70,8 +71,8 @@ func Setup() {
 	if config.RateLimit.Enabled {
 		fmt.Println("Enabled Rate Limiter")
 		cfg := limiter.Config{
-			Timeout: config.RateLimit.Duration,
-			Max:     config.RateLimit.Requests,
+			Expiration: time.Duration(config.RateLimit.Duration) * time.Second,
+			Max:        config.RateLimit.Requests,
 		}
 		app.Use(limiter.New(cfg))
 	}
@@ -80,15 +81,10 @@ func Setup() {
 		fmt.Println("Enabled Logger")
 		app.Use(logger.New())
 		if config.Server.Recover {
-			app.Use(recovermd.New(recovermd.Config{
-				Handler: func(c *fiber.Ctx, err error) {
-					c.SendString(err.Error())
-					c.SendStatus(500)
-				},
-			}))
+			app.Use(recovermd.New())
 		}
 
-		app.Use("/swagger", swagger.Handler) // default
+		//app.Use("/swagger", swagger.Handler) // default
 	} else {
 		if config.Server.Recover {
 			app.Use(recovermd.New())
@@ -138,11 +134,12 @@ func Run() {
 	}
 
 	// Last middleware to match anything
-	app.Use(func(c *fiber.Ctx) {
+	app.Use(func(c *fiber.Ctx) error {
 		if file, ok := StatusCodePages[404]; c.Method() == "GET" && ok {
 			c.SendFile(config.App.Static + "/" + file)
 		}
 		c.SendStatus(404)
+		return nil
 	})
 	Events.Go("init.after")
 
@@ -156,7 +153,10 @@ func Run() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		err = app.Listen(config.Server.Host+":"+config.Server.Port, &tls.Config{Certificates: []tls.Certificate{cer}})
+		//err = app.Listen(config.Server.Host+":"+config.Server.Port, &tls.Config{Certificates: []tls.Certificate{cer}})
+		ln, _ := net.Listen("tcp", config.Server.Host+":"+config.Server.Port)
+		ln = tls.NewListener(ln, &tls.Config{Certificates: []tls.Certificate{cer}})
+		err = app.Listen(config.Server.Host + ":" + config.Server.Port)
 	} else {
 		err = app.Listen(config.Server.Host + ":" + config.Server.Port)
 	}

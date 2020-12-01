@@ -55,6 +55,15 @@ func main() {
 					return nil
 				},
 			},
+
+			{
+				Name:  "admin.create",
+				Usage: "evo admin.create username password",
+				Action: func(c *cli.Context) error {
+					adminCreate()
+					return nil
+				},
+			},
 		},
 	}
 

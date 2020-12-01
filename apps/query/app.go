@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/getevo/evo"
 	"github.com/getevo/evo/menu"
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 var c Controller

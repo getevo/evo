@@ -106,7 +106,7 @@ type Configuration struct {
 
 	CORS struct {
 		Enabled          bool     `yaml:"enabled"`
-		AllowOrigins     []string `yaml:"allowed-origins"`
+		AllowOrigins     string   `yaml:"allowed-origins"`
 		AllowMethods     []string `yaml:"allowed-methods"`
 		AllowHeaders     []string `yaml:"allowed-headers"`
 		AllowCredentials bool     `yaml:"allowed-credentials"`
