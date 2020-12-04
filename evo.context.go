@@ -8,7 +8,7 @@ import (
 	"github.com/getevo/evo/errors"
 	"github.com/getevo/evo/lib/jwt"
 	"github.com/getevo/evo/lib/log"
-	"github.com/gofiber/fiber"
+	"github.com/gofiber/fiber/v2"
 	"net/url"
 	"reflect"
 	"strings"

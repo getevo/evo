@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/getevo/evo/lib/log"
 	"github.com/getevo/evo/lib/text"
-	"github.com/gofiber/fiber"
+	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/utils"
 	"io"
 	"mime/multipart"

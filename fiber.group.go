@@ -1,7 +1,7 @@
 package evo
 
 import (
-	"github.com/gofiber/fiber"
+	"github.com/gofiber/fiber/v2"
 )
 
 // Use registers a middleware route.
