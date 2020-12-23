@@ -20,7 +20,7 @@ import (
 func main() {
 
 	evo.Setup()
-	keycloak.Register("https://authfootters.ies-italia.it", "footters", "dev")
+	keycloak.Register("https://auth.example.com", "realm", "client")
 	evo.Run()
 }
 ```
