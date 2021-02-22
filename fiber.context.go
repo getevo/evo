@@ -3,16 +3,35 @@ package evo
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/avct/uasurfer"
 	"github.com/getevo/evo/lib/log"
 	"github.com/getevo/evo/lib/text"
-	"github.com/gofiber/fiber"
 	"github.com/gofiber/utils"
+	"github.com/valyala/fasthttp"
 	"io"
 	"mime/multipart"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 )
+
+// Cookie data for ctx.Cookie
+type Cookie struct {
+	Name     string    `json:"name"`
+	Value    string    `json:"value"`
+	Path     string    `json:"path"`
+	Domain   string    `json:"domain"`
+	Expires  time.Time `json:"expires"`
+	Secure   bool      `json:"secure"`
+	HTTPOnly bool      `json:"http_only"`
+	SameSite string    `json:"same_site"`
+}
+
+// GetBrowser return browser information by parsing useragent
+func (r *Request) GetBrowser() *uasurfer.UserAgent {
+	return uasurfer.Parse(r.UserAgent())
+}
 
 // Accepts checks if the specified extensions or content types are acceptable.
 func (r *Request) Accepts(offers ...string) (offer string) {
@@ -59,7 +78,35 @@ func (r *Request) Body() string {
 // It supports decoding the following content types based on the Content-Type header:
 // application/json, application/xml, application/x-www-form-urlencoded, multipart/form-data
 func (r *Request) BodyParser(out interface{}) error {
+	ctype := string(r.ContentType())
+	// Parse body as json
+	if strings.HasPrefix(ctype, MIMEApplicationJSON) {
+		return json.Unmarshal([]byte(r.Body()), out)
+	}
 	return r.Context.BodyParser(out)
+}
+
+// ContentType returns request content type
+func (r *Request) ContentType() string {
+	return string(r.Context.Fasthttp.Request.Header.ContentType())
+}
+
+// UserAgent returns request useragent
+func (r *Request) UserAgent() string {
+	ua := r.Get("User-Agent")
+	if ua == "" {
+		ua = r.Get("X-Original-Agent")
+	}
+	if ua == "" {
+		ua = r.Get("X-User-Agent")
+	}
+	return ua
+}
+
+// UserAgent returns request useragent
+func (r *Request) IP() string {
+	clientIP := requestIP(r.Context.Fasthttp)
+	return clientIP
 }
 
 // ClearCookie expires a specific cookie by key.
@@ -69,8 +116,27 @@ func (r *Request) ClearCookie(key ...string) {
 }
 
 // Cookie sets a cookie by passing a cookie struct
-func (r *Request) Cookie(cookie *fiber.Cookie) {
-	r.Context.Cookie(cookie)
+func (r *Request) Cookie(cookie *Cookie) {
+	fcookie := fasthttp.AcquireCookie()
+	fcookie.SetKey(cookie.Name)
+	fcookie.SetValue(cookie.Value)
+	fcookie.SetPath(cookie.Path)
+	fcookie.SetDomain(cookie.Domain)
+	fcookie.SetExpire(cookie.Expires)
+	fcookie.SetSecure(cookie.Secure)
+	fcookie.SetHTTPOnly(cookie.HTTPOnly)
+
+	switch utils.ToLower(cookie.SameSite) {
+	case "strict":
+		fcookie.SetSameSite(fasthttp.CookieSameSiteStrictMode)
+	case "none":
+		fcookie.SetSameSite(fasthttp.CookieSameSiteNoneMode)
+	default:
+		fcookie.SetSameSite(fasthttp.CookieSameSiteLaxMode)
+	}
+
+	r.Context.Fasthttp.Response.Header.SetCookie(fcookie)
+	fasthttp.ReleaseCookie(fcookie)
 }
 
 // Cookies is used for getting a cookie value by key
@@ -150,11 +216,6 @@ func (r *Request) Hostname() string {
 	return r.Context.Hostname()
 }
 
-// IP returns the remote IP address of the request.
-func (r *Request) IP() string {
-	return r.Context.IP()
-}
-
 // IPs returns an string slice of IP addresses specified in the X-Forwarded-For request header.
 func (r *Request) IPs() []string {
 	return r.Context.IPs()
@@ -175,7 +236,7 @@ func (r *Request) JSON(data interface{}) error {
 		return err
 	}
 	// Set http headers
-	r.Context.Context().Response.Header.SetContentType(fiber.MIMEApplicationJSON)
+	r.Context.Fasthttp.Response.Header.SetContentType(MIMEApplicationJSON)
 	r.Write(raw)
 
 	return nil
@@ -217,8 +278,8 @@ func (r *Request) MultipartForm() (*multipart.Form, error) {
 
 // Next executes the next method in the stack that matches the current route.
 // You can pass an optional error for custom error handling.
-func (r *Request) Next() error {
-	return r.Context.Next()
+func (r *Request) Next(err ...error) {
+	r.Context.Next(err...)
 }
 
 // OriginalURL contains the original request URL.
@@ -259,11 +320,6 @@ func (r *Request) Query(key string) (value string) {
 	return r.Context.Query(key)
 }
 
-// Range returns a struct containing the type and a slice of ranges.
-func (r *Request) Range(size int) (rangeData fiber.Range, err error) {
-	return r.Context.Range(size)
-}
-
 // Redirect to the URL derived from the specified path, with specified status.
 // If status is not specified, status defaults to 302 Found
 func (r *Request) Redirect(path string, status ...int) {
@@ -274,11 +330,6 @@ func (r *Request) Redirect(path string, status ...int) {
 // We support the following engines: html, amber, handlebars, mustache, pug
 func (r *Request) Render(file string, bind interface{}) error {
 	return r.Context.Render(file, bind)
-}
-
-// Route returns the matched Route struct.
-func (r *Request) Route() *fiber.Route {
-	return r.Context.Route()
 }
 
 // SaveFile saves any multipart file to disk.
@@ -383,8 +434,8 @@ func (r *Request) Write(body interface{}) {
 	case bool:
 		data = []byte(strconv.FormatBool(body))
 	case io.Reader:
-		r.Context.Context().Response.SetBodyStream(body, -1)
-		r.Context.Set(HeaderContentLength, strconv.Itoa(len(r.Context.Context().Response.Body())))
+		r.Context.Fasthttp.Response.SetBodyStream(body, -1)
+		r.Context.Set(HeaderContentLength, strconv.Itoa(len(r.Context.Fasthttp.Response.Body())))
 		cache = false
 	default:
 		data = []byte(fmt.Sprintf("%v", body))
@@ -392,11 +443,11 @@ func (r *Request) Write(body interface{}) {
 	if cache && r.CacheKey != "" {
 		Cache.Set(r.CacheKey, cached{
 			content: data,
-			header:  r.Context.Context().Response.Header,
-			code:    r.Context.Context().Response.StatusCode(),
+			header:  r.Context.Fasthttp.Response.Header,
+			code:    r.Context.Fasthttp.Response.StatusCode(),
 		}, r.CacheDuration)
 	}
-	r.Context.Context().Response.SetBody(data)
+	r.Context.Fasthttp.Response.SetBody(data)
 }
 
 // XHR returns a Boolean property, that is true, if the request’s X-Requested-With header field is XMLHttpRequest,
@@ -407,7 +458,7 @@ func (r *Request) XHR() bool {
 
 // SetCookie set cookie with given name,value and optional params (wise function)
 func (r *Request) SetCookie(key string, val interface{}, params ...interface{}) {
-	cookie := new(fiber.Cookie)
+	cookie := new(Cookie)
 	cookie.Name = key
 	cookie.Path = "/"
 	ref := reflect.ValueOf(val)
