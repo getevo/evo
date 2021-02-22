@@ -8,7 +8,7 @@ import (
 	"github.com/getevo/evo/errors"
 	"github.com/getevo/evo/lib/jwt"
 	"github.com/getevo/evo/lib/log"
-	"github.com/gofiber/fiber"
+	"github.com/gofiber/fiber/v2"
 	"net/url"
 	"reflect"
 	"strings"
@@ -116,7 +116,7 @@ func (r *Request) Persist() {
 		}
 		token, err := jwt.Generate(r.JWT.Data)
 		if err == nil {
-			r.Cookie(&fiber.Cookie{
+			r.Cookie(&Cookie{
 				Name:    "access_token",
 				Value:   token,
 				Expires: exp,
