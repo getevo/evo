@@ -88,7 +88,7 @@ func (r *Request) BodyParser(out interface{}) error {
 
 // ContentType returns request content type
 func (r *Request) ContentType() string {
-	return string(r.Context.Fasthttp.Request.Header.ContentType())
+	return string(r.Context.Context().Request.Header.ContentType())
 }
 
 // UserAgent returns request useragent
@@ -105,7 +105,7 @@ func (r *Request) UserAgent() string {
 
 // UserAgent returns request useragent
 func (r *Request) IP() string {
-	clientIP := requestIP(r.Context.Fasthttp)
+	clientIP := requestIP(r.Context.Context())
 	return clientIP
 }
 
@@ -135,7 +135,7 @@ func (r *Request) Cookie(cookie *Cookie) {
 		fcookie.SetSameSite(fasthttp.CookieSameSiteLaxMode)
 	}
 
-	r.Context.Fasthttp.Response.Header.SetCookie(fcookie)
+	r.Context.Context().Response.Header.SetCookie(fcookie)
 	fasthttp.ReleaseCookie(fcookie)
 }
 
@@ -236,7 +236,7 @@ func (r *Request) JSON(data interface{}) error {
 		return err
 	}
 	// Set http headers
-	r.Context.Fasthttp.Response.Header.SetContentType(MIMEApplicationJSON)
+	r.Context.Context().Response.Header.SetContentType(MIMEApplicationJSON)
 	r.Write(raw)
 
 	return nil
@@ -278,8 +278,8 @@ func (r *Request) MultipartForm() (*multipart.Form, error) {
 
 // Next executes the next method in the stack that matches the current route.
 // You can pass an optional error for custom error handling.
-func (r *Request) Next(err ...error) {
-	r.Context.Next(err...)
+func (r *Request) Next() error {
+	return r.Context.Next()
 }
 
 // OriginalURL contains the original request URL.
@@ -434,8 +434,8 @@ func (r *Request) Write(body interface{}) {
 	case bool:
 		data = []byte(strconv.FormatBool(body))
 	case io.Reader:
-		r.Context.Fasthttp.Response.SetBodyStream(body, -1)
-		r.Context.Set(HeaderContentLength, strconv.Itoa(len(r.Context.Fasthttp.Response.Body())))
+		r.Context.Context().Response.SetBodyStream(body, -1)
+		r.Context.Set(HeaderContentLength, strconv.Itoa(len(r.Context.Context().Response.Body())))
 		cache = false
 	default:
 		data = []byte(fmt.Sprintf("%v", body))
@@ -443,11 +443,11 @@ func (r *Request) Write(body interface{}) {
 	if cache && r.CacheKey != "" {
 		Cache.Set(r.CacheKey, cached{
 			content: data,
-			header:  r.Context.Fasthttp.Response.Header,
-			code:    r.Context.Fasthttp.Response.StatusCode(),
+			header:  r.Context.Context().Response.Header,
+			code:    r.Context.Context().Response.StatusCode(),
 		}, r.CacheDuration)
 	}
-	r.Context.Fasthttp.Response.SetBody(data)
+	r.Context.Context().Response.SetBody(data)
 }
 
 // XHR returns a Boolean property, that is true, if the request’s X-Requested-With header field is XMLHttpRequest,
