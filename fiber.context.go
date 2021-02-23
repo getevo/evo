@@ -3,6 +3,7 @@ package evo
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/ajg/form"
 	"github.com/avct/uasurfer"
 	"github.com/getevo/evo/lib/log"
 	"github.com/getevo/evo/lib/text"
@@ -79,11 +80,16 @@ func (r *Request) Body() string {
 // application/json, application/xml, application/x-www-form-urlencoded, multipart/form-data
 func (r *Request) BodyParser(out interface{}) error {
 	ctype := string(r.ContentType())
-	// Parse body as json
+
 	if strings.HasPrefix(ctype, MIMEApplicationJSON) {
-		return json.Unmarshal([]byte(r.Body()), out)
+		return json.Unmarshal(r.Context.Context().Request.Body(), out)
+	} else if strings.HasPrefix(ctype, MIMETextXML) || strings.HasPrefix(ctype, MIMEApplicationXML) {
+		return json.Unmarshal(r.Context.Context().Request.Body(), out)
+	} else if strings.HasPrefix(ctype, MIMEApplicationForm) || strings.HasPrefix(ctype, MIMEMultipartForm) {
+		return form.DecodeString(out, r.Body())
 	}
-	return r.Context.BodyParser(out)
+	return fmt.Errorf("undefined body type")
+	//return r.Context.BodyParser(out)
 }
 
 // ContentType returns request content type

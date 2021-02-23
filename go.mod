@@ -8,7 +8,9 @@ require (
 	github.com/CloudyKit/fastprinter v0.0.0-20200109182630-33d98a066a53 // indirect
 	github.com/CloudyKit/jet v2.1.2+incompatible
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
+	github.com/ajg/form v1.5.1
 	github.com/araddon/dateparse v0.0.0-20210207001429-0eec95c9db7e
+	github.com/avct/uasurfer v0.0.0-20191028135549-26b5daa857f1
 	github.com/awoodbeck/strftime v0.0.0-20180221155908-016cde65fcde
 	github.com/cpuguy83/go-md2man v1.0.10
 	github.com/creasty/defaults v1.5.1
@@ -33,7 +35,7 @@ require (
 	github.com/lithammer/shortuuid v3.0.0+incompatible
 	github.com/magefile/mage v1.11.0
 	github.com/mitchellh/mapstructure v1.4.1
-	github.com/mssola/user_agent v0.5.2
+	github.com/mssola/user_agent v0.5.2 // indirect
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
 	github.com/onsi/ginkgo v1.15.0 // indirect
 	github.com/onsi/gomega v1.10.5 // indirect

@@ -27,7 +27,7 @@ type AuthParams struct {
 
 func GetUserByID(id interface{}) *evo.User {
 	user := evo.User{}
-	if db.Where("id = ?", id).Find(&user).Error, gorm.ErrRecordNotFound){
+	if db.Where("id = ?", id).Find(&user).RowsAffected == 0 {
 		user.Anonymous = true
 		return &user
 	}
@@ -37,7 +37,7 @@ func GetUserByID(id interface{}) *evo.User {
 
 func GetUserByUsername(username interface{}) *evo.User {
 	user := evo.User{}
-	if db.Where("username = ?", username).Find(&user).Error, gorm.ErrRecordNotFound){
+	if db.Where("username = ?", username).Find(&user).RowsAffected == 0 {
 		return nil
 	}
 	return &user
@@ -45,7 +45,7 @@ func GetUserByUsername(username interface{}) *evo.User {
 
 func GetUserByEmail(email interface{}) *evo.User {
 	user := evo.User{}
-	if db.Where("email = ?", email).Find(&user).Error, gorm.ErrRecordNotFound){
+	if db.Where("email = ?", email).Find(&user).RowsAffected == 0 {
 		return nil
 	}
 	return &user
@@ -53,7 +53,7 @@ func GetUserByEmail(email interface{}) *evo.User {
 
 func GetGroup(v interface{}) *evo.UserGroup {
 	group := evo.UserGroup{}
-	if db.Where("id = ? OR code_name", v, v).Find(&group).Error, gorm.ErrRecordNotFound){
+	if db.Where("id = ? OR code_name", v, v).Find(&group).RowsAffected == 0 {
 		return nil
 	}
 	return &group
@@ -224,7 +224,7 @@ func (c Controller) EditUser(r *evo.Request) {
 	}
 	var user evo.User
 	var id = T.Must(r.Params("id")).UInt()
-	if db.Where("id = ?", id).Find(&user).Error, gorm.ErrRecordNotFound){
+	if db.Where("id = ?", id).Find(&user).RowsAffected == 0 {
 		r.WriteResponse(constant.ERROR_INVALID_ID)
 		return
 	}
@@ -260,7 +260,7 @@ func (c Controller) EditRole(r *evo.Request) {
 	var role evo.Role
 	var id = r.Params("id")
 
-	if db.Where("id = ? OR code_name = ?", id, id).Find(&role).Error, gorm.ErrRecordNotFound){
+	if db.Where("id = ? OR code_name = ?", id, id).Find(&role).RowsAffected == 0 {
 		r.WriteResponse(constant.ERROR_INVALID_ID)
 		return
 	}
@@ -290,7 +290,7 @@ func (c Controller) EditGroup(r *evo.Request) {
 	}
 	var group evo.UserGroup
 	var id = r.Params("id")
-	if db.Where("id = ? OR code_name = ?", id, id).Find(&group).Error, gorm.ErrRecordNotFound){
+	if db.Where("id = ? OR code_name = ?", id, id).Find(&group).RowsAffected == 0 {
 		r.WriteResponse(e.Field("id", constant.ERROR_INVALID_ID))
 		return
 	}
@@ -336,7 +336,7 @@ func (c Controller) GetGroup(r *evo.Request) {
 	}
 	var group evo.UserGroup
 	var id = r.Params("id")
-	if db.Where("id = ? OR code_name = ?", id, id).Find(&group).Error, gorm.ErrRecordNotFound){
+	if db.Where("id = ? OR code_name = ?", id, id).Find(&group).RowsAffected == 0 {
 		r.WriteResponse(e.Field("id", constant.ERROR_INVALID_ID))
 		return
 	} else {
@@ -367,7 +367,7 @@ func (c Controller) GetRole(r *evo.Request) {
 	}
 	var role evo.Role
 	var id = r.Params("id")
-	if db.Where("id = ? OR code_name = ?", id, id).Find(&role).Error, gorm.ErrRecordNotFound){
+	if db.Where("id = ? OR code_name = ?", id, id).Find(&role).RowsAffected == 0 {
 		r.WriteResponse(e.Field("id", constant.ERROR_INVALID_ID))
 		return
 	} else {
@@ -383,7 +383,7 @@ func (c Controller) GetRoleGroups(r *evo.Request) {
 	}
 	var role evo.Role
 	var id = r.Params("id")
-	if db.Where("id = ? OR code_name = ?", id, id).Find(&role).Error, gorm.ErrRecordNotFound){
+	if db.Where("id = ? OR code_name = ?", id, id).Find(&role).RowsAffected == 0 {
 		r.WriteResponse(e.Field("id", constant.ERROR_INVALID_ID))
 		return
 	} else {
@@ -401,7 +401,7 @@ func (c Controller) GetUser(r *evo.Request) {
 	}
 	var user evo.User
 	var id = r.Params("id")
-	if db.Where("id = ? OR username = ? OR email = ?", id, id, id).Find(&user).Error, gorm.ErrRecordNotFound){
+	if db.Where("id = ? OR username = ? OR email = ?", id, id, id).Find(&user).RowsAffected == 0 {
 		r.WriteResponse(constant.ERROR_OBJECT_NOT_EXIST)
 		return
 	} else {
@@ -421,7 +421,7 @@ func (c Controller) GetAllUsers(r *evo.Request) {
 		return
 	}
 	var users []evo.User
-	err := db.Offset(r.Params("offset")).Limit(r.Params("limit")).Find(&users).Error
+	err := db.Offset(r.QueryI("offset").Int()).Limit(r.QueryI("limit").Int()).Find(&users).Error
 	if err != nil {
 		r.WriteResponse(err)
 	} else {
