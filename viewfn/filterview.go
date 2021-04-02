@@ -226,7 +226,6 @@ func (fv *FilterView) Prepare(r *evo.Request) {
 		offset,
 	)
 
-	fmt.Println(dataQuery)
 	limitQuery := fmt.Sprintf("SELECT COUNT(*) FROM %s %s WHERE %s",
 		quote(tables[0]), //main table
 		_join,
@@ -273,7 +272,7 @@ func (fv *FilterView) Prepare(r *evo.Request) {
 		for i := 0; i < length; i++ {
 			k := columns[i]
 			v := reflect.ValueOf(current[i]).Elem().Interface()
-			value[k] = v
+			value[k] = byteToStr(v)
 		}
 		fv.data = append(fv.data, value)
 	}
@@ -288,6 +287,18 @@ func makeResultReceiver(length int) []interface{} {
 		result = append(result, &current)
 	}
 	return result
+}
+
+func byteToStr(v interface{}) string {
+
+	if cast, ok := v.([]byte); ok {
+		return string(cast)
+	} else if v == nil {
+		return ""
+	} else {
+		return fmt.Sprintf("%v", v)
+	}
+
 }
 
 func (fv FilterView) SizeInput(r *evo.Request) string {
