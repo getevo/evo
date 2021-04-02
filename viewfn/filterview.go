@@ -253,6 +253,7 @@ func (fv *FilterView) Prepare(r *evo.Request) {
 	}
 
 	rows, err := db.Raw(dataQuery).Rows()
+	fmt.Println(dataQuery)
 	if err != nil {
 		return
 	}
