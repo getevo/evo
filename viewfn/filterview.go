@@ -87,7 +87,7 @@ func getName(t reflect.Type) string {
 }
 
 func quote(s string) string {
-	return "\"" + s + "\""
+	return "`" + s + "`"
 }
 
 func defaultProcessor(column Column, data map[string]interface{}, r *evo.Request) string {
