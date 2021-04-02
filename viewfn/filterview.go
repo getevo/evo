@@ -208,9 +208,10 @@ func (fv *FilterView) Prepare(r *evo.Request) {
 		}
 	}
 
-	if order == "" {
-		order = quote(tables[0]) + ".\"id\" DESC"
+	if order == "" && len(schema.Schema.PrimaryFieldDBNames) > 0 {
+		order = quote(tables[0]) + "." + quote(schema.Schema.PrimaryFieldDBNames[0]) + " DESC"
 	}
+
 	if fv.Unscoped {
 		db = db.Unscoped()
 	}
