@@ -148,10 +148,15 @@ func (fv *FilterView) Prepare(r *evo.Request) {
 		}
 
 	}
-	tables = append(tables, db.NewScope(fv.Model).TableName())
+	db = evo.GetDBO()
+	var schema = db.Model(fv.Model).Statement
+	schema.Parse(fv.Model)
+	tables = append(tables, schema.Table)
 	models[getName(reflect.TypeOf(fv.Model))] = tables[0]
 	for _, join := range fv.Join {
-		t := db.NewScope(join.Model).TableName()
+		var schema = db.Model(join.Model).Statement
+		schema.Parse(join.Model)
+		t := schema.Table
 		models[getName(reflect.TypeOf(join.Model))] = t
 		tables = append(tables, t)
 		_join += " INNER JOIN " + quote(t) + " ON " + quote(tables[0]) + "." + quote(join.MainFK) + " = " + quote(t) + "." + quote(join.DestFK)
@@ -165,7 +170,9 @@ func (fv *FilterView) Prepare(r *evo.Request) {
 			column.Model = quote(tables[0])
 		} else {
 			if _, ok := column.Model.(string); !ok {
-				column.Model = quote(db.NewScope(column.Model).TableName())
+				var schema = db.Model(column.Model).Statement
+				schema.Parse(column.Model)
+				column.Model = quote(schema.Table)
 			}
 		}
 		if column.Alias == "" {

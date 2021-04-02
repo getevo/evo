@@ -105,8 +105,6 @@ IO.Cookie = function (key,set,attributes) {
       return key ? jar[key] : jar
   }else{
 
-      console.warn(typeof set)
-
       attributes = IO.Assign({}, IO.defaultCookieAttributes, attributes)
       if (typeof attributes.expires === 'number') {
           attributes.expires = new Date(Date.now() + attributes.expires * 864e5)
