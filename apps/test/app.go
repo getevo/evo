@@ -35,9 +35,6 @@ func (App) Router() {
 		db.Find(&u)
 		request.WriteResponse(u)
 	})
-	evo.Group("/a").Group("/b").Get("/test", func(request *evo.Request) {
-		request.WriteResponse("test")
-	})
 }
 
 func (App) Permissions() []evo.Permission {

@@ -145,9 +145,14 @@ func (r *Request) RenderView(input interface{}, views ...string) *bytes.Buffer {
 	vars.Set("request", r)
 	ref := reflect.ValueOf(input)
 	kind := ref.Kind()
-	if kind == reflect.Map {
+	/*	if kind == reflect.Map {
 		for _, k := range ref.MapKeys() {
 			vars.Set(k.String(), ref.MapIndex(k).Interface())
+		}
+	}*/
+	if v, ok := input.(map[string]interface{}); ok {
+		for key, value := range v {
+			vars.Set(key, value)
 		}
 	} else if kind == reflect.String {
 		vars.Set("body", input.(string))
