@@ -68,6 +68,7 @@ type Pagination struct {
 type FilterView struct {
 	Style        string
 	Columns      []Column
+	Select       []string
 	Model        interface{}
 	Join         []Join
 	Attribs      html.Attributes
@@ -106,7 +107,7 @@ func defaultProcessor(column Column, data map[string]interface{}, r *evo.Request
 func (fv *FilterView) Prepare(r *evo.Request) {
 	var db = evo.GetDBO()
 	var query = []string{"true"}
-	var _select []string
+	var _select = fv.Select
 	var _join string
 	var models = map[string]string{}
 	var tables []string

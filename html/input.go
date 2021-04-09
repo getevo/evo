@@ -2,10 +2,12 @@ package html
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/CloudyKit/jet"
 	"github.com/getevo/evo"
 	"github.com/getevo/evo/lib/log"
+	"github.com/tidwall/gjson"
 	"strconv"
 	"strings"
 )
@@ -13,6 +15,75 @@ import (
 type KeyValue struct {
 	Key   interface{}
 	Value interface{}
+}
+
+type Dictionary []KeyValue
+
+func (dict *Dictionary) FindValue(key interface{}) string {
+	for _, item := range *dict {
+		if fmt.Sprint(item.Key) == fmt.Sprint(key) {
+			return fmt.Sprint(item.Value)
+		}
+	}
+	return ""
+}
+
+func (dict *Dictionary) FindKey(value interface{}) string {
+	for _, item := range *dict {
+		if fmt.Sprint(item.Value) == fmt.Sprint(value) {
+			return fmt.Sprint(item.Key)
+		}
+	}
+	return ""
+}
+
+func (dict *Dictionary) Push(key, value interface{}) {
+	var new = append(*dict, KeyValue{key, value})
+	*dict = new
+}
+
+func (dict *Dictionary) DeleteKey(key interface{}) {
+	var new Dictionary
+	for index, item := range *dict {
+		if fmt.Sprint(item.Value) == fmt.Sprint(key) {
+			new = remove(*dict, index)
+			*dict = new
+			break
+		}
+	}
+}
+
+func (dict *Dictionary) DeleteValue(value interface{}) {
+	var new Dictionary
+	for index, item := range *dict {
+		if fmt.Sprint(item.Value) == fmt.Sprint(value) {
+			new = remove(*dict, index)
+			*dict = new
+			break
+		}
+	}
+}
+
+func (dict *Dictionary) MapFromObject(ptr interface{}, key, value string) error {
+	var new Dictionary
+	var b, err = json.Marshal(ptr)
+	if err != nil {
+		return err
+	}
+	obj := gjson.Parse(string(b))
+	for _, item := range obj.Array() {
+		new = append(new, KeyValue{
+			item.Get(key).String(), item.Get(value).String(),
+		})
+
+	}
+	*dict = new
+	return err
+}
+
+func remove(s Dictionary, i int) Dictionary {
+	s[len(s)-1], s[i] = s[i], s[len(s)-1]
+	return s[:len(s)-1]
 }
 
 type Renderable interface {
