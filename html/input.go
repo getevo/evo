@@ -19,7 +19,7 @@ type KeyValue struct {
 
 type Dictionary []KeyValue
 
-func (dict *Dictionary) FindValue(key interface{}) string {
+func (dict *Dictionary) FindKey(key interface{}) string {
 	for _, item := range *dict {
 		if fmt.Sprint(item.Key) == fmt.Sprint(key) {
 			return fmt.Sprint(item.Value)
@@ -28,7 +28,7 @@ func (dict *Dictionary) FindValue(key interface{}) string {
 	return ""
 }
 
-func (dict *Dictionary) FindKey(value interface{}) string {
+func (dict *Dictionary) FindValue(value interface{}) string {
 	for _, item := range *dict {
 		if fmt.Sprint(item.Value) == fmt.Sprint(value) {
 			return fmt.Sprint(item.Key)
