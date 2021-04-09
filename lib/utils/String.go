@@ -22,6 +22,10 @@ const (
 	ALPHANUM_SIGNS RandomStringOp = 6
 )
 
+func NewString(input interface{}) String {
+	return String(fmt.Sprint(input))
+}
+
 func (s String) Trim(args ...string) String {
 	if len(args) > 0 {
 		for _, arg := range args {
