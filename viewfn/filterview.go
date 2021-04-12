@@ -114,8 +114,8 @@ func (fv *FilterView) Prepare(r *evo.Request) {
 	fv.Pagination.Limit = 10
 	var offset = 0
 	var order = ""
-	if r.Query("limit") != "" {
-		fv.Pagination.Limit = T.Must(r.Query("limit")).Int()
+	if r.Query("size") != "" {
+		fv.Pagination.Limit = T.Must(r.Query("size")).Int()
 		if fv.Pagination.Limit < 10 {
 			fv.Pagination.Limit = 10
 		}
@@ -234,10 +234,7 @@ func (fv *FilterView) Prepare(r *evo.Request) {
 	)
 	row := db.Raw(limitQuery).Row()
 	row.Scan(&fv.Pagination.Records)
-	fv.Pagination.Pages = fv.Pagination.Records / fv.Pagination.Limit
-	if fv.Pagination.Pages == 0 {
-		fv.Pagination.Pages = 1
-	}
+	fv.Pagination.Pages = (fv.Pagination.Records / fv.Pagination.Limit) + 1
 	fv.Pagination.First = fv.Pagination.CurrentPage * fv.Pagination.Limit
 	fv.Pagination.Last = fv.Pagination.First + fv.Pagination.Limit
 	if fv.Pagination.Last > fv.Pagination.Records {
