@@ -219,6 +219,9 @@ func (r *Request) GetI(key string, params ...string) value {
 
 // Hostname contains the hostname derived from the Host HTTP header.
 func (r *Request) Hostname() string {
+	if r.Get("X-Forwarded-Server") != "" {
+		return r.Get("X-Forwarded-Server")
+	}
 	return r.Context.Hostname()
 }
 
