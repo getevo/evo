@@ -219,6 +219,9 @@ func (r *Request) GetI(key string, params ...string) value {
 
 // Hostname contains the hostname derived from the Host HTTP header.
 func (r *Request) Hostname() string {
+	if r.Get("X-Forwarded-Host") != "" {
+		return r.Get("X-Forwarded-Host")
+	}
 	if r.Get("X-Forwarded-Server") != "" {
 		return r.Get("X-Forwarded-Server")
 	}
@@ -227,7 +230,10 @@ func (r *Request) Hostname() string {
 
 // IPs returns an string slice of IP addresses specified in the X-Forwarded-For request header.
 func (r *Request) IPs() []string {
-	return r.Context.IPs()
+	if len(r.Context.IPs()) > 0 {
+		return r.Context.IPs()
+	}
+	return []string{}
 }
 
 // Is returns the matching content type,
