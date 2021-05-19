@@ -236,6 +236,27 @@ func (r *Request) IPs() []string {
 	return []string{}
 }
 
+func (r *Request) Header(key string) string {
+	return r.Get(key)
+}
+
+func (r *Request) Headers(key string) map[string]string {
+	var headers map[string]string
+	for _, line := range strings.Split(r.Context.Context().Request.Header.String(), "\n") {
+		var parts = strings.SplitN(line, ":", 1)
+		if len(parts) == 2 {
+			headers[parts[0]] = parts[1]
+		} else if len(parts) > 0 {
+			headers[parts[0]] = ""
+		}
+	}
+	return headers
+}
+
+func (r *Request) SetHeader(key, val string) {
+	r.Set(key, val)
+}
+
 // Is returns the matching content type,
 // if the incoming request’s Content-Type HTTP header field matches the MIME type specified by the type parameter
 func (r *Request) Is(extension string) (match bool) {

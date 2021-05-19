@@ -9,6 +9,7 @@ require (
 	github.com/CloudyKit/jet v2.1.2+incompatible
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/ajg/form v1.5.1
+	github.com/alecthomas/repr v0.0.0-20210301060118-828286944d6a
 	github.com/araddon/dateparse v0.0.0-20210207001429-0eec95c9db7e
 	github.com/avct/uasurfer v0.0.0-20191028135549-26b5daa857f1
 	github.com/awoodbeck/strftime v0.0.0-20180221155908-016cde65fcde
