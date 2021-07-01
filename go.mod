@@ -18,6 +18,7 @@ require (
 	github.com/cstockton/go-conv v0.0.0-20170524002450-66a2b2ba36e1
 	github.com/davecgh/go-spew v1.1.1
 	github.com/disintegration/imaging v1.6.2
+	github.com/fatih/structs v1.1.0
 	github.com/fatih/structtag v1.2.0
 	github.com/gbrlsnchs/jwt/v3 v3.0.0
 	github.com/getevo/go-arg v1.4.0
@@ -36,7 +37,6 @@ require (
 	github.com/lithammer/shortuuid v3.0.0+incompatible
 	github.com/magefile/mage v1.11.0
 	github.com/mitchellh/mapstructure v1.4.1
-	github.com/mssola/user_agent v0.5.2 // indirect
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
 	github.com/onsi/ginkgo v1.15.0 // indirect
 	github.com/onsi/gomega v1.10.5 // indirect

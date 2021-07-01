@@ -66,8 +66,14 @@ func GuessAsset(app App) string {
 		pack = t.Type().String()
 	}
 	//
-	pack = strings.Replace(pack, ".", "/", 1)
-	pack = "/bundle/" + gpath.Parent(pack)
+	pack = gpath.Parent(strings.Replace(pack, ".", "/", 1))
+
+	if gpath.IsDirExist(gpath.WorkingDir() + "/apps/" + pack) {
+		log.Info("Load local bundle at " + gpath.WorkingDir() + "/" + gpath.Parent(pack))
+		return gpath.WorkingDir() + "/" + pack
+	}
+
+	pack = "/bundle/" + pack
 	pack = strings.Trim(pack, "/")
 
 	if gpath.IsDirExist(gpath.WorkingDir() + "/" + pack) {
