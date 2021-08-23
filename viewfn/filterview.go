@@ -66,6 +66,8 @@ type Pagination struct {
 }
 
 type FilterView struct {
+	Title        string
+	Description  string
 	Style        string
 	Columns      []Column
 	Select       []string
