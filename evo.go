@@ -28,7 +28,7 @@ var (
 
 	Events          = event.New()
 	StatusCodePages = map[int]string{}
-
+	Any             func(request *Request) error
 	//private
 	statics [][2]string
 )
@@ -132,15 +132,25 @@ func Run() {
 	for _, item := range statics {
 		app.Static(item[0], item[1])
 	}
+	if Any != nil {
+		app.Use(func(ctx *fiber.Ctx) error {
+			r := Upgrade(ctx)
+			if err := Any(r); err != nil {
+				return err
+			}
 
-	// Last middleware to match anything
-	app.Use(func(c *fiber.Ctx) error {
-		if file, ok := StatusCodePages[404]; c.Method() == "GET" && ok {
-			c.SendFile(config.App.Static + "/" + file)
-		}
-		c.SendStatus(404)
-		return nil
-	})
+			return nil
+		})
+	} else {
+		// Last middleware to match anything
+		app.Use(func(c *fiber.Ctx) error {
+			if file, ok := StatusCodePages[404]; c.Method() == "GET" && ok {
+				c.SendFile(config.App.Static + "/" + file)
+			}
+			c.SendStatus(404)
+			return nil
+		})
+	}
 	Events.Go("init.after")
 
 	for _, item := range onReady {
