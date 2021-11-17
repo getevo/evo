@@ -78,8 +78,13 @@ type FilterView struct {
 	QueryBuilder func(r *evo.Request) []string
 	data         []map[string]interface{}
 	Pagination   Pagination
+	EnableDebug  bool
 }
 
+func (fv *FilterView) Debug() *FilterView {
+	fv.EnableDebug = true
+	return fv
+}
 func (fv FilterView) GetData() []map[string]interface{} {
 	return fv.data
 }
@@ -234,6 +239,10 @@ func (fv *FilterView) Prepare(r *evo.Request) {
 		_join,
 		strings.Join(query, " AND "),
 	)
+	db = evo.GetDBO()
+	if fv.EnableDebug {
+		db = db.Debug()
+	}
 	row := db.Raw(limitQuery).Row()
 	row.Scan(&fv.Pagination.Records)
 	fv.Pagination.Pages = (fv.Pagination.Records / fv.Pagination.Limit) + 1
@@ -251,9 +260,11 @@ func (fv *FilterView) Prepare(r *evo.Request) {
 			fv.Pagination.PageRange = append(fv.Pagination.PageRange, i)
 		}
 	}
-
+	if fv.EnableDebug {
+		db = db.Debug()
+	}
 	rows, err := db.Raw(dataQuery).Rows()
-	fmt.Println(dataQuery)
+
 	if err != nil {
 		return
 	}
