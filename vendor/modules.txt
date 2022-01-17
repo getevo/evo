@@ -82,7 +82,7 @@ github.com/go-playground/universal-translator
 # github.com/go-playground/validator v9.31.0+incompatible
 ## explicit
 github.com/go-playground/validator
-# github.com/go-sql-driver/mysql v1.5.0
+# github.com/go-sql-driver/mysql v1.6.0
 ## explicit
 github.com/go-sql-driver/mysql
 # github.com/gocarina/gocsv v0.0.0-20201208093247-67c824bc04d4
