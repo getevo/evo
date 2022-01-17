@@ -84,6 +84,32 @@ func (sd SoftDeleteQueryClause) ModifyStatement(stmt *Statement) {
 	}
 }
 
+func (DeletedAt) UpdateClauses(f *schema.Field) []clause.Interface {
+	return []clause.Interface{SoftDeleteUpdateClause{Field: f}}
+}
+
+type SoftDeleteUpdateClause struct {
+	Field *schema.Field
+}
+
+func (sd SoftDeleteUpdateClause) Name() string {
+	return ""
+}
+
+func (sd SoftDeleteUpdateClause) Build(clause.Builder) {
+}
+
+func (sd SoftDeleteUpdateClause) MergeClause(*clause.Clause) {
+}
+
+func (sd SoftDeleteUpdateClause) ModifyStatement(stmt *Statement) {
+	if stmt.SQL.String() == "" {
+		if _, ok := stmt.Clauses["WHERE"]; stmt.DB.AllowGlobalUpdate || ok {
+			SoftDeleteQueryClause(sd).ModifyStatement(stmt)
+		}
+	}
+}
+
 func (DeletedAt) DeleteClauses(f *schema.Field) []clause.Interface {
 	return []clause.Interface{SoftDeleteDeleteClause{Field: f}}
 }
@@ -129,10 +155,10 @@ func (sd SoftDeleteDeleteClause) ModifyStatement(stmt *Statement) {
 		if _, ok := stmt.Clauses["WHERE"]; !stmt.DB.AllowGlobalUpdate && !ok {
 			stmt.DB.AddError(ErrMissingWhereClause)
 		} else {
-			SoftDeleteQueryClause{Field: sd.Field}.ModifyStatement(stmt)
+			SoftDeleteQueryClause(sd).ModifyStatement(stmt)
 		}
 
 		stmt.AddClauseIfNotExists(clause.Update{})
-		stmt.Build("UPDATE", "SET", "WHERE")
+		stmt.Build(stmt.DB.Callback().Update().Clauses...)
 	}
 }
