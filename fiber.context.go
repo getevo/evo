@@ -382,7 +382,7 @@ func (r *Request) Secure() bool {
 func (r *Request) SendHTML(body interface{}) {
 	r.Set("Content-Type", "text/html")
 	if v, ok := body.(string); ok {
-		r.Context.Send([]byte(v))
+		r.Context.Write([]byte(v))
 	} else if v, ok := body.([]byte); ok {
 		r.Context.Write(v)
 	} else {
