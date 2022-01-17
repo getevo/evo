@@ -381,14 +381,7 @@ func (r *Request) Secure() bool {
 // Send sets the HTML response body. The Send body can be of any type.
 func (r *Request) SendHTML(body interface{}) {
 	r.Set("Content-Type", "text/html")
-	if v, ok := body.(string); ok {
-		r.Context.Write([]byte(v))
-	} else if v, ok := body.([]byte); ok {
-		r.Context.Write(v)
-	} else {
-		r.Context.Write([]byte(fmt.Sprint(v)))
-	}
-
+	r.Write(body)
 }
 
 // Send sets the HTTP response body. The Send body can be of any type.
