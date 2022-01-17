@@ -384,9 +384,9 @@ func (r *Request) SendHTML(body interface{}) {
 	if v, ok := body.(string); ok {
 		r.Context.Send([]byte(v))
 	} else if v, ok := body.([]byte); ok {
-		r.Context.Send(v)
+		r.Context.Write(v)
 	} else {
-		r.Context.Send([]byte(fmt.Sprint(v)))
+		r.Context.Write([]byte(fmt.Sprint(v)))
 	}
 
 }
