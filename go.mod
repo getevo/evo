@@ -45,7 +45,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/pkg/sftp v1.12.0
 	github.com/shirou/gopsutil v3.21.1+incompatible
-	github.com/tidwall/gjson v1.7.4
+	github.com/tidwall/gjson v1.13.0
 	github.com/urfave/cli/v2 v2.3.0
 	github.com/valyala/fasthttp v1.21.0
 	github.com/wzshiming/ctc v1.2.3
