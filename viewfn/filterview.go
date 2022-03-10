@@ -41,7 +41,7 @@ type Join struct {
 type Column struct {
 	Type         ColumnType
 	Title        string
-	Width        int
+	Width        string
 	Resize       bool
 	Order        bool
 	Name         string
