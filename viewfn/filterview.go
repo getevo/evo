@@ -5,6 +5,7 @@ import (
 	"github.com/getevo/evo"
 	"github.com/getevo/evo/html"
 	"github.com/getevo/evo/lib/T"
+	"github.com/getevo/evo/menu"
 	"reflect"
 	"strings"
 )
@@ -79,6 +80,7 @@ type FilterView struct {
 	data         []map[string]interface{}
 	Pagination   Pagination
 	EnableDebug  bool
+	Menu         []menu.Menu
 }
 
 func (fv *FilterView) Debug() *FilterView {
