@@ -48,6 +48,7 @@ type Column struct {
 	Alias        string
 	Select       string
 	Options      []html.KeyValue
+	Actions      html.Renderable
 	InputBuilder func(r *evo.Request) html.Renderable
 	Attribs      html.Attributes
 	QueryBuilder func(r *evo.Request) []string
@@ -351,6 +352,9 @@ func (col Column) Filter(r *evo.Request) html.Renderable {
 			{"", "--------"},
 		}, el.Options...)
 	case ACTIONS:
+		if col.Actions != nil {
+			return col.Actions
+		}
 		var actions []html.Element
 		for _, item := range col.Options {
 			action := item.Key.(ActionType)
