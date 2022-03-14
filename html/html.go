@@ -43,6 +43,9 @@ func (el *Element) Set(key string, value interface{}) *Element {
 
 func (el Element) Render() string {
 	if el.Tag == "" {
+		if v, ok := el.Body.(string); ok {
+			return v
+		}
 		return Render(el.Body)
 	}
 	return "<" + el.Tag + " " + el.Attributes.Render() + ">" + Render(el.Body) + "</" + el.Tag + ">"
