@@ -171,6 +171,10 @@ func Run() {
 		err = app.Listen(config.Server.Host + ":" + config.Server.Port)
 	}
 	Events.Go("server.panic")
+
+	for prefix, _ := range viewList {
+		applyViewFunction(prefix)
+	}
 	log.Fatal(err)
 }
 

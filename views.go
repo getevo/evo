@@ -3,12 +3,14 @@ package evo
 import (
 	"fmt"
 	"github.com/CloudyKit/jet"
+	"reflect"
 )
 
 //TODO: Concurrent View Pool
 type views map[string]*jet.Set
 
 var viewList = views{}
+var viewFnApplied = map[string]bool{}
 
 //RegisterView register views of given path
 func RegisterView(prefix, path string) *jet.Set {
@@ -16,6 +18,7 @@ func RegisterView(prefix, path string) *jet.Set {
 	if config.Server.Debug {
 		viewList[prefix].SetDevelopmentMode(true)
 	}
+	applyViewFunction(prefix)
 	return viewList[prefix]
 }
 
@@ -27,4 +30,19 @@ func GetView(prefix, name string) (*jet.Template, error) {
 
 	return nil, fmt.Errorf("template prefix \"%s\" not found", prefix)
 
+}
+
+var globalFunctions = map[string]func(arguments jet.Arguments) reflect.Value{}
+
+func RegisterViewFunction(name string, fn func(arguments jet.Arguments) reflect.Value) {
+	globalFunctions[name] = fn
+}
+
+func applyViewFunction(prefix string) {
+	for name, fn := range globalFunctions {
+		if ok, _ := viewFnApplied[prefix+"#"+name]; !ok {
+			viewList[prefix].AddGlobalFunc(name, fn)
+			viewFnApplied[prefix+"#"+name] = true
+		}
+	}
 }
