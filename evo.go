@@ -156,7 +156,9 @@ func Run() {
 	for _, item := range onReady {
 		item()
 	}
-
+	for prefix, _ := range viewList {
+		applyViewFunction(prefix)
+	}
 	var err error
 	if config.Server.HTTPS {
 		cer, err := tls.LoadX509KeyPair(GuessPath(config.Server.Cert), GuessPath(config.Server.Key))
@@ -172,9 +174,6 @@ func Run() {
 	}
 	Events.Go("server.panic")
 
-	for prefix, _ := range viewList {
-		applyViewFunction(prefix)
-	}
 	log.Fatal(err)
 }
 
