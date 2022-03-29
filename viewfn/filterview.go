@@ -86,7 +86,8 @@ type FilterView struct {
 	data         []map[string]interface{}
 	Pagination   Pagination
 	EnableDebug  bool
-	Menu         []menu.Menu
+	PageActions  []menu.Menu
+	BatchActions []menu.Menu
 }
 
 func (fv *FilterView) Debug() *FilterView {
