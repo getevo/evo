@@ -224,8 +224,12 @@ func (fv *FilterView) Prepare(r *evo.Request) {
 		}
 	}
 
-	if order == "" && len(schema.Schema.PrimaryFieldDBNames) > 0 {
-		order = quote(tables[0]) + "." + quote(schema.Schema.PrimaryFieldDBNames[0]) + " DESC"
+	if order == "" {
+		if fv.Sort.SortColumn != "" {
+			order = quote(tables[0]) + "." + quote(fv.Sort.SortColumn) + " ASC"
+		} else if len(schema.Schema.PrimaryFieldDBNames) > 0 {
+			order = quote(tables[0]) + "." + quote(schema.Schema.PrimaryFieldDBNames[0]) + " DESC"
+		}
 	}
 
 	if fv.Unscoped {
