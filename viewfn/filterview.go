@@ -235,7 +235,7 @@ func (fv *FilterView) Prepare(r *evo.Request) {
 	if fv.Unscoped {
 		db = db.Unscoped()
 	}
-
+	_select = append(_select, quote(tables[0])+"."+quote(schema.Schema.PrimaryFieldDBNames[0])+" AS `pk`")
 	dataQuery := fmt.Sprintf("SELECT %s FROM %s %s WHERE %s ORDER BY %s LIMIT %d OFFSET %d ",
 		strings.Join(_select, ","),
 		quote(tables[0]), //main table
