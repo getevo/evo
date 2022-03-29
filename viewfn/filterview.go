@@ -67,7 +67,12 @@ type Pagination struct {
 	PageRange   []int
 }
 
+type Sort struct {
+	PrimaryKey string
+	SortColumn string
+}
 type FilterView struct {
+	Sort         Sort
 	Title        string
 	Description  string
 	Style        string
