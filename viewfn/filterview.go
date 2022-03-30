@@ -228,6 +228,7 @@ func (fv *FilterView) Prepare(r *evo.Request) {
 	if order == "" {
 		if fv.Sort.SortColumn != "" {
 			order = quote(tables[0]) + "." + quote(fv.Sort.SortColumn) + " ASC"
+			_select = append(_select, quote(fv.Sort.SortColumn)+" AS `_order`")
 		} else if len(schema.Schema.PrimaryFieldDBNames) > 0 {
 			order = quote(tables[0]) + "." + quote(schema.Schema.PrimaryFieldDBNames[0]) + " DESC"
 		}
@@ -237,6 +238,7 @@ func (fv *FilterView) Prepare(r *evo.Request) {
 		db = db.Unscoped()
 	}
 	_select = append(_select, quote(tables[0])+"."+quote(schema.Schema.PrimaryFieldDBNames[0])+" AS `pk`")
+
 	dataQuery := fmt.Sprintf("SELECT %s FROM %s %s WHERE %s ORDER BY %s LIMIT %d OFFSET %d ",
 		strings.Join(_select, ","),
 		quote(tables[0]), //main table
