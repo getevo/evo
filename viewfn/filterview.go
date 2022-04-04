@@ -79,6 +79,7 @@ type FilterView struct {
 	Columns      []Column
 	Select       []string
 	Model        interface{}
+	Entity       string
 	Join         []Join
 	Attribs      html.Attributes
 	Unscoped     bool
