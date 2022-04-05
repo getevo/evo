@@ -147,6 +147,23 @@ func (fv *FilterView) Prepare(r *evo.Request) {
 			offset = 0
 		}
 	}
+
+	db = evo.GetDBO()
+	var schema = db.Model(fv.Model).Statement
+	schema.Parse(fv.Model)
+
+	for _, field := range schema.Schema.Fields {
+		if tag := field.Tag.Get("fv"); tag != "" {
+			if strings.Contains(tag, "orderable") {
+				fv.Sort = Sort{
+					SortColumn: field.DBName,
+					PrimaryKey: schema.Schema.PrioritizedPrimaryField.DBName,
+				}
+			}
+			break
+		}
+	}
+
 	s1 := r.Query("order")
 	if s1 != "" {
 		ok := false
@@ -168,21 +185,6 @@ func (fv *FilterView) Prepare(r *evo.Request) {
 			}
 		}
 
-	}
-	db = evo.GetDBO()
-	var schema = db.Model(fv.Model).Statement
-	schema.Parse(fv.Model)
-
-	for _, field := range schema.Schema.Fields {
-		if tag := field.Tag.Get("fv"); tag != "" {
-			if strings.Contains(tag, "orderable") {
-				fv.Sort = Sort{
-					SortColumn: field.DBName,
-					PrimaryKey: schema.Schema.PrioritizedPrimaryField.DBName,
-				}
-			}
-			break
-		}
 	}
 
 	tables = append(tables, schema.Table)
@@ -245,7 +247,6 @@ func (fv *FilterView) Prepare(r *evo.Request) {
 	if order == "" {
 		if fv.Sort.SortColumn != "" {
 			order = quote(tables[0]) + "." + quote(fv.Sort.SortColumn) + " DESC"
-			_select = append(_select, quote(fv.Sort.SortColumn)+" AS `_order`")
 		} else if len(schema.Schema.PrimaryFieldDBNames) > 0 {
 			order = quote(tables[0]) + "." + quote(schema.Schema.PrimaryFieldDBNames[0]) + " DESC"
 		}
@@ -254,8 +255,10 @@ func (fv *FilterView) Prepare(r *evo.Request) {
 	if fv.Unscoped {
 		db = db.Unscoped()
 	}
+	if fv.Sort.SortColumn != "" {
+		_select = append(_select, quote(fv.Sort.SortColumn)+" AS `_order`")
+	}
 	_select = append(_select, quote(tables[0])+"."+quote(schema.Schema.PrimaryFieldDBNames[0])+" AS `pk`")
-	fmt.Println(_select)
 	dataQuery := fmt.Sprintf("SELECT %s FROM %s %s WHERE %s ORDER BY %s LIMIT %d OFFSET %d ",
 		strings.Join(_select, ","),
 		quote(tables[0]), //main table
