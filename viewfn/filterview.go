@@ -162,9 +162,9 @@ func (fv *FilterView) Prepare(r *evo.Request) {
 		if ok {
 			s2 := strings.ToUpper(r.Query("sort"))
 			if s2 == "ASC" || s2 == "DESC" {
-				order = s1 + " " + s2
+				order = "`" + s1 + "` " + s2
 			} else {
-				order = s1 + " ASC"
+				order = "`" + s1 + "` ASC"
 			}
 		}
 
