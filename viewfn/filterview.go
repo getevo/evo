@@ -149,11 +149,14 @@ func (fv *FilterView) Prepare(r *evo.Request) {
 	}
 	s1 := r.Query("order")
 	if s1 != "" {
-
 		ok := false
-		for _, column := range fv.Columns {
-			if s1 == column.Name {
-				ok = true
+		if s1 == fv.Sort.SortColumn {
+			ok = true
+		} else {
+			for _, column := range fv.Columns {
+				if s1 == column.Name {
+					ok = true
+				}
 			}
 		}
 		if ok {
