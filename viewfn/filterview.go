@@ -172,6 +172,19 @@ func (fv *FilterView) Prepare(r *evo.Request) {
 	db = evo.GetDBO()
 	var schema = db.Model(fv.Model).Statement
 	schema.Parse(fv.Model)
+
+	for _, field := range schema.Schema.Fields {
+		if tag := field.Tag.Get("fv"); tag != "" {
+			if strings.Contains(tag, "orderable") {
+				fv.Sort = Sort{
+					SortColumn: field.DBName,
+					PrimaryKey: schema.Schema.PrioritizedPrimaryField.DBName,
+				}
+			}
+			break
+		}
+	}
+
 	tables = append(tables, schema.Table)
 	models[getName(reflect.TypeOf(fv.Model))] = tables[0]
 	for _, join := range fv.Join {
