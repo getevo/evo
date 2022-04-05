@@ -231,7 +231,7 @@ func (fv *FilterView) Prepare(r *evo.Request) {
 
 	if order == "" {
 		if fv.Sort.SortColumn != "" {
-			order = quote(tables[0]) + "." + quote(fv.Sort.SortColumn) + " ASC"
+			order = quote(tables[0]) + "." + quote(fv.Sort.SortColumn) + " DESC"
 			_select = append(_select, quote(fv.Sort.SortColumn)+" AS `_order`")
 		} else if len(schema.Schema.PrimaryFieldDBNames) > 0 {
 			order = quote(tables[0]) + "." + quote(schema.Schema.PrimaryFieldDBNames[0]) + " DESC"
