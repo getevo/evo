@@ -7,6 +7,7 @@ import (
 	"github.com/getevo/evo/lib/T"
 	"github.com/getevo/evo/menu"
 	"reflect"
+	"strconv"
 	"strings"
 )
 
@@ -39,16 +40,14 @@ type Join struct {
 }
 
 type Column struct {
-	Type       ColumnType
-	Title      string
-	Width      string
-	Resize     bool
-	Order      bool
-	Name       string
-	Alias      string
-	Select     string
-	PickerMode bool
-
+	Type         ColumnType
+	Title        string
+	Width        string
+	Resize       bool
+	Order        bool
+	Name         string
+	Alias        string
+	Select       string
 	Options      []html.KeyValue
 	Actions      html.Renderable
 	InputBuilder func(r *evo.Request) html.Renderable
@@ -74,17 +73,21 @@ type Sort struct {
 	SortColumn string
 }
 type FilterView struct {
-	Sort         Sort
-	Title        string
-	Description  string
-	Style        string
-	Columns      []Column
-	Select       []string
-	Model        interface{}
-	Entity       string
-	Join         []Join
-	Attribs      html.Attributes
-	Unscoped     bool
+	Sort        Sort
+	Title       string
+	Description string
+	Style       string
+	Columns     []Column
+	Select      []string
+	Model       interface{}
+	Entity      string
+	Join        []Join
+	Attribs     html.Attributes
+	Unscoped    bool
+	PickerMode  bool
+	PickerTitle func(data map[string]interface{}, r *evo.Request) string
+	PickerID    func(data map[string]interface{}, r *evo.Request) string
+
 	QueryBuilder func(r *evo.Request) []string
 	data         []map[string]interface{}
 	Pagination   Pagination
@@ -123,7 +126,7 @@ func defaultProcessor(column Column, data map[string]interface{}, r *evo.Request
 	return ""
 }
 
-func (fv *FilterView) Prepare(r *evo.Request) {
+func (fv *FilterView) Prepare(r *evo.Request) bool {
 	var db = evo.GetDBO()
 	var query = []string{"true"}
 	var _select = fv.Select
@@ -267,15 +270,25 @@ func (fv *FilterView) Prepare(r *evo.Request) {
 		_select = append(_select, quote(fv.Sort.SortColumn)+" AS `_order`")
 	}
 	_select = append(_select, quote(tables[0])+"."+quote(schema.Schema.PrimaryFieldDBNames[0])+" AS `pk`")
-	dataQuery := fmt.Sprintf("SELECT %s FROM %s %s WHERE %s ORDER BY %s LIMIT %d OFFSET %d ",
-		strings.Join(_select, ","),
-		quote(tables[0]), //main table
-		_join,
-		strings.Join(query, " AND "),
-		order,
-		fv.Pagination.Limit,
-		offset,
-	)
+	var dataQuery = ""
+	if fv.PickerMode && r.Query("pk") != "" {
+		dataQuery = fmt.Sprintf("SELECT %s FROM %s %s WHERE "+quote(tables[0])+"."+quote(schema.Schema.PrimaryFieldDBNames[0])+" = %s",
+			strings.Join(_select, ","),
+			quote(tables[0]), //main table
+			_join,
+			strconv.Quote(r.Query("pk")),
+		)
+	} else {
+		dataQuery = fmt.Sprintf("SELECT %s FROM %s %s WHERE %s ORDER BY %s LIMIT %d OFFSET %d ",
+			strings.Join(_select, ","),
+			quote(tables[0]), //main table
+			_join,
+			strings.Join(query, " AND "),
+			order,
+			fv.Pagination.Limit,
+			offset,
+		)
+	}
 
 	limitQuery := fmt.Sprintf("SELECT COUNT(*) FROM %s %s WHERE %s",
 		quote(tables[0]), //main table
@@ -286,34 +299,34 @@ func (fv *FilterView) Prepare(r *evo.Request) {
 	if fv.EnableDebug {
 		db = db.Debug()
 	}
-	row := db.Raw(limitQuery).Row()
-	row.Scan(&fv.Pagination.Records)
-	fv.Pagination.Pages = (fv.Pagination.Records / fv.Pagination.Limit) + 1
-	fv.Pagination.First = fv.Pagination.CurrentPage * fv.Pagination.Limit
-	fv.Pagination.Last = fv.Pagination.First + fv.Pagination.Limit
-	if fv.Pagination.Last > fv.Pagination.Records {
-		fv.Pagination.Last = fv.Pagination.Records
-	}
-	to := fv.Pagination.CurrentPage + 5
-	if to > fv.Pagination.Pages {
-		to = fv.Pagination.Pages + 1
-	}
-	for i := fv.Pagination.CurrentPage - 2; i < to; i++ {
-		if i > 0 {
-			fv.Pagination.PageRange = append(fv.Pagination.PageRange, i)
+	if fv.PickerMode && r.Query("pk") == "" {
+		row := db.Raw(limitQuery).Row()
+		row.Scan(&fv.Pagination.Records)
+		fv.Pagination.Pages = (fv.Pagination.Records / fv.Pagination.Limit) + 1
+		fv.Pagination.First = fv.Pagination.CurrentPage * fv.Pagination.Limit
+		fv.Pagination.Last = fv.Pagination.First + fv.Pagination.Limit
+		if fv.Pagination.Last > fv.Pagination.Records {
+			fv.Pagination.Last = fv.Pagination.Records
+		}
+		to := fv.Pagination.CurrentPage + 5
+		if to > fv.Pagination.Pages {
+			to = fv.Pagination.Pages + 1
+		}
+		for i := fv.Pagination.CurrentPage - 2; i < to; i++ {
+			if i > 0 {
+				fv.Pagination.PageRange = append(fv.Pagination.PageRange, i)
+			}
 		}
 	}
-	if fv.EnableDebug {
-		db = db.Debug()
-	}
+
 	rows, err := db.Raw(dataQuery).Rows()
 
 	if err != nil {
-		return
+		return false
 	}
 	columns, err := rows.Columns()
 	if err != nil {
-		return
+		return false
 	}
 	length := len(columns)
 	fv.data = make([]map[string]interface{}, 0)
@@ -329,9 +342,35 @@ func (fv *FilterView) Prepare(r *evo.Request) {
 			v := reflect.ValueOf(current[i]).Elem().Interface()
 			value[k] = byteToStr(v)
 		}
+		if fv.PickerID != nil {
+			value["_picker_pk"] = fv.PickerID(value, r)
+		} else {
+			value["_picker_pk"] = value["pk"]
+		}
+
+		if fv.PickerTitle != nil {
+			value["_picker_title"] = fv.PickerTitle(value, r)
+		} else {
+			value["_picker_title"] = ""
+		}
 		fv.data = append(fv.data, value)
 	}
-
+	if fv.PickerMode && r.Query("pk") != "" {
+		var title = ""
+		if fv.PickerTitle != nil {
+			title = fv.PickerTitle(fv.data[0], r)
+		}
+		var pk = fv.data[0]["pk"]
+		if fv.PickerID != nil {
+			pk = fv.PickerID(fv.data[0], r)
+		}
+		r.WriteResponse(map[string]interface{}{
+			"pk":    pk,
+			"title": title,
+		})
+		return true
+	}
+	return false
 }
 
 func makeResultReceiver(length int) []interface{} {
