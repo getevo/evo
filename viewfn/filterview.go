@@ -219,31 +219,35 @@ func (fv *FilterView) Prepare(r *evo.Request) {
 			fv.Columns[k].Processor = defaultProcessor
 		}
 
-		if column.Name != "" && column.Name != "-" {
-			_select = append(_select, column.Model.(string)+"."+quote(column.Name)+" AS "+quote(column.Alias))
+		if column.Select != "" && column.Select != "-" {
+			_select = append(_select, column.Select+" AS "+quote(column.Alias))
+		} else if column.Select != "-" {
+			if column.Name != "" && column.Name != "-" {
+				_select = append(_select, column.Model.(string)+"."+quote(column.Name)+" AS "+quote(column.Alias))
+			}
 		}
 
 		if column.QueryBuilder != nil {
 			query = append(query, column.QueryBuilder(r)...)
 		} else {
-			if column.Select != "-" {
-				var v string
-				if column.Select != "" {
-					v = r.Query(column.Select)
-				} else {
-					v = r.Query(column.Alias)
-				}
-				if v != "" {
-					q := column.SimpleFilter
-					for model, tb := range models {
-						q = strings.Replace(q, model+".", quote(tb)+".", -1)
-					}
-					q = strings.Replace(q, "*", v, -1)
 
-					query = append(query, q)
+			var v string
+			if column.Name != "" {
+				v = r.Query(column.Name)
+			} else {
+				v = r.Query(column.Alias)
+			}
+			if v != "" {
+				q := column.SimpleFilter
+				for model, tb := range models {
+					q = strings.Replace(q, model+".", quote(tb)+".", -1)
 				}
+				q = strings.Replace(q, "*", v, -1)
+
+				query = append(query, q)
 			}
 		}
+
 	}
 
 	if order == "" {
@@ -415,7 +419,7 @@ func (col Column) Filter(r *evo.Request) html.Renderable {
 		el = html.Input("text", col.Name, "")
 		el.SetAttr("onpressenter", "fv.filter(this)")
 	}
-	if col.Select != "" {
+	if col.Name == "" && col.Select != "" {
 		el.SetName(col.Select)
 	}
 
@@ -425,8 +429,8 @@ func (col Column) Filter(r *evo.Request) html.Renderable {
 	if col.Title != "" {
 		el.Placeholder(col.Title)
 	}
-	if r.Query(col.Select) != "" {
-		el.Value = r.Query(col.Select)
+	if r.Query(col.Name) != "" {
+		el.Value = r.Query(col.Name)
 	} else if r.Query(col.Name) != "" {
 		el.Value = r.Query(col.Name)
 	} else {
