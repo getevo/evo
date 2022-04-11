@@ -219,7 +219,7 @@ func (fv *FilterView) Prepare(r *evo.Request) {
 			fv.Columns[k].Processor = defaultProcessor
 		}
 
-		if column.Name != "" {
+		if column.Name != "" && column.Name != "-" {
 			_select = append(_select, column.Model.(string)+"."+quote(column.Name)+" AS "+quote(column.Alias))
 		}
 
