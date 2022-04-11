@@ -47,6 +47,7 @@ type Column struct {
 	Name         string
 	Alias        string
 	Select       string
+	PickerMode   bool
 	Options      []html.KeyValue
 	Actions      html.Renderable
 	InputBuilder func(r *evo.Request) html.Renderable
