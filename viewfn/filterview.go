@@ -226,20 +226,22 @@ func (fv *FilterView) Prepare(r *evo.Request) {
 		if column.QueryBuilder != nil {
 			query = append(query, column.QueryBuilder(r)...)
 		} else {
-			var v string
-			if column.Select != "" {
-				v = r.Query(column.Select)
-			} else {
-				v = r.Query(column.Alias)
-			}
-			if v != "" {
-				q := column.SimpleFilter
-				for model, tb := range models {
-					q = strings.Replace(q, model+".", quote(tb)+".", -1)
+			if column.Select != "-" {
+				var v string
+				if column.Select != "" {
+					v = r.Query(column.Select)
+				} else {
+					v = r.Query(column.Alias)
 				}
-				q = strings.Replace(q, "*", v, -1)
+				if v != "" {
+					q := column.SimpleFilter
+					for model, tb := range models {
+						q = strings.Replace(q, model+".", quote(tb)+".", -1)
+					}
+					q = strings.Replace(q, "*", v, -1)
 
-				query = append(query, q)
+					query = append(query, q)
+				}
 			}
 		}
 	}
