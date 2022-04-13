@@ -299,7 +299,7 @@ func (fv *FilterView) Prepare(r *evo.Request) bool {
 	if fv.EnableDebug {
 		db = db.Debug()
 	}
-	if fv.PickerMode && r.Query("pk") == "" {
+	if fv.PickerMode && r.Query("pk") != "" {
 		row := db.Raw(limitQuery).Row()
 		row.Scan(&fv.Pagination.Records)
 		fv.Pagination.Pages = (fv.Pagination.Records / fv.Pagination.Limit) + 1
