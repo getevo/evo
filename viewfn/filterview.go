@@ -2,13 +2,14 @@ package viewfn
 
 import (
 	"fmt"
+	"reflect"
+	"strconv"
+	"strings"
+
 	"github.com/getevo/evo"
 	"github.com/getevo/evo/html"
 	"github.com/getevo/evo/lib/T"
 	"github.com/getevo/evo/menu"
-	"reflect"
-	"strconv"
-	"strings"
 )
 
 type ColumnType int
@@ -138,6 +139,14 @@ func (fv *FilterView) Prepare(r *evo.Request) bool {
 	var order = ""
 	if r.Query("size") != "" {
 		fv.Pagination.Limit = T.Must(r.Query("size")).Int()
+		if fv.Pagination.Limit < 10 {
+			fv.Pagination.Limit = 10
+		}
+		if fv.Pagination.Limit > 100 {
+			fv.Pagination.Limit = 100
+		}
+	} else if r.Cookies("tableSize") != "" {
+		fv.Pagination.Limit = T.Must(r.Cookies("tableSize")).Int()
 		if fv.Pagination.Limit < 10 {
 			fv.Pagination.Limit = 10
 		}
