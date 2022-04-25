@@ -36,7 +36,7 @@ require (
 	github.com/leodido/go-urn v1.2.1
 	github.com/lithammer/shortuuid v3.0.0+incompatible
 	github.com/magefile/mage v1.11.0
-	github.com/mitchellh/mapstructure v1.4.1
+	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nbutton23/zxcvbn-go v0.0.0-20210217022336-fa2cb2858354
 	github.com/onsi/ginkgo v1.15.0 // indirect
 	github.com/onsi/gomega v1.10.5 // indirect
