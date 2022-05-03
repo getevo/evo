@@ -276,7 +276,7 @@ func (fv *FilterView) Prepare(r *evo.Request) bool {
 		db = db.Unscoped()
 	}
 	if fv.Sort.SortColumn != "" {
-		_select = append(_select, quote(fv.Sort.SortColumn)+" AS `_order`")
+		_select = append(_select, quote(tables[0])+"."+quote(fv.Sort.SortColumn)+" AS `_order`")
 	}
 	_select = append(_select, quote(tables[0])+"."+quote(schema.Schema.PrimaryFieldDBNames[0])+" AS `pk`")
 	var dataQuery = ""
