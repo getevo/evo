@@ -143,6 +143,7 @@ func (r *Request) RenderView(input interface{}, views ...string) *bytes.Buffer {
 	vars.Set("proto", r.Context.Protocol())
 	vars.Set("hostname", r.Context.Hostname())
 	vars.Set("request", r)
+
 	ref := reflect.ValueOf(input)
 	kind := ref.Kind()
 	/*	if kind == reflect.Map {
@@ -162,6 +163,10 @@ func (r *Request) RenderView(input interface{}, views ...string) *bytes.Buffer {
 
 	for k, v := range r.Variables {
 		vars.Set(k, v)
+	}
+
+	for key, val := range viewGlobalParams {
+		vars.Set(key, val)
 	}
 
 	for _, view := range views {

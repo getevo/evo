@@ -46,3 +46,9 @@ func applyViewFunction(prefix string) {
 		}
 	}
 }
+
+var viewGlobalParams = map[string]interface{}{}
+
+func AddGlobalViewParam(key string, value interface{}) {
+	viewGlobalParams[key] = value
+}
