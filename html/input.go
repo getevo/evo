@@ -19,6 +19,20 @@ type KeyValue struct {
 
 type Dictionary []KeyValue
 
+type Collection []Renderable
+
+func (el Collection) Render() string {
+	var html = ""
+	for _, item := range el {
+		html += item.Render()
+	}
+	return html
+}
+
+func (el Collection) String() string {
+	return el.Render()
+}
+
 func (dict *Dictionary) FindKey(key interface{}) string {
 	for _, item := range *dict {
 		if fmt.Sprint(item.Key) == fmt.Sprint(key) {
