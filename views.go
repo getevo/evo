@@ -13,8 +13,12 @@ var viewList = views{}
 var viewFnApplied = map[string]bool{}
 
 //RegisterView register views of given path
-func RegisterView(prefix, path string) *jet.Set {
-	viewList[prefix] = jet.NewHTMLSet(path)
+func RegisterView(prefix, path string, safeWriter ...jet.SafeWriter) *jet.Set {
+	if len(safeWriter) == 0 {
+		viewList[prefix] = jet.NewHTMLSet(path)
+	} else {
+		viewList[prefix] = jet.NewSet(safeWriter[0], path)
+	}
 	if config.Server.Debug {
 		viewList[prefix].SetDevelopmentMode(true)
 	}
