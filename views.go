@@ -3,6 +3,7 @@ package evo
 import (
 	"fmt"
 	"github.com/CloudyKit/jet"
+	"io"
 	"reflect"
 )
 
@@ -15,7 +16,9 @@ var viewFnApplied = map[string]bool{}
 //RegisterView register views of given path
 func RegisterView(prefix, path string, safeWriter ...jet.SafeWriter) *jet.Set {
 	if len(safeWriter) == 0 {
-		viewList[prefix] = jet.NewHTMLSet(path)
+		viewList[prefix] = jet.NewSet(func(writer io.Writer, bytes []byte) {
+			writer.Write(bytes)
+		}, path)
 	} else {
 		viewList[prefix] = jet.NewSet(safeWriter[0], path)
 	}
