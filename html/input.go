@@ -13,8 +13,8 @@ import (
 )
 
 type KeyValue struct {
-	Key   interface{}
-	Value interface{}
+	Key   interface{} `json:"key"`
+	Value interface{} `json:"value"`
 }
 
 type Dictionary []KeyValue
