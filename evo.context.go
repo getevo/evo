@@ -141,6 +141,7 @@ func (r *Request) RenderView(mixed ...interface{}) *bytes.Buffer {
 	var input interface{}
 	vars := jet.VarMap{}
 	var views []string
+
 	for idx, item := range mixed {
 		ref := reflect.ValueOf(item)
 		switch ref.Kind() {
@@ -150,17 +151,17 @@ func (r *Request) RenderView(mixed ...interface{}) *bytes.Buffer {
 			} else {
 				views = append(views, fmt.Sprint(item))
 			}
-		case reflect.Array:
+		case reflect.Slice, reflect.Array:
 			for i := 0; i < ref.Len(); i += 1 {
-				switch ref.Index(i).Kind() {
+				var in = reflect.ValueOf(ref.Index(i).Interface())
+				switch in.Kind() {
 				case reflect.String:
-					views = append(views, fmt.Sprint(item))
+					views = append(views, fmt.Sprint(in.Interface()))
 				case reflect.Map:
-					for _, k := range ref.Index(i).MapKeys() {
-						vars.Set(fmt.Sprint(k.Interface()), ref.Index(i).MapIndex(k).Interface())
+					for _, k := range in.MapKeys() {
+						vars.Set(fmt.Sprint(k.Interface()), in.MapIndex(k).Interface())
 					}
 				default:
-					input = ref.Index(i).Interface()
 				}
 			}
 		case reflect.Map:
@@ -172,7 +173,6 @@ func (r *Request) RenderView(mixed ...interface{}) *bytes.Buffer {
 		}
 	}
 	var buff bytes.Buffer
-
 	vars.Set("base", r.Context.Protocol()+"://"+r.Context.Hostname())
 	vars.Set("proto", r.Context.Protocol())
 	vars.Set("hostname", r.Context.Hostname())
