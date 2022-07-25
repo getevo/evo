@@ -129,16 +129,37 @@ func (r *Request) Persist() {
 	}
 }
 
-func (r *Request) View(data interface{}, views ...string) {
-	buff := r.RenderView(data, views...)
+func (r *Request) View(mixed ...interface{}) {
+	buff := r.RenderView(mixed...)
 	buff.Bytes()
 	r.SendHTML(buff.Bytes())
 	buff = nil
 }
 
-func (r *Request) RenderView(input interface{}, views ...string) *bytes.Buffer {
-	var buff bytes.Buffer
+func (r *Request) RenderView(mixed ...interface{}) *bytes.Buffer {
+	//input interface{}, views ...string
+	var input interface{}
 	vars := jet.VarMap{}
+	var views []string
+	for idx, item := range mixed {
+		ref := reflect.ValueOf(item)
+		switch ref.Kind() {
+		case reflect.String:
+			if idx == 0 {
+				input = fmt.Sprint(item)
+			} else {
+				views = append(views, fmt.Sprint(item))
+			}
+		case reflect.Map:
+			for _, k := range ref.MapKeys() {
+				vars.Set(fmt.Sprint(k.Interface()), ref.MapIndex(k).Interface())
+			}
+		default:
+			input = ref.Interface()
+		}
+	}
+	var buff bytes.Buffer
+
 	vars.Set("base", r.Context.Protocol()+"://"+r.Context.Hostname())
 	vars.Set("proto", r.Context.Protocol())
 	vars.Set("hostname", r.Context.Hostname())
