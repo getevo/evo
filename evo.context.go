@@ -150,6 +150,19 @@ func (r *Request) RenderView(mixed ...interface{}) *bytes.Buffer {
 			} else {
 				views = append(views, fmt.Sprint(item))
 			}
+		case reflect.Array:
+			for i := 0; i < ref.Len(); i += 1 {
+				switch ref.Index(i).Kind() {
+				case reflect.String:
+					views = append(views, fmt.Sprint(item))
+				case reflect.Map:
+					for _, k := range ref.Index(i).MapKeys() {
+						vars.Set(fmt.Sprint(k.Interface()), ref.Index(i).MapIndex(k).Interface())
+					}
+				default:
+					input = ref.Index(i).Interface()
+				}
+			}
 		case reflect.Map:
 			for _, k := range ref.MapKeys() {
 				vars.Set(fmt.Sprint(k.Interface()), ref.MapIndex(k).Interface())
