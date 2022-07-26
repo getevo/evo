@@ -145,6 +145,9 @@ func (r *Request) RenderView(mixed ...interface{}) *bytes.Buffer {
 	var views []string
 
 	for idx, item := range mixed {
+		if item == nil {
+			continue
+		}
 		ref := reflect.ValueOf(item)
 		switch ref.Kind() {
 		case reflect.String:
