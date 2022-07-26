@@ -136,7 +136,7 @@ func (r *Request) View(mixed ...interface{}) {
 	buff = nil
 }
 
-type View func(request *Request) []interface{}
+type View func(*Request, jet.VarMap) []interface{}
 
 func (r *Request) RenderView(mixed ...interface{}) *bytes.Buffer {
 	//input interface{}, views ...string
@@ -158,10 +158,10 @@ func (r *Request) RenderView(mixed ...interface{}) *bytes.Buffer {
 			}
 		case reflect.Func:
 			var resp []interface{}
-			if fn, ok := item.(func(request *Request) []interface{}); ok {
-				resp = fn(r)
+			if fn, ok := item.(func(*Request, jet.VarMap) []interface{}); ok {
+				resp = fn(r, vars)
 			} else if fn, ok := item.(View); ok {
-				resp = fn(r)
+				resp = fn(r, vars)
 			}
 			for _, p := range resp {
 				var in = reflect.ValueOf(p)
