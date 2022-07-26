@@ -136,6 +136,8 @@ func (r *Request) View(mixed ...interface{}) {
 	buff = nil
 }
 
+type View func(request *Request) []interface{}
+
 func (r *Request) RenderView(mixed ...interface{}) *bytes.Buffer {
 	//input interface{}, views ...string
 	var input interface{}
@@ -150,6 +152,25 @@ func (r *Request) RenderView(mixed ...interface{}) *bytes.Buffer {
 				input = fmt.Sprint(item)
 			} else {
 				views = append(views, fmt.Sprint(item))
+			}
+		case reflect.Func:
+			var resp []interface{}
+			if fn, ok := item.(func(request *Request) []interface{}); ok {
+				resp = fn(r)
+			} else if fn, ok := item.(View); ok {
+				resp = fn(r)
+			}
+			for _, p := range resp {
+				var in = reflect.ValueOf(p)
+				switch in.Kind() {
+				case reflect.String:
+					views = append(views, fmt.Sprint(in.Interface()))
+				case reflect.Map:
+					for _, k := range in.MapKeys() {
+						vars.Set(fmt.Sprint(k.Interface()), in.MapIndex(k).Interface())
+					}
+				default:
+				}
 			}
 		case reflect.Slice, reflect.Array:
 			for i := 0; i < ref.Len(); i += 1 {
