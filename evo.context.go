@@ -90,6 +90,10 @@ func Upgrade(ctx *fiber.Ctx) *Request {
 	return &r
 }
 
+func (r *Request) SetDebug(debug bool) {
+	r.Debug = debug
+}
+
 func (r *Request) Flash(params ...string) {
 	if len(params) == 0 {
 		return
