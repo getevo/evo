@@ -4,15 +4,16 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/CloudyKit/jet"
-	"github.com/getevo/evo/errors"
-	"github.com/getevo/evo/lib/jwt"
-	"github.com/getevo/evo/lib/log"
-	"github.com/gofiber/fiber/v2"
 	"net/url"
 	"reflect"
 	"strings"
 	"time"
+
+	"github.com/CloudyKit/jet"
+	e "github.com/getevo/evo/errors"
+	"github.com/getevo/evo/lib/jwt"
+	"github.com/getevo/evo/lib/log"
+	"github.com/gofiber/fiber/v2"
 )
 
 type Request struct {
@@ -24,6 +25,7 @@ type Request struct {
 	Response      Response
 	CacheKey      string
 	CacheDuration time.Duration
+	Debug         bool
 	flashes       []flash
 }
 type flash struct {
