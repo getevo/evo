@@ -25,7 +25,7 @@ type Request struct {
 	Response      Response
 	CacheKey      string
 	CacheDuration time.Duration
-	debug         interface{}
+	debug         *bool
 	flashes       []flash
 }
 type flash struct {
@@ -77,7 +77,10 @@ func (u *URL) String() string {
 }
 
 func Upgrade(ctx *fiber.Ctx) *Request {
-	r := Request{}
+	var _false = false
+	r := Request{
+		debug: &_false,
+	}
 	r.Variables = fiber.Map{}
 	r.Context = ctx
 	r.Response = Response{}
@@ -91,15 +94,11 @@ func Upgrade(ctx *fiber.Ctx) *Request {
 }
 
 func (r *Request) Debug() bool {
-	return r.debug != nil
+	return *r.debug
 }
 
 func (r *Request) SetDebug(debug bool) {
-	if debug {
-		r.debug = struct{}{}
-		return
-	}
-	r.debug = nil
+	r.debug = &debug
 }
 
 func (r *Request) Flash(params ...string) {
