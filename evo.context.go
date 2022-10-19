@@ -27,7 +27,7 @@ type Request struct {
 	CacheDuration time.Duration
 	Debug         bool
 	flashes       []flash
-	BeforeWrite   func(request *Request)
+	BeforeWrite   func(request *Request, body []byte) []byte
 }
 type flash struct {
 	Type    string `json:"type"`
