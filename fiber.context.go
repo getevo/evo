@@ -476,6 +476,9 @@ func (r *Request) Write(body interface{}) {
 			code:    r.Context.Context().Response.StatusCode(),
 		}, r.CacheDuration)
 	}
+	if r.BeforeWrite != nil {
+		r.BeforeWrite(r)
+	}
 	r.Context.Context().Response.SetBody(data)
 }
 
