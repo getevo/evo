@@ -33,6 +33,7 @@ require (
 	github.com/gofiber/websocket v0.5.1
 	github.com/jackskj/carta v0.2.0
 	github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88 // indirect
+	github.com/klauspost/compress v1.15.11
 	github.com/leodido/go-urn v1.2.1
 	github.com/lithammer/shortuuid v3.0.0+incompatible
 	github.com/magefile/mage v1.11.0

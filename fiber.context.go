@@ -8,6 +8,7 @@ import (
 	"github.com/getevo/evo/lib/log"
 	"github.com/getevo/evo/lib/text"
 	"github.com/gofiber/utils"
+	"github.com/klauspost/compress/snappy"
 	"github.com/valyala/fasthttp"
 	"io"
 	"mime/multipart"
@@ -478,6 +479,9 @@ func (r *Request) Write(body interface{}) {
 	}
 	if r.BeforeWrite != nil {
 		data = r.BeforeWrite(r, data)
+	}
+	if r.Header("x-snappy") == "1" {
+		data = snappy.Encode(nil, data)
 	}
 	r.Context.Context().Response.SetBody(data)
 }

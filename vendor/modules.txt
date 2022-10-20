@@ -139,9 +139,12 @@ github.com/jinzhu/inflection
 github.com/jinzhu/now
 # github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88
 ## explicit
-# github.com/klauspost/compress v1.10.7
+# github.com/klauspost/compress v1.15.11
+## explicit
 github.com/klauspost/compress/flate
 github.com/klauspost/compress/gzip
+github.com/klauspost/compress/s2
+github.com/klauspost/compress/snappy
 github.com/klauspost/compress/zlib
 # github.com/kr/fs v0.1.0
 github.com/kr/fs
