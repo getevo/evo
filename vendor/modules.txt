@@ -5,11 +5,7 @@ github.com/AlexanderGrom/go-event
 ## explicit
 github.com/BurntSushi/toml
 # github.com/CloudyKit/fastprinter v0.0.0-20200109182630-33d98a066a53
-## explicit
 github.com/CloudyKit/fastprinter
-# github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d
-## explicit
-github.com/StackExchange/wmi
 # github.com/ajg/form v1.5.1
 ## explicit
 github.com/ajg/form
@@ -66,8 +62,7 @@ github.com/gbrlsnchs/jwt/v3/internal
 # github.com/getevo/go-arg v1.4.0
 ## explicit
 github.com/getevo/go-arg
-# github.com/go-ole/go-ole v1.2.5
-## explicit
+# github.com/go-ole/go-ole v1.2.6
 github.com/go-ole/go-ole
 github.com/go-ole/go-ole/oleutil
 # github.com/go-playground/locales v0.13.0
@@ -208,7 +203,7 @@ github.com/russross/blackfriday
 github.com/russross/blackfriday/v2
 # github.com/savsgio/gotils v0.0.0-20200616100644-13ff1fd2c28c
 github.com/savsgio/gotils
-# github.com/shirou/gopsutil v3.21.1+incompatible
+# github.com/shirou/gopsutil v3.21.11+incompatible
 ## explicit
 github.com/shirou/gopsutil/cpu
 github.com/shirou/gopsutil/internal/common
@@ -222,6 +217,11 @@ github.com/tidwall/gjson
 github.com/tidwall/match
 # github.com/tidwall/pretty v1.1.0
 github.com/tidwall/pretty
+# github.com/tklauser/go-sysconf v0.3.10
+## explicit
+github.com/tklauser/go-sysconf
+# github.com/tklauser/numcpus v0.4.0
+github.com/tklauser/numcpus
 # github.com/urfave/cli/v2 v2.3.0
 ## explicit
 github.com/urfave/cli/v2
@@ -242,6 +242,9 @@ github.com/wzshiming/ctc
 github.com/wzshiming/winseq
 # github.com/yudai/pp v2.0.1+incompatible
 ## explicit
+# github.com/yusufpapurcu/wmi v1.2.2
+## explicit
+github.com/yusufpapurcu/wmi
 # golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83
 ## explicit
 golang.org/x/crypto/argon2
@@ -271,7 +274,7 @@ golang.org/x/lint/golint
 # golang.org/x/mod v0.3.0
 golang.org/x/mod/module
 golang.org/x/mod/semver
-# golang.org/x/sys v0.0.0-20210119212857-b64e53b001e4
+# golang.org/x/sys v0.0.0-20220128215802-99c3d69c2c27
 golang.org/x/sys/cpu
 golang.org/x/sys/execabs
 golang.org/x/sys/internal/unsafeheader

@@ -5,8 +5,6 @@ go 1.15
 require (
 	github.com/AlexanderGrom/go-event v0.0.0-20180406111247-a2f1486e096e
 	github.com/BurntSushi/toml v0.3.1
-	github.com/CloudyKit/fastprinter v0.0.0-20200109182630-33d98a066a53 // indirect
-	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/ajg/form v1.5.1
 	github.com/alecthomas/repr v0.0.0-20210301060118-828286944d6a
 	github.com/araddon/dateparse v0.0.0-20210207001429-0eec95c9db7e
@@ -21,7 +19,6 @@ require (
 	github.com/fatih/structtag v1.2.0
 	github.com/gbrlsnchs/jwt/v3 v3.0.0
 	github.com/getevo/go-arg v1.4.0
-	github.com/go-ole/go-ole v1.2.5 // indirect
 	github.com/go-playground/universal-translator v0.17.0 // indirect
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/go-sql-driver/mysql v1.5.0
@@ -45,12 +42,14 @@ require (
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/pkg/sftp v1.12.0
-	github.com/shirou/gopsutil v3.21.1+incompatible
+	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/tidwall/gjson v1.7.4
+	github.com/tklauser/go-sysconf v0.3.10 // indirect
 	github.com/urfave/cli/v2 v2.3.0
 	github.com/valyala/fasthttp v1.21.0
 	github.com/wzshiming/ctc v1.2.3
 	github.com/yudai/pp v2.0.1+incompatible // indirect
+	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83
 	golang.org/x/lint v0.0.0-20201208152925-83fdc39ff7b5
 	golang.org/x/text v0.3.5
