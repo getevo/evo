@@ -1,10 +1,10 @@
 package viewfn
 
 import (
-	"github.com/CloudyKit/jet"
 	"github.com/disintegration/imaging"
 	"github.com/getevo/evo/lib/gpath"
 	"github.com/getevo/evo/lib/log"
+	jet "github.com/iesreza/jet/v8"
 	"os"
 	"path/filepath"
 	"reflect"

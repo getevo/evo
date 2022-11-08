@@ -2,7 +2,6 @@ package adminlte
 
 import (
 	"fmt"
-	"github.com/CloudyKit/jet"
 	"github.com/getevo/evo"
 	"github.com/getevo/evo/apps/settings"
 	"github.com/getevo/evo/menu"

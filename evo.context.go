@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CloudyKit/jet"
 	e "github.com/getevo/evo/errors"
 	"github.com/getevo/evo/lib/jwt"
 	"github.com/getevo/evo/lib/log"

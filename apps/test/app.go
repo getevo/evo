@@ -2,10 +2,10 @@ package test
 
 import (
 	"fmt"
-	"github.com/CloudyKit/jet"
 	"github.com/getevo/evo"
 	"github.com/getevo/evo/lib/gpath"
 	"github.com/getevo/evo/menu"
+	"github.com/iesreza/jet/v8"
 	"gorm.io/gorm"
 )
 

@@ -6,7 +6,6 @@ require (
 	github.com/AlexanderGrom/go-event v0.0.0-20180406111247-a2f1486e096e
 	github.com/BurntSushi/toml v0.3.1
 	github.com/CloudyKit/fastprinter v0.0.0-20200109182630-33d98a066a53 // indirect
-	github.com/CloudyKit/jet v2.1.2+incompatible
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/ajg/form v1.5.1
 	github.com/alecthomas/repr v0.0.0-20210301060118-828286944d6a
@@ -31,6 +30,7 @@ require (
 	github.com/gofiber/fiber/v2 v2.5.0
 	github.com/gofiber/utils v0.1.2
 	github.com/gofiber/websocket v0.5.1
+	github.com/iesreza/jet/v8 v8.0.0-20221108141515-5f0d8f1e016f
 	github.com/jackskj/carta v0.2.0
 	github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88 // indirect
 	github.com/klauspost/compress v1.15.11

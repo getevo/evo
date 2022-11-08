@@ -7,9 +7,6 @@ github.com/BurntSushi/toml
 # github.com/CloudyKit/fastprinter v0.0.0-20200109182630-33d98a066a53
 ## explicit
 github.com/CloudyKit/fastprinter
-# github.com/CloudyKit/jet v2.1.2+incompatible
-## explicit
-github.com/CloudyKit/jet
 # github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d
 ## explicit
 github.com/StackExchange/wmi
@@ -129,6 +126,13 @@ github.com/golang/protobuf/ptypes/timestamp
 github.com/google/uuid
 # github.com/gorilla/schema v1.1.0
 github.com/gorilla/schema
+# github.com/gosimple/slug v1.13.1
+github.com/gosimple/slug
+# github.com/gosimple/unidecode v1.0.1
+github.com/gosimple/unidecode
+# github.com/iesreza/jet/v8 v8.0.0-20221108141515-5f0d8f1e016f
+## explicit
+github.com/iesreza/jet/v8
 # github.com/jackskj/carta v0.2.0
 ## explicit
 github.com/jackskj/carta

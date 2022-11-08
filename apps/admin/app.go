@@ -2,12 +2,12 @@ package admin
 
 import (
 	"fmt"
-	"github.com/CloudyKit/jet"
 	"github.com/getevo/evo"
 	"github.com/getevo/evo/apps/auth"
 	"github.com/getevo/evo/apps/settings"
 	"github.com/getevo/evo/lib/fontawesome"
 	"github.com/getevo/evo/menu"
+	"github.com/iesreza/jet/v8"
 )
 
 // Register register the admin in io apps

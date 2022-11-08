@@ -2,11 +2,11 @@ package settings
 
 import (
 	"fmt"
-	"github.com/CloudyKit/jet"
 	"github.com/getevo/evo"
 	"github.com/getevo/evo/lib/concurrent"
 	"github.com/getevo/evo/lib/fontawesome"
 	"github.com/getevo/evo/menu"
+	"github.com/iesreza/jet/v8"
 	"gorm.io/gorm"
 	"reflect"
 )

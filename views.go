@@ -2,7 +2,7 @@ package evo
 
 import (
 	"fmt"
-	"github.com/CloudyKit/jet"
+	"github.com/iesreza/jet/v8"
 	"io"
 	"reflect"
 )
@@ -16,15 +16,14 @@ var viewFnApplied = map[string]bool{}
 //RegisterView register views of given path
 func RegisterView(prefix, path string, safeWriter ...jet.SafeWriter) *jet.Set {
 	if len(safeWriter) == 0 {
-		viewList[prefix] = jet.NewSet(func(writer io.Writer, bytes []byte) {
+		viewList[prefix] = jet.NewSet(jet.NewOSFileSystemLoader(path), jet.WithSafeWriter(func(writer io.Writer, bytes []byte) {
 			writer.Write(bytes)
-		}, path)
+		}))
+
 	} else {
-		viewList[prefix] = jet.NewSet(safeWriter[0], path)
+		viewList[prefix] = jet.NewSet(jet.NewOSFileSystemLoader(path), jet.WithSafeWriter(safeWriter[0]))
 	}
-	if config.Server.Debug {
-		viewList[prefix].SetDevelopmentMode(true)
-	}
+	viewList[prefix].Development(config.Server.Debug)
 	applyViewFunction(prefix)
 	return viewList[prefix]
 }
