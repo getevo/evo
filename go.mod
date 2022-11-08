@@ -1,4 +1,4 @@
-module github.com/getevo/evo/v2
+module github.com/getevo/evo
 
 go 1.15
 
