@@ -5,7 +5,6 @@ go 1.15
 require (
 	github.com/AlexanderGrom/go-event v0.0.0-20180406111247-a2f1486e096e
 	github.com/BurntSushi/toml v0.3.1
-	github.com/CloudyKit/fastprinter v0.0.0-20200109182630-33d98a066a53 // indirect
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/ajg/form v1.5.1
 	github.com/alecthomas/repr v0.0.0-20210301060118-828286944d6a
@@ -24,7 +23,7 @@ require (
 	github.com/go-ole/go-ole v1.2.5 // indirect
 	github.com/go-playground/universal-translator v0.17.0 // indirect
 	github.com/go-playground/validator v9.31.0+incompatible
-	github.com/go-sql-driver/mysql v1.5.0
+	github.com/go-sql-driver/mysql v1.6.0
 	github.com/gocarina/gocsv v0.0.0-20201208093247-67c824bc04d4
 	github.com/gofiber/fiber v1.14.6
 	github.com/gofiber/fiber/v2 v2.5.0
@@ -62,8 +61,8 @@ require (
 	gopkg.in/hlandau/passlib.v1 v1.0.10
 	gopkg.in/square/go-jose.v2 v2.5.1
 	gopkg.in/yaml.v2 v2.4.0
-	gorm.io/driver/mysql v1.0.4
+	gorm.io/driver/mysql v1.4.4
 	gorm.io/driver/sqlite v1.1.4
 	gorm.io/driver/sqlserver v1.0.6
-	gorm.io/gorm v1.20.12
+	gorm.io/gorm v1.23.8
 )
