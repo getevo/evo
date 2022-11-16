@@ -25,4 +25,4 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 #
 EXPOSE 8080
 #
-CMD ["/build/evo", "-c","/build/config.yml"]
+CMD ["./evo"]
