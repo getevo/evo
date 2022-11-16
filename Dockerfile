@@ -17,7 +17,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 #ARG VERSION
 RUN --mount=type=cache,target=/go/pkg/mod \
    --mount=type=cache,target=/root/.cache/go-build \
-  CGO_ENABLED=0 go build  -installsuffix cgo -ldflags "-X main.version=1" -o ./evo ./cmd/bot/main.go 
+  CGO_ENABLED=0 go build  -installsuffix cgo -ldflags "-X main.version=1" ./cmd/bot/main.go 
 #
 #
 FROM phusion/baseimage:focal-1.2.0
@@ -25,5 +25,5 @@ FROM phusion/baseimage:focal-1.2.0
 COPY --from=builder /app /app
 WORKDIR /app
 #
-CMD [ "./evo" ]
+CMD [ "./main" ]
 #
