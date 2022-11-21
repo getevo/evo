@@ -17,7 +17,7 @@ jobs:
       # Repo metadata
       - name: Repo metadata
         id: repo
-        uses: actions/github-script@v3
+        uses: actions/github-script@v6
         with:
           script: |
             const repo = await github.repos.get(context.repo)
