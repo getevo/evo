@@ -5,7 +5,6 @@ go 1.15
 require (
 	github.com/AlexanderGrom/go-event v0.0.0-20180406111247-a2f1486e096e
 	github.com/BurntSushi/toml v0.3.1
-	github.com/CloudyKit/fastprinter v0.0.0-20200109182630-33d98a066a53 // indirect
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/ajg/form v1.5.1
 	github.com/alecthomas/repr v0.0.0-20210301060118-828286944d6a
@@ -46,7 +45,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/pkg/sftp v1.12.0
 	github.com/shirou/gopsutil v3.21.1+incompatible
-	github.com/tidwall/gjson v1.7.4
+	github.com/tidwall/gjson v1.14.4
 	github.com/urfave/cli/v2 v2.3.0
 	github.com/valyala/fasthttp v1.21.0
 	github.com/wzshiming/ctc v1.2.3
