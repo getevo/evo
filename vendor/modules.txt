@@ -5,7 +5,6 @@ github.com/AlexanderGrom/go-event
 ## explicit
 github.com/BurntSushi/toml
 # github.com/CloudyKit/fastprinter v0.0.0-20200109182630-33d98a066a53
-## explicit
 github.com/CloudyKit/fastprinter
 # github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d
 ## explicit
@@ -18,7 +17,7 @@ github.com/ajg/form
 github.com/alecthomas/repr
 # github.com/alexflint/go-scalar v1.0.0
 github.com/alexflint/go-scalar
-# github.com/andybalholm/brotli v1.0.0
+# github.com/andybalholm/brotli v1.0.4
 github.com/andybalholm/brotli
 # github.com/araddon/dateparse v0.0.0-20210207001429-0eec95c9db7e
 ## explicit
@@ -227,13 +226,13 @@ github.com/tidwall/pretty
 github.com/urfave/cli/v2
 # github.com/valyala/bytebufferpool v1.0.0
 github.com/valyala/bytebufferpool
-# github.com/valyala/fasthttp v1.21.0
+# github.com/valyala/fasthttp v1.42.0
 ## explicit
 github.com/valyala/fasthttp
 github.com/valyala/fasthttp/fasthttputil
 github.com/valyala/fasthttp/reuseport
 github.com/valyala/fasthttp/stackless
-# github.com/valyala/tcplisten v0.0.0-20161114210144-ceec8f93295a
+# github.com/valyala/tcplisten v1.0.0
 github.com/valyala/tcplisten
 # github.com/wzshiming/ctc v1.2.3
 ## explicit
@@ -242,7 +241,7 @@ github.com/wzshiming/ctc
 github.com/wzshiming/winseq
 # github.com/yudai/pp v2.0.1+incompatible
 ## explicit
-# golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83
+# golang.org/x/crypto v0.0.0-20220214200702-86341886e292
 ## explicit
 golang.org/x/crypto/argon2
 golang.org/x/crypto/bcrypt
@@ -250,12 +249,12 @@ golang.org/x/crypto/blake2b
 golang.org/x/crypto/blowfish
 golang.org/x/crypto/chacha20
 golang.org/x/crypto/curve25519
+golang.org/x/crypto/curve25519/internal/field
 golang.org/x/crypto/ed25519
-golang.org/x/crypto/ed25519/internal/edwards25519
+golang.org/x/crypto/internal/poly1305
 golang.org/x/crypto/internal/subtle
 golang.org/x/crypto/md4
 golang.org/x/crypto/pbkdf2
-golang.org/x/crypto/poly1305
 golang.org/x/crypto/scrypt
 golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
@@ -271,13 +270,13 @@ golang.org/x/lint/golint
 # golang.org/x/mod v0.3.0
 golang.org/x/mod/module
 golang.org/x/mod/semver
-# golang.org/x/sys v0.0.0-20210119212857-b64e53b001e4
+# golang.org/x/sys v0.0.0-20220728004956-3c1f35247d10
 golang.org/x/sys/cpu
 golang.org/x/sys/execabs
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 golang.org/x/sys/windows
-# golang.org/x/text v0.3.5
+# golang.org/x/text v0.3.7
 ## explicit
 golang.org/x/text/feature/plural
 golang.org/x/text/internal

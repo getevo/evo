@@ -11,7 +11,6 @@ import (
 	"math"
 	"net"
 	"reflect"
-	"strings"
 	"sync"
 	"time"
 	"unsafe"
@@ -19,29 +18,24 @@ import (
 
 // AppendHTMLEscape appends html-escaped s to dst and returns the extended dst.
 func AppendHTMLEscape(dst []byte, s string) []byte {
-	if strings.IndexByte(s, '<') < 0 &&
-		strings.IndexByte(s, '>') < 0 &&
-		strings.IndexByte(s, '"') < 0 &&
-		strings.IndexByte(s, '\'') < 0 {
+	var (
+		prev int
+		sub  string
+	)
 
-		// fast path - nothing to escape
-		return append(dst, s...)
-	}
-
-	// slow path
-	var prev int
-	var sub string
 	for i, n := 0, len(s); i < n; i++ {
 		sub = ""
 		switch s[i] {
+		case '&':
+			sub = "&amp;"
 		case '<':
 			sub = "&lt;"
 		case '>':
 			sub = "&gt;"
 		case '"':
-			sub = "&quot;"
+			sub = "&#34;" // "&#34;" is shorter than "&quot;".
 		case '\'':
-			sub = "&#39;"
+			sub = "&#39;" // "&#39;" is shorter than "&apos;" and apos was not in HTML until HTML5.
 		}
 		if len(sub) > 0 {
 			dst = append(dst, s[prev:i]...)
@@ -98,7 +92,7 @@ func ParseIPv4(dst net.IP, ipStr []byte) (net.IP, error) {
 		}
 		v, err := ParseUint(b[:n])
 		if err != nil {
-			return dst, fmt.Errorf("cannot parse ipStr %q: %s", ipStr, err)
+			return dst, fmt.Errorf("cannot parse ipStr %q: %w", ipStr, err)
 		}
 		if v > 255 {
 			return dst, fmt.Errorf("cannot parse ipStr %q: ip part cannot exceed 255: parsed %d", ipStr, v)
@@ -108,7 +102,7 @@ func ParseIPv4(dst net.IP, ipStr []byte) (net.IP, error) {
 	}
 	v, err := ParseUint(b)
 	if err != nil {
-		return dst, fmt.Errorf("cannot parse ipStr %q: %s", ipStr, err)
+		return dst, fmt.Errorf("cannot parse ipStr %q: %w", ipStr, err)
 	}
 	if v > 255 {
 		return dst, fmt.Errorf("cannot parse ipStr %q: ip part cannot exceed 255: parsed %d", ipStr, v)
@@ -240,7 +234,7 @@ func ParseUfloat(buf []byte) (float64, error) {
 				if err != nil {
 					return -1, errInvalidFloatExponent
 				}
-				return float64(v) * offset * math.Pow10(minus*int(vv)), nil
+				return float64(v) * offset * math.Pow10(minus*vv), nil
 			}
 			return -1, errUnexpectedFloatChar
 		}
@@ -258,9 +252,7 @@ var (
 )
 
 func readHexInt(r *bufio.Reader) (int, error) {
-	n := 0
-	i := 0
-	var k int
+	var k, i, n int
 	for {
 		c, err := r.ReadByte()
 		if err != nil {
@@ -345,8 +337,8 @@ func s2b(s string) (b []byte) {
 	/* #nosec G103 */
 	sh := (*reflect.StringHeader)(unsafe.Pointer(&s))
 	bh.Data = sh.Data
-	bh.Len = sh.Len
 	bh.Cap = sh.Len
+	bh.Len = sh.Len
 	return b
 }
 
@@ -380,7 +372,7 @@ func appendQuotedPath(dst, src []byte) []byte {
 
 	for _, c := range src {
 		if quotedPathShouldEscapeTable[int(c)] != 0 {
-			dst = append(dst, '%', upperhex[c>>4], upperhex[c&15])
+			dst = append(dst, '%', upperhex[c>>4], upperhex[c&0xf])
 		} else {
 			dst = append(dst, c)
 		}
