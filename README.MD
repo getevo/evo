@@ -67,7 +67,7 @@ The fantastic ORM library for Golang
 _____
 
 
-##### [Jet Template Engine for Go](https://github.com/iesreza/jet/v7 "Jet Template Engine for Go")  
+##### [Jet Template Engine for Go](https://github.com/iesreza/jet "Jet Template Engine for Go")  
 Jet is a template engine developed to be easy to use, powerful, dynamic, yet secure and very fast.
 _____
 
