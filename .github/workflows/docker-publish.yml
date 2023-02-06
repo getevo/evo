@@ -65,7 +65,7 @@ jobs:
 
       # Build image and push to registry
       - name: Build and push
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v4
         with:
           context: .
           file: ./Dockerfile
