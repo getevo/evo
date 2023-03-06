@@ -5,7 +5,6 @@ go 1.15
 require (
 	github.com/AlexanderGrom/go-event v0.0.0-20180406111247-a2f1486e096e
 	github.com/BurntSushi/toml v0.3.1
-	github.com/CloudyKit/fastprinter v0.0.0-20200109182630-33d98a066a53 // indirect
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/ajg/form v1.5.1
 	github.com/alecthomas/repr v0.0.0-20210301060118-828286944d6a
@@ -51,10 +50,10 @@ require (
 	github.com/valyala/fasthttp v1.21.0
 	github.com/wzshiming/ctc v1.2.3
 	github.com/yudai/pp v2.0.1+incompatible // indirect
-	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83
+	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
 	golang.org/x/lint v0.0.0-20201208152925-83fdc39ff7b5
-	golang.org/x/text v0.3.5
-	golang.org/x/tools v0.1.0
+	golang.org/x/text v0.8.0
+	golang.org/x/tools v0.6.0
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/hlandau/easymetric.v1 v1.0.0 // indirect
