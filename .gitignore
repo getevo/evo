@@ -1,8 +1,7 @@
-# Created by .ignore support plugin (hsz.mobi)
-
 # IntelliJ project files
 .idea
 *.iml
+*.yml
 out
 gen
 ### Go template
@@ -20,7 +19,7 @@ gen
 *.out
 
 # Dependency directories (remove the comment below to include it)
-# vendor/
+vendor/
 
 # SqlLite Databases
 *.sqlite*
@@ -28,3 +27,5 @@ gen
 
 # vscode
 .vscode
+
+go.work

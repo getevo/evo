@@ -1,7 +1,7 @@
 package gpath
 
 import (
-	"github.com/getevo/evo/lib/text"
+	"github.com/getevo/evo/v2/lib/text"
 	copy2 "github.com/otiai10/copy"
 	"io"
 	"io/ioutil"
