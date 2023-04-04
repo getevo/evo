@@ -2,6 +2,7 @@ package evo
 
 import (
 	"fmt"
+	"github.com/getevo/evo/v2/lib/settings"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/sqlite"
 	"gorm.io/driver/sqlserver"
@@ -13,44 +14,34 @@ import (
 	"time"
 )
 
-var Database *gorm.DB
+var db *gorm.DB
 
 func setupDatabase() {
-	Events.Go("database.starts")
-	config := config.Database
 	var err error
-	if config.Enabled == false {
+	var config = DatabaseConfig{}
+	settings.Register("Database", &config)
+	if !config.Enabled {
 		return
 	}
 	var logLevel = logger.Silent
-	config.Debug = strings.ToLower(config.Debug)
 
 	switch config.Debug {
-	case "true", "all", "*", "any":
+	case 4:
 		logLevel = logger.Info
-	case "warn", "warning":
+	case 3:
 		logLevel = logger.Warn
-	case "err", "error":
+	case 2:
 		logLevel = logger.Error
 	default:
 		logLevel = logger.Silent
 	}
 
-	if config.Debug == "true" || config.Debug == "all" {
-		logLevel = logger.Info
-	}
-	if config.Debug == "warn" || config.Debug == "warning" {
-		logLevel = logger.Warn
-	}
-	if config.Debug == "err" || config.Debug == "error" {
-		logLevel = logger.Error
-	}
 	var newLog = logger.New(
 		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
 		logger.Config{
-			SlowThreshold: time.Second, // Slow SQL threshold
-			LogLevel:      logLevel,    // Log level
-			Colorful:      true,        // Disable color
+			SlowThreshold: config.SlowQueryThreshold, // Slow SQL threshold
+			LogLevel:      logLevel,                  // Log level
+			Colorful:      true,                      // Disable color
 		},
 	)
 	cfg := &gorm.Config{
@@ -59,33 +50,31 @@ func setupDatabase() {
 	switch strings.ToLower(config.Type) {
 	case "mysql":
 		connectionString := fmt.Sprintf("%s:%s@tcp(%s)/%s?%s", config.Username, config.Password, config.Server, config.Database, config.Params)
-		Database, err = gorm.Open(mysql.Open(connectionString), cfg)
-
-		/*	case "postgres":
-			connectionString := fmt.Sprintf("user=%s password=%s host=%s dbname=%s sslmode=%s "+config.Params, config.Username, config.Password, config.Server, config.Database, config.SSLMode)
-				Database, err = gorm.Open(postgres.Open(connectionString), cfg)*/
+		db, err = gorm.Open(mysql.Open(connectionString), cfg)
 	case "mssql":
 		connectionString := fmt.Sprintf("user id=%s;password=%s;server=%s;database:%s;"+config.Params, config.Username, config.Password, config.Server, config.Database)
-		Database, err = gorm.Open(sqlserver.Open(connectionString), cfg)
+		db, err = gorm.Open(sqlserver.Open(connectionString), cfg)
 	default:
-		Database, err = gorm.Open(sqlite.Open(config.Database+config.Params), cfg)
+		db, err = gorm.Open(sqlite.Open(config.Database+config.Params), cfg)
 	}
-
 	if err != nil {
-		panic(err)
+		log.Fatal("unable to connect to database", "error", err)
 		return
 	}
 
-	Events.Go("database.started")
+	//switch settings to database
+	/*	var driver = database.Database{}
+		driver.Init()
+		settings.SetInterface(&driver)*/
 
 }
 
 // GetDBO return database object instance
 func GetDBO() *gorm.DB {
-	if Database == nil {
+	if db == nil {
 		setupDatabase()
 	}
-	return Database
+	return db
 }
 
 type Model struct {

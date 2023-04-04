@@ -1,14 +1,15 @@
 package evo
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/ajg/form"
-	"github.com/avct/uasurfer"
-	"github.com/getevo/evo/lib/log"
-	"github.com/getevo/evo/lib/text"
-	"github.com/gofiber/utils"
-	"github.com/klauspost/compress/snappy"
+	"github.com/getevo/evo/v2/lib/generic"
+	"github.com/getevo/evo/v2/lib/outcome"
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/utils/v2"
+	"github.com/tidwall/gjson"
 	"github.com/valyala/fasthttp"
 	"io"
 	"mime/multipart"
@@ -17,23 +18,6 @@ import (
 	"strings"
 	"time"
 )
-
-// Cookie data for ctx.Cookie
-type Cookie struct {
-	Name     string    `json:"name"`
-	Value    string    `json:"value"`
-	Path     string    `json:"path"`
-	Domain   string    `json:"domain"`
-	Expires  time.Time `json:"expires"`
-	Secure   bool      `json:"secure"`
-	HTTPOnly bool      `json:"http_only"`
-	SameSite string    `json:"same_site"`
-}
-
-// GetBrowser return browser information by parsing useragent
-func (r *Request) GetBrowser() *uasurfer.UserAgent {
-	return uasurfer.Parse(r.UserAgent())
-}
 
 // Accepts checks if the specified extensions or content types are acceptable.
 func (r *Request) Accepts(offers ...string) (offer string) {
@@ -55,15 +39,20 @@ func (r *Request) AcceptsLanguages(offers ...string) (offer string) {
 	return r.Context.AcceptsLanguages(offers...)
 }
 
-// Append the specified value to the HTTP response header field.
+// AppendHeader the specified value to the HTTP response header field.
 // If the header is not already set, it creates the header with the specified value.
-func (r *Request) Append(field string, values ...string) {
+func (r *Request) AppendHeader(field string, values ...string) {
 	r.Context.Append(field, values...)
 }
 
 // Attachment sets the HTTP response Content-Disposition header field to attachment.
 func (r *Request) Attachment(name ...string) {
 	r.Context.Attachment(name...)
+}
+
+// QueryString returns url query string.
+func (r *Request) QueryString() string {
+	return r.URL().QueryString
 }
 
 // BaseURL returns (protocol + host).
@@ -80,7 +69,7 @@ func (r *Request) Body() string {
 // It supports decoding the following content types based on the Content-Type header:
 // application/json, application/xml, application/x-www-form-urlencoded, multipart/form-data
 func (r *Request) BodyParser(out interface{}) error {
-	ctype := string(r.ContentType())
+	ctype := r.ContentType()
 
 	if strings.HasPrefix(ctype, MIMEApplicationJSON) {
 		return json.Unmarshal(r.Context.Context().Request.Body(), out)
@@ -100,20 +89,22 @@ func (r *Request) ContentType() string {
 
 // UserAgent returns request useragent
 func (r *Request) UserAgent() string {
-	ua := r.Get("User-Agent")
+	ua := r.Header("User-Agent")
 	if ua == "" {
-		ua = r.Get("X-Original-Agent")
+		ua = r.Header("X-Original-Agent")
 	}
 	if ua == "" {
-		ua = r.Get("X-User-Agent")
+		ua = r.Header("X-User-Agent")
 	}
 	return ua
 }
 
-// UserAgent returns request useragent
+// IP returns user ip
 func (r *Request) IP() string {
-	clientIP := requestIP(r.Context.Context())
-	return clientIP
+	if fiberConfig.ServerHeader != "" {
+		return r.Header(fiberConfig.ServerHeader)
+	}
+	return r.Context.IP()
 }
 
 // ClearCookie expires a specific cookie by key.
@@ -122,8 +113,8 @@ func (r *Request) ClearCookie(key ...string) {
 	r.Context.ClearCookie(key...)
 }
 
-// Cookie sets a cookie by passing a cookie struct
-func (r *Request) Cookie(cookie *Cookie) {
+// SetRawCookie sets a cookie by passing a cookie struct
+func (r *Request) SetRawCookie(cookie *outcome.Cookie) {
 	fcookie := fasthttp.AcquireCookie()
 	fcookie.SetKey(cookie.Name)
 	fcookie.SetValue(cookie.Value)
@@ -146,8 +137,8 @@ func (r *Request) Cookie(cookie *Cookie) {
 	fasthttp.ReleaseCookie(fcookie)
 }
 
-// Cookies is used for getting a cookie value by key
-func (r *Request) Cookies(key string) (value string) {
+// Cookie is used for getting a cookie value by key
+func (r *Request) Cookie(key string) (value string) {
 	return r.Context.Cookies(key)
 }
 
@@ -155,14 +146,14 @@ func (r *Request) Cookies(key string) (value string) {
 // Typically, browsers will prompt the user for download.
 // By default, the Content-Disposition header filename= parameter is the filepath (this typically appears in the browser dialog).
 // Override this default with the filename parameter.
-func (r *Request) Download(file string, name ...string) {
-	r.Context.Download(file, name...)
+func (r *Request) Download(file string, name ...string) error {
+	return r.Context.Download(file, name...)
 }
 
 // Format performs content-negotiation on the Accept HTTP header.
 // It uses Accepts to select a proper format.
 // If the header is not specified or there is no proper format, text/plain is used.
-func (r *Request) Format(body interface{}) {
+func (r *Request) Format(body interface{}) error {
 	var b string
 	accept := r.Context.Accepts("html", "json")
 
@@ -176,14 +167,15 @@ func (r *Request) Format(body interface{}) {
 	}
 	switch accept {
 	case "html":
-		r.Context.SendString(b)
+		return r.Context.SendString(b)
 	case "json":
 		if err := r.Context.JSON(body); err != nil {
-			log.Error("Format: error serializing json ", err)
+			return err
 		}
 	default:
-		r.Context.SendString(b)
+		return r.Context.SendString(b)
 	}
+	return nil
 }
 
 // FormFile returns the first file by key from a MultipartForm.
@@ -192,39 +184,54 @@ func (r *Request) FormFile(key string) (*multipart.FileHeader, error) {
 }
 
 // FormValue returns the first value by key from a MultipartForm.
-func (r *Request) FormValue(key string) (value string) {
-	return r.Context.FormValue(key)
+func (r *Request) FormValue(key string) generic.Value {
+	return generic.Parse(r.Context.FormValue(key))
 }
 
-// FormValue returns the first value by key from a MultipartForm.
-func (r *Request) FormValueI(key string, params ...string) value {
-	return Value(r.Context.FormValue(key), params...)
-}
-
-//Fresh not implemented yet
+// Fresh not implemented yet
 func (r *Request) Fresh() bool {
 	return r.Context.Fresh()
 }
 
 // Get returns the HTTP request header specified by field.
 // Field names are case-insensitive
-func (r *Request) Get(key string) string {
-	return r.Context.Get(key)
-}
+func (r *Request) Get(key string) generic.Value {
+	// It doesn't return POST'ed arguments - use PostArgs() for this.
+	//
+	// See also PostArgs, FormValue and FormFile.
+	if r.Context.Context().QueryArgs().Has(key) {
+		return r.Query(key)
+	}
+	if len(r.Context.Context().Request.Header.Peek(key)) > 0 {
+		return generic.Parse(r.Header(key))
+	}
+	var val = r.Header(key)
+	if len(val) > 0 {
+		return generic.Parse(val)
+	}
 
-// Get returns the HTTP request header specified by field.
-// Field names are case-insensitive
-func (r *Request) GetI(key string, params ...string) value {
-	return Value(r.Context.Get(key), params...)
+	ctype := utils.ToLower(string(r.Context.Context().Request.Header.ContentType()))
+	ctype = utils.ParseVendorSpecificContentType(ctype)
+
+	if strings.HasPrefix(ctype, MIMEApplicationForm) {
+		val = r.Context.FormValue(key)
+		if len(val) > 0 {
+			return generic.Parse(val)
+		}
+	} else if strings.HasPrefix(ctype, MIMEApplicationJSON) {
+		return generic.Parse(gjson.Parse(string(r.Context.Body())).Get(key).String())
+	}
+
+	return generic.Parse(nil)
 }
 
 // Hostname contains the hostname derived from the Host HTTP header.
 func (r *Request) Hostname() string {
-	if r.Get("X-Forwarded-Host") != "" {
-		return r.Get("X-Forwarded-Host")
+	if r.Header("X-Forwarded-Host") != "" {
+		return r.Header("X-Forwarded-Host")
 	}
-	if r.Get("X-Forwarded-Server") != "" {
-		return r.Get("X-Forwarded-Server")
+	if r.Header("X-Forwarded-Server") != "" {
+		return r.Header("X-Forwarded-Server")
 	}
 	return r.Context.Hostname()
 }
@@ -238,20 +245,15 @@ func (r *Request) IPs() []string {
 }
 
 func (r *Request) Header(key string) string {
-	return r.Get(key)
+	return r.Context.Get(key)
 }
 
-func (r *Request) Headers(key string) map[string]string {
-	var headers map[string]string
-	for _, line := range strings.Split(r.Context.Context().Request.Header.String(), "\n") {
-		var parts = strings.SplitN(line, ":", 1)
-		if len(parts) == 2 {
-			headers[parts[0]] = parts[1]
-		} else if len(parts) > 0 {
-			headers[parts[0]] = ""
-		}
-	}
-	return headers
+func (r *Request) RespHeaders() map[string]string {
+	return r.Context.GetRespHeaders()
+}
+
+func (r *Request) ReqHeaders() map[string]string {
+	return r.Context.GetReqHeaders()
 }
 
 func (r *Request) SetHeader(key, val string) {
@@ -324,16 +326,10 @@ func (r *Request) OriginalURL() string {
 	return r.Context.OriginalURL()
 }
 
-// Params is used to get the route parameters.
+// Param is used to get the route parameters.
 // Defaults to empty string "", if the param doesn't exist.
-func (r *Request) Params(key string) string {
-	return r.Context.Params(key)
-}
-
-// Params is used to get the route parameters.
-// Defaults to empty string "", if the param doesn't exist.
-func (r *Request) ParamsI(key string, params ...string) value {
-	return Value(r.Context.Params(key), params...)
+func (r *Request) Param(key string) generic.Value {
+	return generic.Parse(r.Context.Params(key))
 }
 
 // Path returns the path part of the request URL.
@@ -348,25 +344,14 @@ func (r *Request) Protocol() string {
 }
 
 // Query returns the query string parameter in the url.
-func (r *Request) QueryI(key string, params ...string) value {
-	return Value(r.Context.Query(key), params...)
-}
-
-// Query returns the query string parameter in the url.
-func (r *Request) Query(key string) (value string) {
-	return r.Context.Query(key)
+func (r *Request) Query(key string) (value generic.Value) {
+	return generic.Parse(r.Context.Query(key))
 }
 
 // Redirect to the URL derived from the specified path, with specified status.
 // If status is not specified, status defaults to 302 Found
-func (r *Request) Redirect(path string, status ...int) {
-	r.Context.Redirect(path, status...)
-}
-
-// Render a template with data and sends a text/html response.
-// We support the following engines: html, amber, handlebars, mustache, pug
-func (r *Request) Render(file string, bind interface{}) error {
-	return r.Context.Render(file, bind)
+func (r *Request) Redirect(path string, status ...int) error {
+	return r.Context.Redirect(path, status...)
 }
 
 // SaveFile saves any multipart file to disk.
@@ -374,8 +359,8 @@ func (r *Request) SaveFile(fileheader *multipart.FileHeader, path string) error 
 	return r.Context.SaveFile(fileheader, path)
 }
 
-// Secure returns a boolean property, that is true, if a TLS connection is established.
-func (r *Request) Secure() bool {
+// IsSecure returns a boolean property, that is true, if a TLS connection is established.
+func (r *Request) IsSecure() bool {
 	return r.Context.Secure()
 }
 
@@ -386,33 +371,33 @@ func (r *Request) SendHTML(body interface{}) {
 }
 
 // Send sets the HTTP response body. The Send body can be of any type.
-func (r *Request) Send(body string) {
-	r.Context.Send([]byte(body))
+func (r *Request) Send(body string) error {
+	return r.Context.Send([]byte(body))
 }
 
 // SendBytes sets the HTTP response body for []byte types
 // This means no type assertion, recommended for faster performance
-func (r *Request) SendBytes(body []byte) {
-	r.Context.Send(body)
+func (r *Request) SendBytes(body []byte) error {
+	return r.Context.Send(body)
 }
 
 // SendFile transfers the file from the given path.
 // The file is compressed by default
 // Sets the Content-Type response HTTP header field based on the filenames extension.
-func (r *Request) SendFile(file string, noCompression ...bool) {
-	r.Context.SendFile(file, noCompression...)
+func (r *Request) SendFile(file string, noCompression ...bool) error {
+	return r.Context.SendFile(file, noCompression...)
 }
 
 // SendStatus sets the HTTP status code and if the response body is empty,
 // it sets the correct status message in the body.
-func (r *Request) SendStatus(status int) {
-	r.Context.SendStatus(status)
+func (r *Request) SendStatus(status int) error {
+	return r.Context.SendStatus(status)
 }
 
 // SendString sets the HTTP response body for string types
 // This means no type assertion, recommended for faster performance
-func (r *Request) SendString(body string) {
-	r.Context.SendString(body)
+func (r *Request) SendString(body string) error {
+	return r.Context.SendString(body)
 }
 
 // Set sets the response’s HTTP header field to the specified key, value.
@@ -452,7 +437,6 @@ func (r *Request) Vary(fields ...string) {
 
 // Write appends any input to the HTTP body response.
 func (r *Request) Write(body interface{}) {
-	var cache = true
 	var data []byte
 	switch body := body.(type) {
 	case string:
@@ -466,22 +450,11 @@ func (r *Request) Write(body interface{}) {
 	case io.Reader:
 		r.Context.Context().Response.SetBodyStream(body, -1)
 		r.Context.Set(HeaderContentLength, strconv.Itoa(len(r.Context.Context().Response.Body())))
-		cache = false
 	default:
 		data = []byte(fmt.Sprintf("%v", body))
 	}
-	if cache && r.CacheKey != "" {
-		Cache.Set(r.CacheKey, cached{
-			content: data,
-			header:  r.Context.Context().Response.Header,
-			code:    r.Context.Context().Response.StatusCode(),
-		}, r.CacheDuration)
-	}
-	if r.BeforeWrite != nil {
-		data = r.BeforeWrite(r, data)
-	}
-	if r.Header("x-snappy") == "1" {
-		data = snappy.Encode(nil, data)
+	if r.status > 0 {
+		r.Status(r.status)
 	}
 	r.Context.Context().Response.SetBody(data)
 }
@@ -494,7 +467,7 @@ func (r *Request) XHR() bool {
 
 // SetCookie set cookie with given name,value and optional params (wise function)
 func (r *Request) SetCookie(key string, val interface{}, params ...interface{}) {
-	cookie := new(Cookie)
+	cookie := new(outcome.Cookie)
 	cookie.Name = key
 	cookie.Path = "/"
 	ref := reflect.ValueOf(val)
@@ -506,7 +479,8 @@ func (r *Request) SetCookie(key string, val interface{}, params ...interface{}) 
 		r.SetCookie(key, ref.Elem().Interface(), params...)
 		return
 	case reflect.Map, reflect.Struct, reflect.Array, reflect.Slice:
-		cookie.Value = text.ToJSON(val)
+		b, _ := json.Marshal(val)
+		cookie.Value = base64.RawStdEncoding.EncodeToString(b)
 		break
 	default:
 		cookie.Value = fmt.Sprint(val)
@@ -520,29 +494,45 @@ func (r *Request) SetCookie(key string, val interface{}, params ...interface{}) 
 			cookie.Expires = v
 		}
 	}
-	r.Cookie(cookie)
+	r.SetRawCookie(cookie)
 }
 
-func (r *Request) Unauthorized() bool {
-	if r.User.Anonymous {
-		log.Error("unauthorized request")
-		r.Status(401)
-		r.WriteResponse(fmt.Errorf("unauthorized"), 401)
-		return true
+// Params return map of parameters in url
+func (r *Request) Params() map[string]string {
+	return r.Context.AllParams()
+}
+
+// Route generate route for named routes
+func (r *Request) Route(name string, params ...interface{}) string {
+	var m = fiber.Map{}
+	var jump = false
+	var route = app.GetRoute(name)
+	if len(route.Params) == len(params) {
+		for idx, key := range route.Params {
+			m[key] = params[idx]
+		}
+	} else if 2*len(route.Params) == len(params) {
+		for idx, param := range params {
+			if jump {
+				jump = false
+				continue
+			}
+			switch p := param.(type) {
+			case string:
+				if len(params) > idx+1 {
+					m[p] = params[idx+1]
+					jump = true
+				}
+			case map[string]interface{}:
+				m = p
+			}
+		}
 	}
-	return false
+
+	var url, _ = r.Context.GetRouteURL(name, m)
+	return url
 }
 
-type Error struct {
-	Code    int
-	Message string
-}
-
-// NewError creates a new HTTPError instance.
-func NewError(code int, message ...string) *Error {
-	e := &Error{code, utils.StatusMessage(code)}
-	if len(message) > 0 {
-		e.Message = message[0]
-	}
-	return e
+func (r *Request) Break() {
+	r._break = true
 }
