@@ -1,10 +1,10 @@
 package gpath
 
 import (
+	"fmt"
 	"github.com/getevo/evo/v2/lib/text"
 	copy2 "github.com/otiai10/copy"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -140,11 +140,55 @@ func Remove(path string) error {
 
 // SafeFileContent return content of a file assumed is accessible
 func SafeFileContent(path string) []byte {
-	data, _ := ioutil.ReadFile(path)
+	data, _ := os.ReadFile(path)
 	return data
 }
 
 // ReadFile reads file to bytes
 func ReadFile(path string) ([]byte, error) {
-	return ioutil.ReadFile(path)
+	return os.ReadFile(path)
+}
+
+// Write bytes to file
+func Write(path string, content interface{}) error {
+	var f *os.File
+	var err error
+	if !IsFileExist(path) {
+		f, err = os.Create(path)
+	} else {
+		f, err = os.Open(path)
+	}
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	switch v := content.(type) {
+	case string:
+		_, err = f.WriteString(v)
+	case []byte:
+		_, err = f.Write(v)
+	default:
+		err = fmt.Errorf("invalid content type")
+	}
+	return err
+}
+
+// Append bytes to file
+func Append(path string, content interface{}) error {
+	var f *os.File
+	var err error
+	f, err = os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	switch v := content.(type) {
+	case string:
+		_, err = f.WriteString(v)
+	case []byte:
+		_, err = f.Write(v)
+	default:
+		err = fmt.Errorf("invalid content type")
+	}
+	return err
 }
