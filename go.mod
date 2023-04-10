@@ -13,8 +13,7 @@ require (
 	github.com/gofiber/utils/v2 v2.0.0-beta.1
 	github.com/iancoleman/strcase v0.2.0
 	github.com/kelindar/binary v1.0.17
-	github.com/otiai10/copy v1.9.0
-	github.com/patrickmn/go-cache v2.1.0+incompatible
+	github.com/otiai10/copy v1.10.0
 	github.com/segmentio/kafka-go v0.4.39
 	github.com/tidwall/gjson v1.7.4
 	github.com/valyala/fasthttp v1.44.0
