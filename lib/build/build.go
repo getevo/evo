@@ -8,10 +8,6 @@ var User = ""
 var Date = ""
 var Commit = ""
 
-func Register(v, u, d, c string) {
-	Version = v
-	User = u
-	Date = d
-	Commit = c
+func Register() {
 	fmt.Println("Build", "Version:", Version, "|", "User:", User, "|", "Date:", Date, "|", "Commit:", Commit)
 }
