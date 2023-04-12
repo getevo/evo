@@ -12,4 +12,21 @@ var Commit = ""
 
 func Register() {
 	fmt.Println("Build", "Version:", Version, "|", "User:", User, "|", "Date:", Date, "|", "Commit:", Commit)
+	info.Version = Version
+	info.User = User
+	info.Date = Date
+	info.Commit = Commit
+}
+
+type Information struct {
+	Version string `json:"version"`
+	User    string `json:"user"`
+	Date    string `json:"date"`
+	Commit  string `json:"commit"`
+}
+
+var info = Information{}
+
+func GetInfo() Information {
+	return info
 }
