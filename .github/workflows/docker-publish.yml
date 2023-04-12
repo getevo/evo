@@ -1,7 +1,7 @@
 name: 'docker-publish'
 on:
   push:
-    branches: [ main ]
+    branches: [ main, master ]
     tags: [ v* ]
 jobs:
   docker:
