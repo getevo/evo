@@ -105,7 +105,7 @@ func (driver) Register() error {
 	settings.Register(
 		settings.SettingDomain{
 			Title:       "Kafka",
-			Domain:      "Kafka",
+			Domain:      "KAFKA",
 			Description: "Apache Kafka configurations",
 			ReadOnly:    false,
 			Visible:     true,
