@@ -122,3 +122,7 @@ func Init(params ...string) error {
 func (SettingDomain) TableName() string {
 	return "settings_domain"
 }
+
+func (Setting) TableName() string {
+	return "settings"
+}
