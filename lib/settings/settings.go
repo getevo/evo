@@ -118,3 +118,7 @@ func Register(settings ...interface{}) {
 func Init(params ...string) error {
 	return defaultDriver.Init(params...)
 }
+
+func (SettingDomain) TableName() string {
+	return "settings_domain"
+}
