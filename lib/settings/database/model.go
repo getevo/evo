@@ -5,7 +5,6 @@ type SettingDomain struct {
 	Title       string    `gorm:"column:title" json:"title"`
 	Description string    `gorm:"column:description" json:"description"`
 	Domain      string    `gorm:"column:domain;primaryKey" json:"domain"`
-	Type        string    `gorm:"column:type" json:"type"`
 	ReadOnly    bool      `gorm:"column:read_only" json:"read_only"`
 	Visible     bool      `gorm:"column:visible" json:"visible"`
 	Items       []Setting `gorm:"-"`
