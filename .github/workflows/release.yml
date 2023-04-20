@@ -1,0 +1,115 @@
+on: release
+name: Build Release
+jobs:
+  release-linux-386:
+    name: release linux/386
+    permissions: write-all
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: compile and release
+        uses: Allan-Nava/go-release.action@v1.5.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GOARCH: "386"
+          GOOS: linux
+          EXTRA_FILES: "LICENSE"
+          CMD_PATH: ""
+          BUILD_ARGS: ""
+          PROJECT_NAME: ""
+  release-linux-amd64:
+    name: release linux/amd64
+    permissions: write-all
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: compile and release
+        uses: Allan-Nava/go-release.action@v1.5.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GOARCH: amd64
+          GOOS: linux
+          EXTRA_FILES: "LICENSE"
+          CMD_PATH: ""
+          BUILD_ARGS: ""
+          PROJECT_NAME: ""
+  release-linux-arm:
+    name: release linux/386
+    permissions: write-all
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: compile and release
+        uses: Allan-Nava/go-release.action@v1.5.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GOARCH: "arm"
+          GOOS: linux
+          EXTRA_FILES: "LICENSE"
+          CMD_PATH: ""
+          BUILD_ARGS: ""
+          PROJECT_NAME: ""
+  release-linux-arm64:
+    name: release linux/amd64
+    permissions: write-all
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: compile and release
+        uses: Allan-Nava/go-release.action@v1.4.7
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GOARCH: arm64
+          GOOS: linux
+          EXTRA_FILES: "LICENSE"
+          CMD_PATH: ""
+          BUILD_ARGS: ""
+          PROJECT_NAME: ""
+  release-darwin-amd64:
+    name: release darwin/amd64
+    permissions: write-all
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: compile and release
+        uses: Allan-Nava/go-release.action@v1.5.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GOARCH: amd64
+          GOOS: darwin
+          EXTRA_FILES: "LICENSE"
+          CMD_PATH: ""
+          BUILD_ARGS: ""
+          PROJECT_NAME: ""
+  release-windows-386:
+    name: release windows/386
+    permissions: write-all
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: compile and release
+        uses: Allan-Nava/go-release.action@v1.5.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GOARCH: "386"
+          GOOS: windows
+          EXTRA_FILES: "LICENSE"
+          CMD_PATH: ""
+          BUILD_ARGS: ""
+          PROJECT_NAME: ""
+  release-windows-amd64:
+    name: release windows/amd64
+    permissions: write-all
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: compile and release
+        uses: Allan-Nava/go-release.action@v1.5.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GOARCH: amd64
+          GOOS: windows
+          EXTRA_FILES: "LICENSE"
+          CMD_PATH: ""
+          BUILD_ARGS: ""
+          PROJECT_NAME: ""
