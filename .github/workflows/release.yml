@@ -1,7 +1,8 @@
 name: Build Release
 on:
   push:
-    branches: [ master, main ]
+    tags: [ v* ]
+    #branches: [ master, main ]
 #
 jobs:
   release-linux-386:
