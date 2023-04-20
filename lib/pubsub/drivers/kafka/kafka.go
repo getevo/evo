@@ -4,12 +4,10 @@ import (
 	"github.com/getevo/evo/v2/lib/kafka"
 	"github.com/getevo/evo/v2/lib/pubsub"
 	"github.com/getevo/evo/v2/lib/settings"
-	"github.com/kelindar/binary"
 )
 
 var Driver = driver{}
-var marshaller func(input interface{}) ([]byte, error) = binary.Marshal
-var unmarshaller func(bytes []byte, out interface{}) error = binary.Unmarshal
+
 var listeners = map[string][]func(topic string, message []byte, driver pubsub.Interface){}
 var producers = map[string]*kafka.Producer{}
 
@@ -238,10 +236,10 @@ func (driver) Name() string {
 
 // SetMarshaller set interface{} to []byte marshalling function
 func (driver) SetMarshaller(fn func(input interface{}) ([]byte, error)) {
-	marshaller = fn
+
 }
 
 // SetUnMarshaller set []byte to interface{} unmarshalling function
 func (driver) SetUnMarshaller(fn func(bytes []byte, out interface{}) error) {
-	unmarshaller = fn
+
 }
