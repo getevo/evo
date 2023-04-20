@@ -1,4 +1,6 @@
 on: release
+  push:
+    branches: [ master, main ]
 name: Build Release
 jobs:
   release-linux-386:
