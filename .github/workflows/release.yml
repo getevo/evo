@@ -20,7 +20,7 @@ jobs:
           EXTRA_FILES: "LICENSE"
           CMD_PATH: ""
           BUILD_ARGS: ""
-          PROJECT_NAME: ""
+          PROJECT_NAME: "evo"
   release-linux-amd64:
     name: release linux/amd64
     permissions: write-all
@@ -36,7 +36,7 @@ jobs:
           EXTRA_FILES: "LICENSE"
           CMD_PATH: ""
           BUILD_ARGS: ""
-          PROJECT_NAME: ""
+          PROJECT_NAME: "evo"
   release-linux-arm:
     name: release linux/386
     permissions: write-all
@@ -52,7 +52,7 @@ jobs:
           EXTRA_FILES: "LICENSE"
           CMD_PATH: ""
           BUILD_ARGS: ""
-          PROJECT_NAME: ""
+          PROJECT_NAME: "evo"
   release-linux-arm64:
     name: release linux/amd64
     permissions: write-all
@@ -68,7 +68,7 @@ jobs:
           EXTRA_FILES: "LICENSE"
           CMD_PATH: ""
           BUILD_ARGS: ""
-          PROJECT_NAME: ""
+          PROJECT_NAME: "evo"
   release-darwin-amd64:
     name: release darwin/amd64
     permissions: write-all
@@ -100,7 +100,7 @@ jobs:
           EXTRA_FILES: "LICENSE"
           CMD_PATH: ""
           BUILD_ARGS: ""
-          PROJECT_NAME: ""
+          PROJECT_NAME: "evo"
   release-windows-amd64:
     name: release windows/amd64
     permissions: write-all
@@ -116,4 +116,4 @@ jobs:
           EXTRA_FILES: "LICENSE"
           CMD_PATH: ""
           BUILD_ARGS: ""
-          PROJECT_NAME: ""
+          PROJECT_NAME: "evo"
