@@ -2,6 +2,7 @@ package evo
 
 import (
 	"fmt"
+	"github.com/getevo/evo/v2/lib/generic"
 	"github.com/getevo/evo/v2/lib/outcome"
 	"github.com/gofiber/fiber/v2"
 	"net/url"
@@ -252,8 +253,8 @@ func (r *Request) HasError() bool {
 	return len(r.Response.Error) > 0
 }
 
-func (r *Request) Var(key string, value ...interface{}) interface{} {
-	return r.Context.Locals(key, value...)
+func (r *Request) Var(key string, value ...interface{}) generic.Value {
+	return generic.Parse(r.Context.Locals(key, value...))
 }
 
 func (r *Request) RestartRouting() error {
