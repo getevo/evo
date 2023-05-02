@@ -183,6 +183,31 @@ func (r *Request) FormFile(key string) (*multipart.FileHeader, error) {
 	return r.Context.FormFile(key)
 }
 
+// ParseJsonBody returns parsed JSON Body using gjson.
+func (r *Request) ParseJsonBody() *gjson.Result {
+	if r.jsonParsedBody == nil {
+		var t = gjson.Parse(string(r.Context.Body()))
+		r.jsonParsedBody = &t
+	}
+	return r.jsonParsedBody
+}
+
+// BodyValue returns the first value by key from a MultipartForm or JSON Body.
+func (r *Request) BodyValue(key string) generic.Value {
+	ctype := r.ContentType()
+	if strings.HasPrefix(ctype, MIMEApplicationJSON) {
+		if r.jsonParsedBody == nil {
+			var t = gjson.Parse(string(r.Context.Body()))
+			r.jsonParsedBody = &t
+		}
+		generic.Parse(r.jsonParsedBody.Get(key).Raw)
+	} else if strings.HasPrefix(ctype, MIMEApplicationForm) || strings.HasPrefix(ctype, MIMEMultipartForm) {
+		return r.FormValue(key)
+	}
+
+	return generic.Parse(nil)
+}
+
 // FormValue returns the first value by key from a MultipartForm.
 func (r *Request) FormValue(key string) generic.Value {
 	return generic.Parse(r.Context.FormValue(key))

@@ -5,6 +5,7 @@ import (
 	"github.com/getevo/evo/v2/lib/generic"
 	"github.com/getevo/evo/v2/lib/outcome"
 	"github.com/gofiber/fiber/v2"
+	"github.com/tidwall/gjson"
 	"net/url"
 	"reflect"
 	"strings"
@@ -21,12 +22,13 @@ type CacheControl struct {
 }
 
 type Request struct {
-	Context      *fiber.Ctx
-	Response     Response
-	CacheControl *CacheControl
-	url          *URL
-	status       int
-	_break       bool
+	Context        *fiber.Ctx
+	Response       Response
+	CacheControl   *CacheControl
+	url            *URL
+	status         int
+	_break         bool
+	jsonParsedBody *gjson.Result
 }
 
 type Response struct {
