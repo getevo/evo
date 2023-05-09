@@ -54,7 +54,7 @@ func (driver *Driver) List(path string, recursive ...bool) ([]lib.FileInfo, erro
 
 		var finfo []lib.FileInfo
 		for _, item := range list {
-			finfo = append(finfo, lib.NewFileInfo(path+"/"+item.Name(), item.Size(), item.Mode(), item.ModTime(), item.IsDir(), item.Sys()))
+			finfo = append(finfo, lib.NewFileInfo(path+"/"+item.Name(), item.Size(), item.Mode(), item.ModTime(), item.IsDir(), item.Sys(), driver))
 		}
 		return finfo, nil
 	}
@@ -64,7 +64,7 @@ func (driver *Driver) List(path string, recursive ...bool) ([]lib.FileInfo, erro
 		if err != nil {
 			return err
 		}
-		result = append(result, lib.NewFileInfo(path, item.Size(), item.Mode(), item.ModTime(), item.IsDir(), item.Sys()))
+		result = append(result, lib.NewFileInfo(path, item.Size(), item.Mode(), item.ModTime(), item.IsDir(), item.Sys(), driver))
 		return nil
 	})
 	return result, err
@@ -82,7 +82,7 @@ func (driver *Driver) Search(match string) ([]lib.FileInfo, error) {
 		if err != nil {
 			return result, err
 		}
-		result = append(result, lib.NewFileInfo(filepath.Clean(item), f.Size(), f.Mode(), f.ModTime(), f.IsDir(), f.Sys()))
+		result = append(result, lib.NewFileInfo(filepath.Clean(item), f.Size(), f.Mode(), f.ModTime(), f.IsDir(), f.Sys(), driver))
 	}
 	return result, err
 }
@@ -106,11 +106,6 @@ func (driver *Driver) SetWorkingDir(path string) error {
 
 func (driver *Driver) WorkingDir() string {
 	return driver.Dir
-}
-
-func (driver *Driver) File(path string) (error, *lib.File) {
-	path = driver.getRealPath(path)
-	panic("implement me")
 }
 
 func (driver *Driver) Touch(path string) error {
@@ -183,7 +178,7 @@ func (driver *Driver) Stat(path string) (lib.FileInfo, error) {
 	if err != nil {
 		return lib.FileInfo{}, err
 	}
-	return lib.NewFileInfo(path, stat.Size(), stat.Mode(), stat.ModTime(), stat.IsDir(), stat.Sys()), nil
+	return lib.NewFileInfo(path, stat.Size(), stat.Mode(), stat.ModTime(), stat.IsDir(), stat.Sys(), driver), nil
 }
 
 func (driver *Driver) IsFileExists(path string) bool {

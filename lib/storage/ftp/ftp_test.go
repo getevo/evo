@@ -8,7 +8,7 @@ import (
 
 func TestDriver_Init(t *testing.T) {
 	var ftp = Driver{}
-	fmt.Println("connection err:", ftp.Init("ftp://username:password@192.168.1.80:21/testdir"))
+	fmt.Println("connection err:", ftp.Init("ftp://username:password@192.168.1.1:21/testdir"))
 	fmt.Println("write testfile err:", ftp.Append("testfile", "\r\n"+time.Now().Format("15:04:03")))
 	/*	fmt.Println("write testfile2 err:", ftp.Write("testfile2", "\r\n"+time.Now().Format("15:04:03")))
 		fmt.Println("delete testfile2 err:", ftp.Remove("testfile2"))

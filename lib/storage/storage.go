@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"github.com/getevo/evo/v2/lib/generic"
 	"github.com/getevo/evo/v2/lib/storage/filesystem"
+	"github.com/getevo/evo/v2/lib/storage/ftp"
 	"github.com/getevo/evo/v2/lib/storage/lib"
 	"github.com/getevo/evo/v2/lib/storage/s3"
+	"github.com/getevo/evo/v2/lib/storage/sftp"
 	"io/fs"
 	"reflect"
 	"regexp"
@@ -49,7 +51,7 @@ const (
 	ModePerm = fs.ModePerm // Unix permission bits, 0o777
 )
 
-var availableDrivers = []lib.Driver{&filesystem.Driver{}, &s3.Driver{}}
+var availableDrivers = []lib.Driver{&filesystem.Driver{}, &s3.Driver{}, &ftp.Driver{}, &sftp.Driver{}}
 var Pool = map[string]lib.Driver{}
 
 func Drivers() []lib.Driver {
@@ -58,10 +60,10 @@ func Drivers() []lib.Driver {
 
 var configRegex = regexp.MustCompile(`(?m)^([a-zA-Z0-9\_\-]+)://`)
 
-func NewStorage(tag string, storage string) error {
+func NewStorage(tag string, storage string) (*lib.Driver, error) {
 	var config = configRegex.FindAllStringSubmatch(storage, -1)
 	if len(config) == 0 {
-		return fmt.Errorf("invalid storage config string %s, required  proto://...", storage)
+		return nil, fmt.Errorf("invalid storage config string %s, required  proto://...", storage)
 	}
 	var driver = config[0][1]
 
@@ -72,11 +74,19 @@ func NewStorage(tag string, storage string) error {
 			obj.SetName(tag)
 			err := obj.Init(storage)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			Pool[tag] = obj
-			return nil
+			return &obj, nil
 		}
 	}
-	return fmt.Errorf("invalid driver %s", driver)
+	return nil, fmt.Errorf("invalid driver %s", driver)
+}
+
+func GetStorage(tag string) lib.Driver {
+	var storage, ok = Pool[tag]
+	if !ok {
+		return nil
+	}
+	return storage
 }

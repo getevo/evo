@@ -24,7 +24,8 @@ vendor/
 # SqlLite Databases
 *.sqlite*
 
-
+./dev/*
+./dev
 # vscode
 .vscode
 

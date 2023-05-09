@@ -7,5 +7,8 @@ import (
 
 func TestNewStorage(t *testing.T) {
 	fmt.Println(NewStorage("filesystem", "fs://./"))
-	fmt.Println(NewStorage("s3", "s3://admin:iesitalia2020@eu-west-1@s3-sslazio-staging.hiwaymedia.it/sslazio/VMFS1/FILES/public/upload/?region=us-west-1"))
+	fmt.Println(NewStorage("s3", "s3://username:password@host.tld/bucket/dir/?region=us-west-1"))
+
+	var storage = GetStorage("s3")
+	fmt.Println(storage.List("./", true))
 }

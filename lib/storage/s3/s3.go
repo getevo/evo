@@ -92,6 +92,7 @@ func (driver *Driver) List(path string, recursive ...bool) ([]lib.FileInfo, erro
 	var p = strings.Replace(path, `/`, `\`, -1)
 	var result []lib.FileInfo
 	var marker *string
+	var m = map[string]bool{}
 	for {
 		res, err := driver.session.ListObjects(
 			context.Background(),
@@ -106,8 +107,40 @@ func (driver *Driver) List(path string, recursive ...bool) ([]lib.FileInfo, erro
 		}
 
 		for _, obj := range res.Contents {
-			if filepath.Dir(*obj.Key) == p {
-				var info = lib.NewFileInfo(*obj.Key, obj.Size, 0644, *obj.LastModified, false, nil)
+			if strings.HasSuffix(*obj.Key, "/.ignore") {
+				continue
+			}
+			if len(recursive) == 0 || !recursive[0] {
+				if filepath.Dir(*obj.Key) == p {
+					var info = lib.NewFileInfo(*obj.Key, obj.Size, 0644, *obj.LastModified, false, nil, driver)
+					result = append(result, info)
+				} else {
+					var first = strings.Split(strings.Trim((*obj.Key)[len(path):], "/"), "/")[0]
+					if ok, _ := m[first]; !ok {
+						m[first] = true
+						var info = lib.NewFileInfo(path+"/"+first, 0, 0755, *obj.LastModified, true, nil, driver)
+						result = append(result, info)
+					}
+				}
+			} else {
+				var info = lib.NewFileInfo(*obj.Key, obj.Size, 0644, *obj.LastModified, false, nil, driver)
+				var chunks = strings.Split(*obj.Key, "/")
+				var build = ""
+
+				for i, item := range chunks {
+					if i == 0 {
+						continue
+					}
+					build += "/" + item
+					if ok, _ := m[build]; !ok {
+						m[build] = true
+						var dirInfo = lib.NewFileInfo(strings.TrimLeft(build, "/"), 0, 0755, *obj.LastModified, true, nil, driver)
+						result = append(result, dirInfo)
+
+					}
+
+				}
+
 				result = append(result, info)
 			}
 		}
@@ -127,6 +160,7 @@ func (driver *Driver) Search(match string) ([]lib.FileInfo, error) {
 	g := glob.NewGlob(globPath)
 	var result []lib.FileInfo
 	var marker *string
+	var m = map[string]bool{}
 	for {
 		res, err := driver.session.ListObjects(
 			context.Background(),
@@ -143,7 +177,23 @@ func (driver *Driver) Search(match string) ([]lib.FileInfo, error) {
 		for _, obj := range res.Contents {
 
 			if ok, _ := g.Match(*obj.Key); ok {
-				var info = lib.NewFileInfo(*obj.Key, obj.Size, 0644, *obj.LastModified, false, nil)
+				var info = lib.NewFileInfo(*obj.Key, obj.Size, 0644, *obj.LastModified, false, nil, driver)
+				var chunks = strings.Split(*obj.Key, "/")
+				var build = ""
+
+				for i, item := range chunks {
+					if i == 0 {
+						continue
+					}
+					build += "/" + item
+					if ok, _ := m[build]; !ok {
+						m[build] = true
+						var dirInfo = lib.NewFileInfo(strings.TrimLeft(build, "/"), 0, 0755, *obj.LastModified, true, nil, driver)
+						result = append(result, dirInfo)
+
+					}
+
+				}
 				result = append(result, info)
 			}
 
@@ -203,11 +253,6 @@ func (driver *Driver) SetWorkingDir(path string) error {
 
 func (driver *Driver) WorkingDir() string {
 	return driver.Dir
-}
-
-func (driver *Driver) File(path string) (error, *lib.File) {
-	path = driver.getRealPath(path)
-	panic("implement me")
 }
 
 func (driver *Driver) Touch(path string) error {
@@ -350,7 +395,7 @@ func (driver *Driver) Stat(path string) (lib.FileInfo, error) {
 	if err != nil {
 		return lib.FileInfo{}, err
 	}
-	return lib.NewFileInfo(path, object.ContentLength, 0644, *object.LastModified, false, nil), nil
+	return lib.NewFileInfo(path, object.ContentLength, 0644, *object.LastModified, false, nil, driver), nil
 
 }
 

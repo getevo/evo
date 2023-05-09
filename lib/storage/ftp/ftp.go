@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	glob "github.com/ganbarodigital/go_glob"
-	ftp "github.com/getevo/evo/v2/lib/storage/ftp/client"
 	"github.com/getevo/evo/v2/lib/storage/lib"
+	ftp "github.com/jlaffaye/ftp"
 	"io/fs"
 	"path/filepath"
 	"strings"
@@ -72,7 +72,7 @@ func (driver *Driver) List(path string, recursive ...bool) ([]lib.FileInfo, erro
 
 	for _, item := range list {
 
-		result = append(result, lib.NewFileInfo(path+"/"+item.Name, int64(item.Size), 0644, item.Time, item.Type == ftp.EntryTypeFolder, nil))
+		result = append(result, lib.NewFileInfo(path+"/"+item.Name, int64(item.Size), 0644, item.Time, item.Type == ftp.EntryTypeFolder, nil, driver))
 
 		if item.Type == ftp.EntryTypeFolder && len(recursive) > 0 && recursive[0] == true {
 			var items, _ = driver.List(relative+"/"+item.Name, true)
@@ -105,6 +105,9 @@ func (driver *Driver) Init(input string) error {
 	var params, err = settings.Parse(input)
 	driver.username = params["username"]
 	driver.password = params["password"]
+	if !strings.Contains(params["host"], ":") {
+		params["host"] += ":21"
+	}
 	driver.host = params["host"]
 	if err != nil {
 		return err
@@ -129,11 +132,6 @@ func (driver *Driver) SetWorkingDir(path string) error {
 
 func (driver *Driver) WorkingDir() string {
 	return driver.Dir
-}
-
-func (driver *Driver) File(path string) (error, *lib.File) {
-	path = driver.getRealPath(path)
-	panic("implement me")
 }
 
 func (driver *Driver) Touch(path string) error {

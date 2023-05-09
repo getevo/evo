@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-var config = "s3://username:password@mys3.origin.tld/bucket/homedir/?region=us-west-1"
+var config = "s3://username:password@host.tld/bucket/dir/?region=us-west-1"
 
 func TestDriver_Write(t *testing.T) {
 	var s3 = Driver{}
@@ -43,9 +43,9 @@ func TestDriver_Write(t *testing.T) {
 		fmt.Println(s3.Remove("mydir/file_to_delete.txt"))
 		fmt.Println(s3.RemoveAll("copy"))*/
 
-	var files, err = s3.List("mydir", false)
+	var files, err = s3.List("./", true)
 	fmt.Println(err)
 	for _, file := range files {
-		fmt.Println(file.Path())
+		fmt.Println(file.Path(), "is dir?", file.IsDir())
 	}
 }

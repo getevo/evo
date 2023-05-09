@@ -1,29 +1,16 @@
 package lib
 
 import (
-	"io"
+	"fmt"
 	"io/fs"
 	"path/filepath"
 	"time"
 )
 
-type File interface {
-	WriteBytes(bytes []byte) (error, *File)
-	WriteString(content string) (error, *File)
-	WriteJson(content interface{}) (error, *File)
-	Write(reader io.Reader) (error, *File)
-	AppendBytes(bytes []byte) (error, *File)
-	AppendString(content string) (error, *File)
-	SetMetadata(meta Metadata)
-	Truncate() error
-	Close()
-}
-
 type Driver interface {
 	Init(params string) error
 	SetWorkingDir(path string) error
 	WorkingDir() string
-	File(path string) (error, *File)
 	Touch(path string) error
 	WriteJson(path string, content interface{}) error
 	Write(path string, content interface{}) error
@@ -56,6 +43,7 @@ type FileInfo struct {
 	modTime time.Time
 	isDir   bool
 	sys     any
+	storage Driver
 }
 
 func (f FileInfo) Name() string {
@@ -97,7 +85,42 @@ func (f FileInfo) Sys() any {
 	return f.sys
 }
 
-func NewFileInfo(path string, size int64, mode fs.FileMode, modTime time.Time, isDir bool, sys any) FileInfo {
+func (f FileInfo) Append(content interface{}) error {
+	if f.IsDir() {
+		return fmt.Errorf("cant write on directory")
+	}
+	return f.storage.Append(f.path, content)
+}
+
+func (f FileInfo) Write(content interface{}) error {
+	if f.IsDir() {
+		return fmt.Errorf("cant write on directory")
+	}
+	return f.storage.Write(f.path, content)
+}
+
+func (f FileInfo) Remove() error {
+	if f.IsDir() {
+		return fmt.Errorf("cant delete a directory")
+	}
+	return f.storage.Remove(f.path)
+}
+
+func (f FileInfo) RemoveDir() error {
+	if !f.IsDir() {
+		return fmt.Errorf("cant remove dir a file")
+	}
+	return f.storage.RemoveAll(f.path)
+}
+
+func (f FileInfo) Touch() error {
+	if f.IsDir() {
+		return fmt.Errorf("cant touch a dir")
+	}
+	return f.storage.Touch(f.path)
+}
+
+func NewFileInfo(path string, size int64, mode fs.FileMode, modTime time.Time, isDir bool, sys any, storage Driver) FileInfo {
 	return FileInfo{
 		path:    path,
 		size:    size,
@@ -105,5 +128,6 @@ func NewFileInfo(path string, size int64, mode fs.FileMode, modTime time.Time, i
 		modTime: modTime,
 		isDir:   isDir,
 		sys:     sys,
+		storage: storage,
 	}
 }
