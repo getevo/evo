@@ -98,6 +98,7 @@ func (driver *Driver) Init(input string) error {
 }
 func (driver *Driver) SetWorkingDir(path string) error {
 	path = driver.getRealPath(path)
+	driver.Dir = path
 	if !gpath.IsDir(driver.Dir) {
 		return fmt.Errorf("invalid dir %s", driver.Dir)
 	}
@@ -226,7 +227,6 @@ func (driver *Driver) Write(path string, content interface{}) error {
 }
 
 func (driver *Driver) getRealPath(path string) string {
-	path = filepath.Clean(filepath.Join(driver.Dir, path))
-	path = strings.Replace(path, `\`, `/`, -1)
+	path, _ = filepath.Abs(filepath.Clean(filepath.Join(driver.Dir, path)))
 	return path
 }
