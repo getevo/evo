@@ -25,9 +25,10 @@ vendor/
 *.sqlite*
 
 
-dev
-dev/*.go
+/dev
+/dev/*.go
 # vscode
 .vscode
 
 go.work
+/dev/
