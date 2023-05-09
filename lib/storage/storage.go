@@ -60,7 +60,11 @@ func Drivers() []lib.Driver {
 
 var configRegex = regexp.MustCompile(`(?m)^([a-zA-Z0-9\_\-]+)://`)
 
-func NewStorage(tag string, storage string) (*lib.Driver, error) {
+func NewStorageInstance(tag string, storage string) (*lib.Driver, error) {
+	if _, ok := Pool[tag]; ok {
+
+		return nil, fmt.Errorf("another storage instance with same name exists. %s", tag)
+	}
 	var config = configRegex.FindAllStringSubmatch(storage, -1)
 	if len(config) == 0 {
 		return nil, fmt.Errorf("invalid storage config string %s, required  proto://...", storage)
@@ -89,4 +93,8 @@ func GetStorage(tag string) lib.Driver {
 		return nil
 	}
 	return storage
+}
+
+func Instances() map[string]lib.Driver {
+	return Pool
 }
