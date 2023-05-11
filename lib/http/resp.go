@@ -5,7 +5,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"regexp"
@@ -24,6 +23,26 @@ type Resp struct {
 	respBody         []byte
 	downloadProgress DownloadProgress
 	err              error // delayed error
+}
+
+type SerializedResponse struct {
+	ReqBody  []byte
+	RespBody []byte
+	Cost     time.Duration
+}
+
+func (r *Resp) serialize() SerializedResponse {
+	return SerializedResponse{
+		ReqBody:  r.reqBody,
+		RespBody: r.respBody,
+		Cost:     r.cost,
+	}
+}
+
+func (r *Resp) deserialize(s SerializedResponse) {
+	r.reqBody = s.ReqBody
+	r.respBody = s.RespBody
+	r.cost = s.Cost
 }
 
 // Request returns *http.Request
@@ -52,14 +71,17 @@ func (r *Resp) ToBytes() ([]byte, error) {
 	if r.respBody != nil {
 		return r.respBody, nil
 	}
-	defer r.resp.Body.Close()
-	respBody, err := ioutil.ReadAll(r.resp.Body)
-	if err != nil {
-		r.err = err
-		return nil, err
+	if r.resp != nil {
+		defer r.resp.Body.Close()
+		respBody, err := io.ReadAll(r.resp.Body)
+		if err != nil {
+			r.err = err
+			return nil, err
+		}
+		r.respBody = respBody
+		return r.respBody, nil
 	}
-	r.respBody = respBody
-	return r.respBody, nil
+	return nil, nil
 }
 
 // String returns response body as string

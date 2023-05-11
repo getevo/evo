@@ -9,6 +9,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"github.com/getevo/evo/v2/lib/cache"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
@@ -35,10 +36,19 @@ const (
 	LrespBody             // output response body
 	Lcost                 // output time costed by the request
 	LstdFlags = LreqHead | LreqBody | LrespHead | LrespBody
+	Debug     = dbg(true)
 )
+
+type dbg bool
 
 // Param represents  http request param
 type Param map[string]interface{}
+
+// Cache set a cache time to keep request in memory
+type Cache struct {
+	Duration  time.Duration
+	Interface cache.Interface
+}
 
 // QueryParam is used to force append http request param to the uri
 type QueryParam map[string]interface{}
@@ -175,11 +185,7 @@ func (r *Req) Do(method, rawurl string, vs ...interface{}) (resp *Resp, err erro
 	resp = &Resp{req: req, r: r}
 
 	// output detail if Debug is enabled
-	if Debug {
-		defer func(resp *Resp) {
-			fmt.Println(resp.Dump())
-		}(resp)
-	}
+	var debug = false
 
 	var queryParam param
 	var formParam param
@@ -188,9 +194,15 @@ func (r *Req) Do(method, rawurl string, vs ...interface{}) (resp *Resp, err erro
 	var progress func(int64, int64)
 	var delayedFunc []func()
 	var lastFunc []func()
-
-	for _, v := range vs {
-		switch vv := v.(type) {
+	var cacheConfig *Cache
+	for idx, _ := range vs {
+		switch vv := vs[idx].(type) {
+		case dbg:
+			if vv == true {
+				debug = true
+			}
+		case Cache:
+			cacheConfig = &vv
 		case Header:
 			for key, value := range vv {
 				req.Header.Add(key, value)
@@ -276,7 +288,16 @@ func (r *Req) Do(method, rawurl string, vs ...interface{}) (resp *Resp, err erro
 			return nil, vv
 		}
 	}
-
+	if debug {
+		defer func(resp *Resp) {
+			if err != nil {
+				fmt.Println(err)
+			}
+			if resp != nil {
+				fmt.Println(resp.Dump())
+			}
+		}(resp)
+	}
 	if length := req.Header.Get("Content-Length"); length != "" {
 		if l, err := strconv.ParseInt(length, 10, 64); err == nil {
 			req.ContentLength = l
@@ -320,6 +341,24 @@ func (r *Req) Do(method, rawurl string, vs ...interface{}) (resp *Resp, err erro
 			rawurl = rawurl + "&" + paramStr
 		}
 	}
+	var cacheDriver cache.Interface
+	if cacheConfig != nil && (req.Method == "GET" || req.Method == "HEAD") {
+		cacheDriver = cacheConfig.Interface
+		if cacheDriver == nil {
+			cacheDriver = cache.DefaultDriver()
+		}
+		var response SerializedResponse
+		if cacheDriver.Get("http#req#"+req.Method+"#"+rawurl, &response) {
+			if debug {
+				fmt.Println("hit cache:", rawurl)
+			}
+			resp.deserialize(response)
+			return resp, nil
+		}
+		if debug {
+			fmt.Println("didnt hit cache:", rawurl)
+		}
+	}
 
 	u, err := url.Parse(rawurl)
 	if err != nil {
@@ -358,14 +397,26 @@ func (r *Req) Do(method, rawurl string, vs ...interface{}) (resp *Resp, err erro
 
 	resp.resp = response
 
-	if _, ok := resp.client.Transport.(*http.Transport); ok && response.Header.Get("Content-Encoding") == "gzip" && req.Header.Get("Accept-Encoding") != "" {
-		body, err := gzip.NewReader(response.Body)
+	if _, ok := resp.client.Transport.(*http.Transport); ok && req.Header.Get("Accept-Encoding") != "" {
+		if response.Header.Get("Content-Encoding") == "gzip" {
+			body, err := gzip.NewReader(response.Body)
+			if err != nil {
+				return nil, err
+			}
+			response.Body = body
+		}
+		// TODO: Brotli
+	}
+	if err == nil && cacheDriver != nil {
+		defer response.Body.Close()
+		respBody, err := io.ReadAll(response.Body)
 		if err != nil {
+			resp.err = err
 			return nil, err
 		}
-		response.Body = body
+		resp.respBody = respBody
+		cacheDriver.Set("http#req#"+req.Method+"#"+rawurl, resp.serialize(), cacheConfig.Duration)
 	}
-
 	return
 }
 

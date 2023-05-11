@@ -129,3 +129,7 @@ func Register() error {
 	SetDefaultDriver(memory.Driver)
 	return nil
 }
+
+func DefaultDriver() Interface {
+	return defaultDriver
+}
