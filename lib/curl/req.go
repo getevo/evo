@@ -1,4 +1,4 @@
-package http
+package curl
 
 import (
 	"bytes"
@@ -288,16 +288,7 @@ func (r *Req) Do(method, rawurl string, vs ...interface{}) (resp *Resp, err erro
 			return nil, vv
 		}
 	}
-	if debug {
-		defer func(resp *Resp) {
-			if err != nil {
-				fmt.Println(err)
-			}
-			if resp != nil {
-				fmt.Println(resp.Dump())
-			}
-		}(resp)
-	}
+
 	if length := req.Header.Get("Content-Length"); length != "" {
 		if l, err := strconv.ParseInt(length, 10, 64); err == nil {
 			req.ContentLength = l
@@ -359,7 +350,16 @@ func (r *Req) Do(method, rawurl string, vs ...interface{}) (resp *Resp, err erro
 			fmt.Println("didnt hit cache:", rawurl)
 		}
 	}
-
+	if debug {
+		defer func(resp *Resp) {
+			if err != nil {
+				fmt.Println(err)
+			}
+			if resp != nil {
+				fmt.Println(resp.Dump())
+			}
+		}(resp)
+	}
 	u, err := url.Parse(rawurl)
 	if err != nil {
 		return nil, err

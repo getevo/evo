@@ -1,4 +1,4 @@
-package http
+package curl
 
 import (
 	"crypto/tls"
@@ -44,12 +44,12 @@ func Client() *http.Client {
 	return std.Client()
 }
 
-// SetClient sets the underlying http.Client.
+// SetClient sets the underlying curl.Client.
 func (r *Req) SetClient(client *http.Client) {
 	r.client = client // use default if client == nil
 }
 
-// SetClient sets the default http.Client for requests.
+// SetClient sets the default curl.Client for requests.
 func SetClient(client *http.Client) {
 	std.SetClient(client)
 }

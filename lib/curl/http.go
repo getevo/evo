@@ -1,4 +1,4 @@
-package http
+package curl
 
 // Get execute a http GET request
 func Get(url string, v ...interface{}) (*Resp, error) {
