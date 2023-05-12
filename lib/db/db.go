@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 var (
@@ -248,4 +249,237 @@ func RollbackTo(name string) *gorm.DB {
 // Exec executes raw sql
 func Exec(sql string, values ...interface{}) (tx *gorm.DB) {
 	return db.Exec(sql, values...)
+}
+
+// Model specify the model you would like to run db operations
+//
+//	// update all users's name to `hello`
+//	db.Model(&User{}).Update("name", "hello")
+//	// if user's primary key is non-blank, will use it as condition, then will only update that user's name to `hello`
+//	db.Model(&user).Update("name", "hello")
+func Model(value interface{}) (tx *gorm.DB) {
+	return db.Model(value)
+}
+
+// Clauses Add clauses
+//
+// This supports both standard clauses (clause.OrderBy, clause.Limit, clause.Where) and more
+// advanced techniques like specifying lock strength and optimizer hints. See the
+// [docs] for more depth.
+//
+//	// add a simple limit clause
+//	db.Clauses(clause.Limit{Limit: 1}).Find(&User{})
+//	// tell the optimizer to use the `idx_user_name` index
+//	db.Clauses(hints.UseIndex("idx_user_name")).Find(&User{})
+//	// specify the lock strength to UPDATE
+//	db.Clauses(clause.Locking{Strength: "UPDATE"}).Find(&users)
+//
+// [docs]: https://gorm.io/docs/sql_builder.html#Clauses
+func Clauses(conds ...clause.Expression) (tx *gorm.DB) {
+	return db.Clauses(conds...)
+}
+
+// Table specify the table you would like to run db operations
+//
+//	// Get a user
+//	db.Table("users").take(&result)
+func Table(name string, args ...interface{}) (tx *gorm.DB) {
+	return db.Table(name, args...)
+}
+
+// Distinct specify distinct fields that you want querying
+//
+//	// Select distinct names of users
+//	db.Distinct("name").Find(&results)
+//	// Select distinct name/age pairs from users
+//	db.Distinct("name", "age").Find(&results)
+func Distinct(args ...interface{}) (tx *gorm.DB) {
+	return db.Distinct(args...)
+}
+
+// Select specify fields that you want when querying, creating, updating
+//
+// Use Select when you only want a subset of the fields. By default, GORM will select all fields.
+// Select accepts both string arguments and arrays.
+//
+//	// Select name and age of user using multiple arguments
+//	db.Select("name", "age").Find(&users)
+//	// Select name and age of user using an array
+//	db.Select([]string{"name", "age"}).Find(&users)
+func Select(query interface{}, args ...interface{}) (tx *gorm.DB) {
+	return db.Select(query, args...)
+}
+
+// Omit specify fields that you want to ignore when creating, updating and querying
+func Omit(columns ...string) (tx *gorm.DB) {
+	return db.Omit(columns...)
+}
+
+// Where add conditions
+//
+// See the [docs] for details on the various formats that where clauses can take. By default, where clauses chain with AND.
+//
+//	// Find the first user with name jinzhu
+//	db.Where("name = ?", "jinzhu").First(&user)
+//	// Find the first user with name jinzhu and age 20
+//	db.Where(&User{Name: "jinzhu", Age: 20}).First(&user)
+//	// Find the first user with name jinzhu and age not equal to 20
+//	db.Where("name = ?", "jinzhu").Where("age <> ?", "20").First(&user)
+//
+// [docs]: https://gorm.io/docs/query.html#Conditions
+func Where(query interface{}, args ...interface{}) (tx *gorm.DB) {
+	return db.Where(query, args...)
+}
+
+// Not add NOT conditions
+//
+// Not works similarly to where, and has the same syntax.
+//
+//	// Find the first user with name not equal to jinzhu
+//	db.Not("name = ?", "jinzhu").First(&user)
+func Not(query interface{}, args ...interface{}) (tx *gorm.DB) {
+	return db.Not(query, args...)
+}
+
+// Or add OR conditions
+//
+// Or is used to chain together queries with an OR.
+//
+//	// Find the first user with name equal to jinzhu or john
+//	db.Where("name = ?", "jinzhu").Or("name = ?", "john").First(&user)
+func Or(query interface{}, args ...interface{}) (tx *gorm.DB) {
+	return db.Or(query, args...)
+}
+
+// Joins specify Joins conditions
+//
+//	db.Joins("Account").Find(&user)
+//	db.Joins("JOIN emails ON emails.user_id = users.id AND emails.email = ?", "jinzhu@example.org").Find(&user)
+//	db.Joins("Account", DB.Select("id").Where("user_id = users.id AND name = ?", "someName").Model(&Account{}))
+func Joins(query string, args ...interface{}) (tx *gorm.DB) {
+	return db.Joins(query, args...)
+}
+
+// InnerJoins specify inner joins conditions
+// db.InnerJoins("Account").Find(&user)
+func InnerJoins(query string, args ...interface{}) (tx *gorm.DB) {
+	return db.InnerJoins(query, args...)
+}
+
+// Group specify the group method on the find
+//
+//	// Select the sum age of users with given names
+//	db.Model(&User{}).Select("name, sum(age) as total").Group("name").Find(&results)
+func Group(name string) (tx *gorm.DB) {
+	return db.Group(name)
+}
+
+// Having specify HAVING conditions for GROUP BY
+//
+//	// Select the sum age of users with name jinzhu
+//	db.Model(&User{}).Select("name, sum(age) as total").Group("name").Having("name = ?", "jinzhu").Find(&result)
+func Having(query interface{}, args ...interface{}) (tx *gorm.DB) {
+	return db.Having(query, args...)
+}
+
+// Order specify order when retrieving records from database
+//
+//	db.Order("name DESC")
+//	db.Order(clause.OrderByColumn{Column: clause.Column{Name: "name"}, Desc: true})
+func Order(value interface{}) (tx *gorm.DB) {
+	return db.Order(value)
+}
+
+// Limit specify the number of records to be retrieved
+//
+// Limit conditions can be cancelled by using `Limit(-1)`.
+//
+//	// retrieve 3 users
+//	db.Limit(3).Find(&users)
+//	// retrieve 3 users into users1, and all users into users2
+//	db.Limit(3).Find(&users1).Limit(-1).Find(&users2)
+func Limit(limit int) (tx *gorm.DB) {
+	return db.Limit(limit)
+}
+
+// Offset specify the number of records to skip before starting to return the records
+//
+// Offset conditions can be cancelled by using `Offset(-1)`.
+//
+//	// select the third user
+//	db.Offset(2).First(&user)
+//	// select the first user by cancelling an earlier chained offset
+//	db.Offset(5).Offset(-1).First(&user)
+func Offset(offset int) (tx *gorm.DB) {
+	return db.Offset(offset)
+}
+
+// Scopes pass current database connection to arguments `func(DB) DB`, which could be used to add conditions dynamically
+//
+//	func AmountGreaterThan1000(db *gorm.DB) *gorm.DB {
+//	    return db.Where("amount > ?", 1000)
+//	}
+//
+//	func OrderStatus(status []string) func  *gorm.DB {
+//	    return func  *gorm.DB {
+//	        return db.Scopes(AmountGreaterThan1000).Where("status in (?)", status)
+//	    }
+//	}
+//
+//	db.Scopes(AmountGreaterThan1000, OrderStatus([]string{"paid", "shipped"})).Find(&orders)
+func Scopes(funcs ...func(*gorm.DB) *gorm.DB) (tx *gorm.DB) {
+	return db.Scopes(funcs...)
+}
+
+// Preload preload associations with given conditions
+//
+//	// get all users, and preload all non-cancelled orders
+//	db.Preload("Orders", "state NOT IN (?)", "cancelled").Find(&users)
+func Preload(query string, args ...interface{}) (tx *gorm.DB) {
+	return db.Preload(query, args...)
+}
+
+// Attrs provide attributes used in [FirstOrCreate] or [FirstOrInit]
+//
+// Attrs only adds attributes if the record is not found.
+//
+//	// assign an email if the record is not found
+//	db.Where(User{Name: "non_existing"}).Attrs(User{Email: "fake@fake.org"}).FirstOrInit(&user)
+//	// user -> User{Name: "non_existing", Email: "fake@fake.org"}
+//
+//	// assign an email if the record is not found, otherwise ignore provided email
+//	db.Where(User{Name: "jinzhu"}).Attrs(User{Email: "fake@fake.org"}).FirstOrInit(&user)
+//	// user -> User{Name: "jinzhu", Age: 20}
+//
+// [FirstOrCreate]: https://gorm.io/docs/advanced_query.html#FirstOrCreate
+// [FirstOrInit]: https://gorm.io/docs/advanced_query.html#FirstOrInit
+func Attrs(attrs ...interface{}) (tx *gorm.DB) {
+	return db.Attrs(attrs...)
+}
+
+// Assign provide attributes used in [FirstOrCreate] or [FirstOrInit]
+//
+// Assign adds attributes even if the record is found. If using FirstOrCreate, this means that
+// records will be updated even if they are found.
+//
+//	// assign an email regardless of if the record is not found
+//	db.Where(User{Name: "non_existing"}).Assign(User{Email: "fake@fake.org"}).FirstOrInit(&user)
+//	// user -> User{Name: "non_existing", Email: "fake@fake.org"}
+//
+//	// assign email regardless of if record is found
+//	db.Where(User{Name: "jinzhu"}).Assign(User{Email: "fake@fake.org"}).FirstOrInit(&user)
+//	// user -> User{Name: "jinzhu", Age: 20, Email: "fake@fake.org"}
+//
+// [FirstOrCreate]: https://gorm.io/docs/advanced_query.html#FirstOrCreate
+// [FirstOrInit]: https://gorm.io/docs/advanced_query.html#FirstOrInit
+func Assign(attrs ...interface{}) (tx *gorm.DB) {
+	return Assign(attrs...)
+}
+
+func Unscoped() (tx *gorm.DB) {
+	return db.Unscoped()
+}
+
+func Raw(sql string, values ...interface{}) (tx *gorm.DB) {
+	return db.Raw(sql, values...)
 }
