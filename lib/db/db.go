@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"database/sql"
-	"github.com/getevo/evo/v2"
 	"gorm.io/gorm"
 )
 
@@ -11,8 +10,8 @@ var (
 	db *gorm.DB
 )
 
-func Register() {
-	db = evo.GetDBO()
+func Register(obj *gorm.DB) {
+	db = obj
 }
 
 // Session create new db session
