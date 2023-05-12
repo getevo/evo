@@ -2,6 +2,7 @@ package evo
 
 import (
 	"github.com/getevo/evo/v2/lib/cache"
+	dbo "github.com/getevo/evo/v2/lib/db"
 	"github.com/getevo/evo/v2/lib/generic"
 	"github.com/getevo/evo/v2/lib/settings"
 	"github.com/getevo/evo/v2/lib/settings/database"
@@ -30,6 +31,7 @@ func Setup() {
 	if settings.Get("Database.Enabled").Bool() {
 		database.SetDBO(GetDBO())
 		settings.SetDefaultDriver(database.Driver)
+		dbo.Register()
 	}
 
 	cache.Register()

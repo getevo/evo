@@ -13,7 +13,6 @@ var (
 
 func Register() {
 	db = evo.GetDBO()
-	db.Row()
 }
 
 // Session create new db session
