@@ -643,3 +643,25 @@ func indirectType(input interface{}) reflect.Type {
 func (v Value) IsEmpty() bool {
 	return v.Input == nil || reflect.ValueOf(v.Input).IsNil()
 }
+
+func (v Value) IsAny(s ...interface{}) bool {
+	var t = v.IndirectType()
+	var kind = t.Kind()
+	for _, item := range s {
+		switch v := item.(type) {
+		case reflect.Kind:
+			if v == kind {
+				return true
+			}
+		case string:
+			if strings.ToLower(t.String()) == v {
+				return true
+			}
+		default:
+			if TypeOf(v).iType.String() == t.String() {
+				return true
+			}
+		}
+	}
+	return false
+}

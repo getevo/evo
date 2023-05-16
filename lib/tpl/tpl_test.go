@@ -10,7 +10,7 @@ type User struct {
 }
 
 func TestRender(t *testing.T) {
-	var text = `Hello $name $user.Family $arr[1] $arr[2][test] $arr[2][key].Family $test[1]`
+	var text = `Hello $name $user.Family $arr[1] $arr[2][test] $arr[2][key].Family $test`
 	fmt.Println(Render(text, map[string]interface{}{
 		"name": "to",
 		"user": User{Family: "MH"},
