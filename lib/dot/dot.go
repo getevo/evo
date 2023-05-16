@@ -2,22 +2,42 @@ package dot
 
 import (
 	"errors"
+	"github.com/getevo/evo/v2/lib/generic"
 	"github.com/getevo/evo/v2/lib/reflections"
+	"github.com/getevo/evo/v2/lib/text"
 	"reflect"
+	"regexp"
 	"strings"
 )
+
+var arrayRegex = regexp.MustCompile(`\[[\"\'\x60]{0,1}(.*?)[\"\'\x60]{0,1}\]`)
 
 func Get(obj interface{}, prop string) (interface{}, error) {
 	// fmt.Println("getting property")
 	// fmt.Println(args)
 
 	// Get the array access
-	arr := strings.Split(prop, ".")
+	chunks := text.SplitAny(prop, ".")
+	var arr []string
+	for _, item := range chunks {
+		var matches = arrayRegex.FindAllStringSubmatch(item, -1)
 
-	// fmt.Println(arr)
+		if len(matches) > 0 {
+			arr = append(arr, strings.Split(item, "[")[0])
+
+			for _, m := range matches {
+				arr = append(arr, m[1])
+			}
+		} else {
+
+			arr = append(arr, item)
+		}
+	}
+
 	var err error
 	// last, arr := arr[len(arr)-1], arr[:len(arr)-1]
 	for _, key := range arr {
+
 		obj, err = getProperty(obj, key)
 		if err != nil {
 			return nil, err
@@ -31,8 +51,16 @@ func Get(obj interface{}, prop string) (interface{}, error) {
 
 // Loop through this to get properties via dot notation
 func getProperty(obj interface{}, prop string) (interface{}, error) {
-	if reflect.TypeOf(obj).Kind() == reflect.Map {
-
+	var _type = reflect.TypeOf(obj)
+	if _type.Kind() == reflect.Array || _type.Kind() == reflect.Slice {
+		val := reflect.ValueOf(obj)
+		idx := val.Index(generic.Parse(prop).Int())
+		if !idx.IsValid() {
+			return nil, nil
+		}
+		return idx.Interface(), nil
+	}
+	if _type.Kind() == reflect.Map {
 		val := reflect.ValueOf(obj)
 
 		valueOf := val.MapIndex(reflect.ValueOf(prop))
