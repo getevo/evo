@@ -13,7 +13,7 @@ With EVO Framework, you can focus on your programming logic and rapidly develop 
 
 ## Table of Contents
 - [Getting Started](#getting-started)
-- [Configuration and Settings](configuration.md)
+- [Configuration and Settings](docs/configuration.md)
 - [Database](database.md)
 - [Modules](storage_interface.md)
 - [Web Server](storage_interface.md)
@@ -25,7 +25,7 @@ With EVO Framework, you can focus on your programming logic and rapidly develop 
 - [TPL Templates](storage_interface.md)
 - [CURL](storage_interface.md)
 - [Build](storage_interface.md)
-- [Args](docs/ARGS.MD)
+- [Args](docs/args.md)
 - [Logging](storage_interface.md)
 - [Concurrency Patterns](storage_interface.md)
 - [STract configuration language](storage_interface.md)
@@ -55,7 +55,7 @@ Database:
    Params: ""
    Password: "password"
    SSLMode: "false"
-   Server: 192.168.1.102:3306
+   Server: 127.0.0.1:3306
    SlowQueryThreshold: 500ms
    Type: mysql
    Username: root

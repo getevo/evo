@@ -19,3 +19,5 @@ In the above code snippet, we have an example usage of the args package. The fir
 The second function, args.Exists, checks if the "arg2" argument exists. If it does exist, you can add your desired code or logic within the if statement block.
 
 Please note that the code provided is a simplified example, and you may need to import the necessary packages and initialize args before using it.
+
+#### [< Table of Contents](https://github.com/getevo/evo#table-of-contents)
