@@ -11,7 +11,27 @@ EVO Framework is a backend development solution designed to facilitate efficient
 
 With EVO Framework, you can focus on your programming logic and rapidly develop robust backend solutions without getting bogged down by intricate implementation details.
 
-#### For detailed usage instructions and examples, refer to the [Table of Contents](#table-of-contents)
+## Table of Contents
+- [Getting Started](#getting-started)
+- [Configuration and Settings](configuration.md)
+- [Database](database.md)
+- [Modules](storage_interface.md)
+- [Web Server](storage_interface.md)
+- [Storage Interface](storage_interface.md)
+- [Cache Interface](cache_interface.md)
+- [Messaging Bus Interface](cache_interface.md)
+- [Date](storage_interface.md)
+- [Internationalization](storage_interface.md)
+- [TPL Templates](storage_interface.md)
+- [CURL](storage_interface.md)
+- [Build](storage_interface.md)
+- [Args](docs/ARGS.MD)
+- [Logging](storage_interface.md)
+- [Concurrency Patterns](storage_interface.md)
+- [STract configuration language](storage_interface.md)
+- [Local Files](storage_interface.md)
+- [Dot Notation](storage_interface.md)
+- [Reflections](args.md)
 
 ## Getting Started
 
@@ -86,24 +106,3 @@ func main() {
 
 ```
 
-## Table of Contents
-
-- [Configuration and Settings](configuration.md)
-- [Database](database.md)
-- [Modules](storage_interface.md)
-- [Web Server](storage_interface.md)
-- [Storage Interface](storage_interface.md)
-- [Cache Interface](cache_interface.md)
-- [Messaging Bus Interface](cache_interface.md)
-- [Date](storage_interface.md)
-- [Internationalization](storage_interface.md)
-- [TPL Templates](storage_interface.md)
-- [CURL](storage_interface.md)
-- [Build](storage_interface.md)
-- [Args](docs/ARGS.MD)
-- [Logging](storage_interface.md)
-- [Concurrency Patterns](storage_interface.md)
-- [STract configuration language](storage_interface.md)
-- [Local Files](storage_interface.md)
-- [Dot Notation](storage_interface.md)
-- [Reflections](args.md)
