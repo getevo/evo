@@ -11,9 +11,9 @@ fmt.Println(value)
 
 // This function returns true if the argument exists.
 if args.Exists("arg2") {
-
+    fmt.Println("arg2 exsits!")
 }
-
+```
 In the above code snippet, we have an example usage of the args package. The first function, args.Get, retrieves the value of the "arg1" argument, which is expected to be passed when running the application. The retrieved value is then printed using fmt.Println.
 
 The second function, args.Exists, checks if the "arg2" argument exists. If it does exist, you can add your desired code or logic within the if statement block.
