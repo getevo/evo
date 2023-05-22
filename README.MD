@@ -1,90 +1,86 @@
-<!--[![Foo](http://www.google.com.au/images/nav_logo7.png)](http://google.com.au/)-->
-## EVO Web Application Development Framework
-[![Go Report Card](https://goreportcard.com/badge/github.com/iesreza/io)](https://goreportcard.com/report/github.com/iesreza/io)
-![Discord](https://img.shields.io/discord/731563126876536873) [![Discord Chat](https://img.shields.io/badge/Discord-Chat-informational)](https://discord.gg/RcmcKu5)    [![GitHub issues](https://img.shields.io/github/issues/getevo/evo)](https://github.com/getevo/evo/issues) [![GitHub stars](https://img.shields.io/github/stars/getevo/evo)](https://github.com/getevo/evo/stargazers) [![Gitter](https://badges.gitter.im/getevo-golang/community.svg)](https://gitter.im/getevo-golang/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+# EVO Framework
 
+EVO Framework is a backend development solution designed to facilitate efficient development using the Go programming language. It is built with a focus on modularity and follows the MVC (Model-View-Controller) architectural pattern. The core of EVO Framework is highly extensible, allowing for seamless extension or replacement of its main modules.
 
-EVO is a powerful package for quickly writing modular web applications/services in Golang aimed both backend and frontend.
+## Key Features
 
+- **Modularity**: EVO Framework promotes modularity, enabling developers to structure their codebase in a modular manner.
+- **MVC Structure**: Following the widely adopted MVC pattern, EVO Framework separates concerns and improves code organization.
+- **Comprehensive Toolset**: EVO Framework provides a rich set of tools, eliminating the need for developers to deal with low-level libraries and technologies.
+- **Enhanced Readability**: By leveraging the EVO Framework, your code becomes more readable and clear, enhancing collaboration and maintainability.
 
-## Features
- - Think once, Code less, Do more!
- - Aim both frontend and backend
- - Extremely simple to use.
- - Awesome superfast path matching and routing.
- - Modular & Extensible
- - A lot of tweaks and improvments
- - A lot of useful functions
- - A lot of UI components and integrations
- - A lot of usable/reusable apps to include and use
- - Live reload
- - High performance
- - Superfast template engine
- - Actively maintained
-- Docker Integration
- 
-## Builtin Apps 
-- Admin `simple extensible user panel`
-- Auth `fully featured user/group/role/permission management set of apies`
-- AdminLTE `adminlte template ready to use!`
-- Query `dynamic multi purpose data query api`
-- Settings `create settings view for all of your apps`
+With EVO Framework, you can focus on your programming logic and rapidly develop robust backend solutions without getting bogged down by intricate implementation details.
 
+## Getting Started
 
-## Documentation
+To get started with EVO Framework, follow these steps:
 
-[Documentation (WIKI)](https://github.com/getevo/evo/wiki)  
+1. Install EVO Framework by running the following command:
+   ```shell
+   $ go get github.com/getevo/evo/v2
+   ```
+2. Create Minimum Configuration File
+```yaml
+#config.yml
+Database:
+   Cache: "false"
+   ConnMaxLifTime: 1h
+   Database: "database"
+   Debug: "3"
+   Enabled: "false"
+   MaxIdleConns: "10"
+   MaxOpenConns: "100"
+   Params: ""
+   Password: "password"
+   SSLMode: "false"
+   Server: 192.168.1.102:3306
+   SlowQueryThreshold: 500ms
+   Type: mysql
+   Username: root
+HTTP:
+   BodyLimit: 1kb
+   CaseSensitive: "false"
+   CompressedFileSuffix: .evo.gz
+   Concurrency: "1024"
+   DisableDefaultContentType: "false"
+   DisableDefaultDate: "false"
+   DisableHeaderNormalizing: "false"
+   DisableKeepalive: "false"
+   ETag: "false"
+   GETOnly: "false"
+   Host: 0.0.0.0
+   IdleTimeout: "0"
+   Immutable: "false"
+   Network: ""
+   Port: "8080"
+   Prefork: "false"
+   ProxyHeader: X-Forwarded-For
+   ReadBufferSize: 8kb
+   ReadTimeout: 1s
+   ReduceMemoryUsage: "false"
+   ServerHeader: EVO
+   StrictRouting: "false"
+   UnescapePath: "false"
+   EnablePrintRoutes: false
+   WriteBufferSize: 4kb
+   WriteTimeout: 5s
 
-#### Quick Start
- - Installation
- - Create new project
- - Examples
+```
+3. Initialize the EVO Framework and start building your application:
+```go
+package main
 
-## Todo
-- i18n
-- User Management app
-- Journal App
-- Log App
-- Swagger
-- [Documentation (WIKI)](https://github.com/getevo/evo/wiki)  
-- Sample Apps
-- Clear Libraries
-- Improve Manager
-- Keycloak login
-- Social Login
-- Websocket integration
-- CodeTest integration 
-- Implementation test case of code
+import (
+   "github.com/getevo/evo/v2"
+)
 
-## Shoulders of Giants
-EVO stands on shoulder of great projects or inspired by them.
+func main() {
+    // initialize evo
+    evo.Setup()
+	
+    //your code goes here ...
+    evo.Run()
+}
 
-##### [Fiber](https://github.com/gofiber/fiber "Fiber")  
-An Express-inspired web framework written in Go
-_____
-##### [GORM](https://github.com/jinzhu/gorm "GORM")  
-The fantastic ORM library for Golang
-_____
-
-
-##### [Jet Template Engine for Go](https://github.com/iesreza/jet "Jet Template Engine for Go")  
-Jet is a template engine developed to be easy to use, powerful, dynamic, yet secure and very fast.
-_____
-
-##### [mapstructure](https://github.com/mitchellh/mapstructure "mapstructure")  
-mapstructure is a Go library for decoding generic map values to structures and vice versa, while providing helpful error handling.
-_____
-
-
-## Contact
-- Join the community and chat with us in real-time on [Discord](https://discord.gg/mCfYm6A).
-- Submit requests and issues on GitHub.
-
-
-
-
-## Contributors
-
-[<img alt="Reza" src="https://avatars1.githubusercontent.com/u/49395861?s=460&v=4" width="100">](https://github.com/iesreza) | [<img alt="Allan Nava" src="https://avatars0.githubusercontent.com/u/22498435?s=460&u=f715d7ae5a09d3ddaf1c278886ec86e59e86ed64&v=4" width="100">](https://github.com/Allan-Nava) |
-:---:|:---:|
-[Reza](https://github.com/iesreza)|[Allan](https://github.com/Allan-Nava)
+For detailed usage instructions and examples, refer to the [Table of Contents](https://github.com/getevo/evo/toc)
+```
