@@ -11,6 +11,8 @@ EVO Framework is a backend development solution designed to facilitate efficient
 
 With EVO Framework, you can focus on your programming logic and rapidly develop robust backend solutions without getting bogged down by intricate implementation details.
 
+#### For detailed usage instructions and examples, refer to the [Table of Contents](https://github.com/getevo/evo/toc)
+
 ## Getting Started
 
 To get started with EVO Framework, follow these steps:
@@ -82,5 +84,4 @@ func main() {
     evo.Run()
 }
 
-For detailed usage instructions and examples, refer to the [Table of Contents](https://github.com/getevo/evo/toc)
 ```
