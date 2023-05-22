@@ -11,7 +11,7 @@ EVO Framework is a backend development solution designed to facilitate efficient
 
 With EVO Framework, you can focus on your programming logic and rapidly develop robust backend solutions without getting bogged down by intricate implementation details.
 
-#### For detailed usage instructions and examples, refer to the [Table of Contents](docs/TOC.MD)
+#### For detailed usage instructions and examples, refer to the [Table of Contents](#table-of-contents)
 
 ## Getting Started
 
