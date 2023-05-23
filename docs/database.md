@@ -1,10 +1,11 @@
 # Database
 By enabling the database in the **`config.yml`**, you can start using your database connection extensively in your applications. The EVO Framework currently supports the following database engines:
 
-MySQL
-TiDB
-Microsoft SQL
-SQLite
+- MySQL
+- TiDB
+- Microsoft SQL
+- SQLite
+
 Here is an example of the database configuration with detailed settings:
 
 ```yaml
