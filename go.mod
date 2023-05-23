@@ -18,7 +18,7 @@ require (
 	github.com/iancoleman/strcase v0.2.0
 	github.com/jlaffaye/ftp v0.1.0
 	github.com/kelindar/binary v1.0.17
-	github.com/otiai10/copy v1.9.0
+	github.com/otiai10/copy v1.11.0
 	github.com/pkg/sftp v1.13.5
 	github.com/segmentio/kafka-go v0.4.39
 	github.com/stretchr/testify v1.8.2
