@@ -1,6 +1,6 @@
 # EVO Framework Configuration
 
-The EVO Framework comes with a flexible configuration system that supports YAML files on the filesystem ("yml") as the default storage, and a database storage option called "database". Developers can also add custom storage interfaces based on their specific needs.
+The EVO Framework comes with a flexible configuration system that supports YAML files on the filesystem ("yml")as the default storage, and a database storage option called "database". Developers can also add custom storage interfaces based on their specific needs.
 
 To run the EVO Framework, you need to configure the following settings in a local file called `config.yml`:
 
