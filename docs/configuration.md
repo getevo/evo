@@ -97,6 +97,59 @@ To use a specific driver:
 var  err = settings.Use("database").Set("SECTION.KEY","MY VALUE")
 ```
 
+### Register configuration
+To register configuration keys and use them later, you need to perform the registration step. Registering configuration keys enhances code readability and provides documentation for each configuration key. Here are examples of how to introduce configuration keys to the system:
+
+- Registering a set of configuration keys using a config struct:
+```go
+type DatabaseConfig struct {
+	Enabled            bool          `description:"Enabled database" default:"false" json:"enabled" yaml:"enabled"`
+	Type               string        `description:"Database engine" default:"sqlite" json:"type" yaml:"type"`
+	Username           string        `description:"Username" default:"root" json:"username" yaml:"username"`
+	Password           string        `description:"Password" default:"" json:"password" yaml:"password"`
+	Server             string        `description:"Server" default:"127.0.0.1:3306" json:"server" yaml:"server"`
+	Cache              string        `description:"Enabled query cache" default:"false" json:"cache" yaml:"cache"`
+	Debug              int           `description:"Debug level (1-4)" default:"3" params:"{\"min\":1,\"max\":4}" json:"debug" yaml:"debug"`
+	Database           string        `description:"Database Name" default:"" json:"database" yaml:"database"`
+	SSLMode            string        `description:"SSL Mode (required by some DBMS)" default:"false" json:"ssl-mode" yaml:"ssl-mode"`
+	Params             string        `description:"Extra connection string parameters" default:"" json:"params" yaml:"params"`
+	MaxOpenConns       int           `description:"Max pool connections" default:"100" json:"max-open-connections" yaml:"max-open-connections"`
+	MaxIdleConns       int           `description:"Max idle connections in pool" default:"10" json:"max-idle-connections" yaml:"max-idle-connections"`
+	ConnMaxLifTime     time.Duration `description:"Max connection lifetime" default:"1h" json:"connection-max-lifetime" yaml:"connection-max-lifetime"`
+	SlowQueryThreshold time.Duration `description:"Slow query threshold" default:"500ms" json:"slow_query_threshold" yaml:"slow-query-threshold"`
+}
+
+// This code will register all keys of the DatabaseConfig struct under the Database section
+// Note that this function will take description and default tags to fill the Value and Description attributes of correspondence settings.Setting struct
+settings.Register("Database", &config)
+```
+
+- Registering a custom key:
+```go
+settings.Register(
+	settings.Setting{
+		Domain:      "CACHE",
+		Name:        "REDIS_ADDRESS",
+		Title:       "Redis server(s) address",
+		Description: "Redis servers address. Separate using a comma if cluster.",
+		Type:        "text",
+		ReadOnly:    false,
+		Visible:     true,
+	},
+	settings.Setting{
+		Domain:      "CACHE",
+		Name:        "REDIS_PREFIX",
+		Title:       "Redis key prefix",
+		Description: "Set a prefix for keys to prevent conjunction of keys in case of multiple applications running on the same instance of Redis",
+		Type:        "text",
+		ReadOnly:    false,
+		Visible:     true,
+	},
+)
+```
+By registering configuration keys, you make them available for use in your application and provide additional information about their purpose, default values, and other details.
+
+
 ## Configuration Drivers
 
 - To get list of available drivers:
