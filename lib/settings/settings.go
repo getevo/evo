@@ -10,15 +10,14 @@ var drivers = []Interface{&yml.Yaml{}}
 var defaultDriver Interface = &proxy{}
 
 type Interface interface {
-	// Name returns driver name
-	Name() string
-	Get(key string) generic.Value
-	Has(key string) (bool, generic.Value)
-	All() map[string]generic.Value
-	Set(key string, value interface{}) error
-	SetMulti(data map[string]interface{}) error
-	Register(settings ...interface{}) error
-	Init(params ...string) error
+	Name() string                               // Name returns driver name
+	Get(key string) generic.Value               // Get returns single value
+	Has(key string) (bool, generic.Value)       // Has check if key exists
+	All() map[string]generic.Value              // All returns all of configuration values
+	Set(key string, value interface{}) error    // Set sets value of a key
+	SetMulti(data map[string]interface{}) error // SetMulti sets multiple keys at once
+	Register(settings ...interface{}) error     // Register a new key to be used in the future
+	Init(params ...string) error                // Init will be called at the initialization of application
 }
 
 type Setting struct {

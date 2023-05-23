@@ -58,6 +58,11 @@ Here's an example of how you can retrieve a configuration:
 var c = settings.Get("SECTION.KEY").Int()
 ```
 
+To retrieve all configuration keys as **`map[string]generic.Value`**:
+```go
+var m = settings.All()
+```
+
 To use a specific driver:
 ```go 
 // Retrieve the configuration from the YAML file only.
@@ -65,15 +70,25 @@ var c = settings.Use("yml").Get("SECTION.KEY").Int()
 
 // Retrieve the configuration from the database only.
 var c = settings.Use("database").Get("SECTION.KEY").Int()
+
 ```
 
 Please note that the **settings.Get** function returns a generic value. To cast it to other types or use it, please refer to the **[generic](generic.md)** section for further instructions.
 
 
-To set the configuration:
+To set single configuration key:
 ```go
 // following code set configuration on default driver
 var  err = settings.Set("SECTION.KEY","MY VALUE")
+```
+
+To set multiple keys at once:
+```go
+// following code set configuration on default driver
+var  err = settings.SetMulti(data map[string]interface{}{
+	"SECTION.KEY1":"value goes here",
+	"SECTION.KEY2":"value goes here",
+})
 ```
 
 To use a specific driver:
@@ -89,9 +104,42 @@ var  err = settings.Use("database").Set("SECTION.KEY","MY VALUE")
 var drivers = settings.Drivers()
 ```
 
+- To switch to specific driver:
+```go
+var drivers = settings.Use("name of driver")
+```
 
 
 - To get single driver:
 ```go
 var driver = settings.Driver("name of driver")
 ```
+
+- To set default driver:
+```go
+settings.SetDefaultDriver("name of driver")
+```
+
+## Create and Add driver
+To create a new driver, you need to implement the **`settings.Interface`** with the following methods:
+
+```go
+type Interface interface {
+    Name() string                             // Returns the driver name
+    Get(key string) generic.Value             // Retrieves a single value
+    Has(key string) (bool, generic.Value)     // Checks if a key exists
+    All() map[string]generic.Value            // Returns all configuration values
+    Set(key string, value interface{}) error  // Sets the value of a key
+    SetMulti(data map[string]interface{}) error  // Sets multiple keys at once
+    Register(settings ...interface{}) error  // Registers a new key to be used in the future
+    Init(params ...string) error             // Initializes the driver (called during application initialization)
+}
+```
+
+Once you have implemented the interface, create an instance of your struct and add it as a driver:
+```go
+driver := YourDriver{} // Create an instance of your driver struct
+settings.AddDriver(driver) // Add your driver to the configuration system
+```
+
+Your driver will now be available for use in the EVO Framework.

@@ -5,19 +5,47 @@ import (
 )
 
 type DatabaseConfig struct {
-	Enabled            bool          `description:"Enabled database" default:"false" json:"enabled" yaml:"enabled"`
-	Type               string        `description:"Database engine" default:"sqlite" json:"type" yaml:"type"`
-	Username           string        `description:"Username" default:"root" json:"username" yaml:"username"`
-	Password           string        `description:"Password" default:"" json:"password" yaml:"password"`
-	Server             string        `description:"Server" default:"127.0.0.1:3306" json:"server" yaml:"server"`
-	Cache              string        `description:"Enabled query cache" default:"false" json:"cache" yaml:"cache"`
-	Debug              int           `description:"Debug level (1-4)" default:"3" params:"{\"min\":1,\"max\":4}" json:"debug" yaml:"debug"`
-	Database           string        `description:"Database Name" default:"" json:"database" yaml:"database"`
-	SSLMode            string        `description:"SSL Mode (required by some DBMS)" default:"false" json:"ssl-mode" yaml:"ssl-mode"`
-	Params             string        `description:"Extra connection string parameters" default:"" json:"params" yaml:"params"`
-	MaxOpenConns       int           `description:"Max pool connections" default:"100" json:"max-open-connections" yaml:"max-open-connections"`
-	MaxIdleConns       int           `description:"Max idle connections in pool" default:"10" json:"max-idle-connections" yaml:"max-idle-connections"`
-	ConnMaxLifTime     time.Duration `description:"Max connection lifetime" default:"1h" json:"connection-max-lifetime" yaml:"connection-max-lifetime"`
+	// Enabled enables the database connection
+	Enabled bool `description:"Enabled database" default:"false" json:"enabled" yaml:"enabled"`
+
+	// Type of database. mysql,mssql,sqlite
+	Type string `description:"Database engine" default:"sqlite" json:"type" yaml:"type"`
+
+	// Username indicates username of the database
+	Username string `description:"Username" default:"root" json:"username" yaml:"username"`
+
+	// Password indicates password of the database
+	Password string `description:"Password" default:"" json:"password" yaml:"password"`
+
+	// Server is the path of server or sqlite file path
+	Server string `description:"Server" default:"127.0.0.1:3306" json:"server" yaml:"server"`
+
+	// Cache if is enabled, it will cache the constructed queries to save process time
+	Cache string `description:"Enabled query cache" default:"false" json:"cache" yaml:"cache"`
+
+	// Debug level indicates verbosity of the logging level. 1:silent 2:warn 3:error 4:info
+	Debug int `description:"Debug level (1-4)" default:"3" params:"{\"min\":1,\"max\":4}" json:"debug" yaml:"debug"`
+
+	// Database indicates name of the database
+	Database string `description:"Database Name" default:"" json:"database" yaml:"database"`
+
+	// SSLMode enables support over ssl
+	SSLMode string `description:"SSL Mode (required by some DBMS)" default:"false" json:"ssl-mode" yaml:"ssl-mode"`
+
+	// Params will pass extra parameter to connection string
+	Params string `description:"Extra connection string parameters" default:"" json:"params" yaml:"params"`
+
+	// MaxOpenConns indicates how many concurrent connections are allowed
+	MaxOpenConns int `description:"Max pool connections" default:"100" json:"max-open-connections" yaml:"max-open-connections"`
+
+	// MaxIdleConns indicates how many concurrent idle connections are allowed
+	MaxIdleConns int `description:"Max idle connections in pool" default:"10" json:"max-idle-connections" yaml:"max-idle-connections"`
+
+	// MaxIdleConns indicates for how long a connection could be idle without being close by server
+	ConnMaxLifTime time.Duration `description:"Max connection lifetime" default:"1h" json:"connection-max-lifetime" yaml:"connection-max-lifetime"`
+
+	// SlowQueryThreshold defines the threshold duration for query execution. If the query
+	// takes longer than this value, the driver will issue a warning.
 	SlowQueryThreshold time.Duration `description:"Slow query threshold" default:"500ms" json:"slow_query_threshold" yaml:"slow-query-threshold"`
 }
 
