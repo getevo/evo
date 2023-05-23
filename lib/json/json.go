@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/tidwall/gjson"
+	"io"
 	"reflect"
 	"strconv"
 	"strings"
@@ -32,6 +33,23 @@ func Unmarshal(input interface{}, output interface{}) error {
 			return err
 		}
 		return json.Unmarshal(b, output)
+	case io.ReadCloser:
+		b, err := io.ReadAll(v)
+		if err != nil {
+			return err
+		}
+		err = v.Close()
+		if err != nil {
+			return err
+		}
+		return json.Unmarshal(b, output)
+	case io.Reader:
+		b, err := io.ReadAll(v)
+		if err != nil {
+			return err
+		}
+		return json.Unmarshal(b, output)
+
 	}
 	return fmt.Errorf("unreconized input")
 }
