@@ -66,12 +66,12 @@ db.Find(&user)
 ```
 
 ### Accessing the database using the db library
-Alternatively, you can access the database object directly using the db library, which is a wrapper around the gorm.DB instance:
+Alternatively, you can access the database object directly using the **db** library, which is a wrapper around the **gorm.DB** instance:
 ```go
 var user User
 db.Find(&user)
 ```
 
-For further information on how to use gorm, you can refer to the **[gorm documentation](https://gorm.io/docs)**. The documentation provides detailed guidance on using the gorm library for database operations.
+For further information on how to use **gorm**, you can refer to the **[gorm documentation](https://gorm.io/docs)**. The documentation provides detailed guidance on using the gorm library for database operations.
 
 
