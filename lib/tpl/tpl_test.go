@@ -6,15 +6,16 @@ import (
 )
 
 type User struct {
+	Name   string
 	Family string
 }
 
 func TestRender(t *testing.T) {
-	var text = `Hello $name $user.Family $arr[1] $arr[2][test] $arr[2][key].Family $test`
+	var text = `Hello $title $user.Name $user.Family you have $sender[0] email From $sender[2][from]($sender[2][user].Name $sender[2][user].Family) at $date[0]:$date[1]:$date[2]`
 	fmt.Println(Render(text, map[string]interface{}{
-		"name": "to",
-		"user": User{Family: "MH"},
-		"arr":  []interface{}{"a", "b", map[string]interface{}{"test": "value", "key": User{Family: "My User"}}},
-		"test": []string{"x", "y", "z"},
+		"title":  "Mrs",
+		"user":   User{Name: "Maria", Family: "Rossy"},
+		"sender": []interface{}{1, "empty!", map[string]interface{}{"from": "example@example.com", "user": User{Name: "Marco", Family: "Pollo"}}},
+		"date":   []int{10, 15, 20},
 	}))
 }

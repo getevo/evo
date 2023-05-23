@@ -22,7 +22,7 @@ With EVO Framework, you can focus on your programming logic and rapidly develop 
 - [Messaging Bus Interface](cache_interface.md)
 - [Date](storage_interface.md)
 - [Internationalization](storage_interface.md)
-- [TPL Templates](storage_interface.md)
+- [TPL Templates](docs/tpl.md)
 - [CURL](storage_interface.md)
 - [Build](storage_interface.md)
 - [Args](docs/args.md)
@@ -30,7 +30,7 @@ With EVO Framework, you can focus on your programming logic and rapidly develop 
 - [Concurrency Patterns](storage_interface.md)
 - [STract configuration language](storage_interface.md)
 - [Local Files](storage_interface.md)
-- [Dot Notation](storage_interface.md)
+- [Dot Notation](docs/dot.md)
 - [Reflections](args.md)
 
 ## Getting Started
