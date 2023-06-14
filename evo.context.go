@@ -29,6 +29,7 @@ type Request struct {
 	status         int
 	_break         bool
 	jsonParsedBody *gjson.Result
+	user           *UserInterface
 }
 
 type Response struct {
