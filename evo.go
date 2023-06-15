@@ -35,6 +35,7 @@ func Setup() {
 	}
 
 	cache.Register()
+
 }
 
 // Run start EVO Server
