@@ -1,7 +1,6 @@
 package scheduler
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
 	"time"
@@ -34,7 +33,6 @@ func Register() {
 	go func() {
 		for {
 			var now = time.Now().Format("Mon,2006-01-02,15:04:05")
-			fmt.Println(now)
 			for idx, _ := range jobs {
 				var job = jobs[idx]
 				if !job.Running && !job.Pause && job.Every.MatchString(now) {
