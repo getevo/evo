@@ -1,12 +1,15 @@
 package try
 
+import "github.com/getevo/evo/v2/lib/panics"
+
 const rethrow_panic = "_____rethrow"
 
 type (
 	Error     interface{}
 	exception struct {
-		finally func()
-		Error   Error
+		finally   func()
+		Error     Error
+		Recovered *panics.Recovered
 	}
 )
 
@@ -15,32 +18,19 @@ func Throw() {
 }
 
 func This(f func()) (e exception) {
-	e = exception{nil, nil}
+	e = exception{nil, nil, nil}
 	// catch error in
-	defer func() {
-		e.Error = recover()
-	}()
-	f()
+	var pc panics.Catcher
+	pc.Try(f)
+	recovered := pc.Recovered()
+	e.Error = recovered.AsError()
+	e.Recovered = pc.Recovered()
 	return
 }
 
-func (e exception) Catch(f func(err Error)) {
+func (e exception) Catch(f func(err *panics.Recovered)) {
 	if e.Error != nil {
-		defer func() {
-			// call finally
-			if e.finally != nil {
-				e.finally()
-			}
-
-			// rethrow exceptions
-			if err := recover(); err != nil {
-				if err == rethrow_panic {
-					err = e.Error
-				}
-				panic(err)
-			}
-		}()
-		f(e.Error)
+		f(e.Recovered)
 	} else if e.finally != nil {
 		e.finally()
 	}
