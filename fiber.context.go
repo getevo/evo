@@ -3,8 +3,9 @@ package evo
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"github.com/ajg/form"
+	"github.com/getevo/evo/v2/lib/frm"
 	"github.com/getevo/evo/v2/lib/generic"
 	"github.com/getevo/evo/v2/lib/outcome"
 	"github.com/gofiber/fiber/v2"
@@ -12,7 +13,9 @@ import (
 	"github.com/tidwall/gjson"
 	"github.com/valyala/fasthttp"
 	"io"
+	"mime"
 	"mime/multipart"
+	"net/url"
 	"reflect"
 	"strconv"
 	"strings"
@@ -76,7 +79,15 @@ func (r *Request) BodyParser(out interface{}) error {
 	} else if strings.HasPrefix(ctype, MIMETextXML) || strings.HasPrefix(ctype, MIMEApplicationXML) {
 		return json.Unmarshal(r.Context.Context().Request.Body(), out)
 	} else if strings.HasPrefix(ctype, MIMEApplicationForm) || strings.HasPrefix(ctype, MIMEMultipartForm) {
-		return form.DecodeString(out, r.Body())
+		dec := frm.NewDecoder(&frm.DecoderOptions{
+			TagName:           "json",
+			IgnoreUnknownKeys: true,
+		})
+		var data, err = r.Form()
+		if err != nil {
+			return err
+		}
+		return dec.Decode(data, out)
 	}
 	return fmt.Errorf("undefined body type")
 	//return r.Context.BodyParser(out)
@@ -211,6 +222,42 @@ func (r *Request) BodyValue(key string) generic.Value {
 // FormValue returns the first value by key from a MultipartForm.
 func (r *Request) FormValue(key string) generic.Value {
 	return generic.Parse(r.Context.FormValue(key))
+}
+
+// Form.
+func (r *Request) Form() (url.Values, error) {
+	var err error
+	var form url.Values
+	if r.Method() == "POST" || r.Method() == "PUT" || r.Method() == "PATCH" {
+		form, err = parsePostForm(r)
+	}
+	if form == nil {
+		form = url.Values{}
+	}
+
+	return form, err
+}
+
+func parsePostForm(r *Request) (vs url.Values, err error) {
+	if r.Body == nil {
+		err = errors.New("missing form body")
+		return
+	}
+	ct := r.ContentType()
+	// RFC 7231, section 3.1.1.5 - empty type
+	//   MAY be treated as application/octet-stream
+	if ct == "" {
+		ct = "application/octet-stream"
+	}
+	ct, _, err = mime.ParseMediaType(ct)
+	switch {
+	case strings.HasPrefix(ct, "application/x-www-form-urlencoded"):
+		return url.ParseQuery(string(r.Body()))
+	case strings.HasPrefix(ct, "multipart/form-data"):
+		v, err := r.MultipartForm()
+		return url.Values(v.Value), err
+	}
+	return nil, fmt.Errorf("invalid content type")
 }
 
 // Fresh not implemented yet
