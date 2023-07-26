@@ -26,7 +26,7 @@ type Error struct {
 
 func (s *Error) Error() string {
 	var b strings.Builder
-	b.WriteString("formam: ")
+	b.WriteString("form parser: ")
 	if s.field != "" {
 		b.WriteString("field=")
 		b.WriteString(s.field)
