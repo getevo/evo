@@ -1,0 +1,362 @@
+package ddl
+
+import (
+	"fmt"
+	"github.com/getevo/evo/v2/lib/db/schema/table"
+	"gorm.io/gorm"
+	"strconv"
+	"strings"
+)
+
+type Table struct {
+	Columns    Columns
+	PrimaryKey Columns
+	Index      Indexes
+	Engine     string
+	Name       string
+}
+
+type Column struct {
+	Name       string
+	Nullable   bool
+	PrimaryKey bool
+	//Size          int
+	//Scale         int
+	Precision     int
+	Type          string
+	Default       string
+	AutoIncrement bool
+	Unique        bool
+	Comment       string
+	OnUpdate      string
+}
+
+type Columns []Column
+
+func (list Columns) Find(name string) *Column {
+	for idx, _ := range list {
+		if list[idx].Name == name {
+			return &list[idx]
+		}
+	}
+	return nil
+}
+
+func (list Columns) Keys() []string {
+	var result []string
+	for _, item := range list {
+		result = append(result, item.Name)
+	}
+	return result
+}
+
+type Index struct {
+	Name    string
+	Unique  bool
+	Columns Columns
+}
+
+type Indexes []Index
+
+func (list Indexes) Find(name string) *Index {
+	for idx, _ := range list {
+		if list[idx].Name == name {
+			return &list[idx]
+		}
+	}
+	return nil
+}
+
+func FromStatement(stmt *gorm.Statement) Table {
+	var table = Table{
+		Name:   stmt.Table,
+		Engine: "INNODB",
+	}
+
+	for _, field := range stmt.Schema.Fields {
+		if field.IgnoreMigration || field.DBName == "" {
+			continue
+		}
+
+		var datatype = stmt.Dialector.DataTypeOf(field)
+		if strings.Contains(datatype, "enum") {
+			datatype = cleanEnum(datatype)
+		} else {
+			datatype = strings.Split(datatype, " ")[0]
+		}
+		switch datatype {
+		case "boolean":
+			datatype = "tinyint(1)"
+		case "bigint":
+			datatype = "bigint(20)"
+		case "datetime(3)":
+			datatype = "timestamp"
+		}
+
+		var column = Column{
+			Name:          field.DBName,
+			Type:          datatype,
+			Precision:     field.Precision,
+			Default:       field.DefaultValue,
+			AutoIncrement: field.AutoIncrement,
+			Comment:       field.Comment,
+			PrimaryKey:    field.PrimaryKey,
+			Unique:        field.Unique,
+		}
+
+		if strings.ToLower(column.Type) == "datetime(3)" {
+			column.Type = "TIMESTAMP"
+		}
+		if column.Name == "deleted_at" {
+			column.Nullable = true
+			column.Default = "NULL"
+		}
+		if column.Name == "created_at" {
+			column.Nullable = false
+			column.Default = "CURRENT_TIMESTAMP"
+		}
+		if column.Name == "updated_at" {
+			column.Nullable = false
+			column.Default = "CURRENT_TIMESTAMP"
+			column.OnUpdate = "CURRENT_TIMESTAMP"
+		}
+
+		if column.Unique {
+			table.Index = append(table.Index, Index{
+				Name:    "idx_unique_" + column.Name,
+				Unique:  true,
+				Columns: Columns{column},
+			})
+		}
+		table.Columns = append(table.Columns, column)
+		if field.PrimaryKey {
+			table.PrimaryKey = append(table.PrimaryKey, column)
+		}
+	}
+
+	for _, index := range stmt.Schema.ParseIndexes() {
+		var idx = Index{
+			Name:   index.Name,
+			Unique: index.Class == "UNIQUE",
+		}
+		for _, opt := range index.Fields {
+			idx.Columns = append(idx.Columns, *table.Columns.Find(opt.DBName))
+		}
+
+		table.Index = append(table.Index, idx)
+	}
+	return table
+}
+
+func cleanEnum(str string) string {
+	var result = ""
+	var inside = false
+	for _, char := range str {
+		if char == '\'' || char == '"' || char == '`' {
+			inside = !inside
+		}
+		if !inside && char == ' ' {
+			continue
+		}
+		result += string(char)
+	}
+	return result
+}
+
+func (table Table) GetCreateQuery() []string {
+	var queries []string
+	var query = "CREATE TABLE IF NOT EXISTS " + quote(table.Name) + "("
+	var primaryKeys []string
+	for idx, _ := range table.Columns {
+		var field = table.Columns[idx]
+		query += "\r\n\t"
+		if field.PrimaryKey {
+			primaryKeys = append(primaryKeys, quote(field.Name))
+			field.Nullable = false
+		}
+		query += getFieldQuery(&field)
+		if idx < len(table.Columns)-1 {
+			query += ","
+		}
+	}
+	if len(primaryKeys) > 0 {
+		query += ","
+		query += "\r\n\t" + "PRIMARY KEY (" + strings.Join(primaryKeys, ",") + ")"
+	}
+	query += "\r\n) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ENGINE=" + table.Engine + " COMMENT '0.0.0';"
+	queries = append(queries, query)
+
+	for _, index := range table.Index {
+		query = "CREATE "
+		if index.Unique {
+			query += "UNIQUE "
+		}
+		var keys = index.Columns.Keys()
+		for idx, _ := range keys {
+			keys[idx] = quote(keys[idx])
+		}
+		query += "INDEX `" + index.Name + "` ON `" + table.Name + "` (" + strings.Join(keys, ",") + ");"
+		queries = append(queries, query)
+	}
+	return queries
+}
+
+func getFieldQuery(field *Column) string {
+	var query = quote(field.Name)
+	query += " " + field.Type
+	if field.AutoIncrement {
+		query += " AUTO_INCREMENT"
+	}
+
+	if field.Nullable {
+		query += " NULL"
+	} else {
+		query += " NOT NULL"
+	}
+
+	if field.Default != "" {
+		query += " DEFAULT " + field.Default
+	}
+	if field.OnUpdate != "" {
+		query += " ON UPDATE " + field.OnUpdate
+	}
+	if len(field.Comment) > 0 {
+		query += " COMMENT " + strconv.Quote(field.Comment)
+	}
+	return query
+}
+
+func (local Table) GetDiff(remote table.Table) []string {
+	var queries []string
+	var primaryKeys []string
+
+	for idx, _ := range local.Columns {
+		var field = local.Columns[idx]
+		if field.PrimaryKey {
+			primaryKeys = append(primaryKeys, quote(field.Name))
+			field.Nullable = false
+		}
+
+		if r := remote.Columns.GetColumn(field.Name); r == nil {
+			//does not exist
+			queries = append(queries, "ALTER TABLE "+quote(local.Name)+" ADD "+getFieldQuery(&field)+";")
+		} else {
+			var diff = false
+			if field.Type != strings.ToLower(r.ColumnType) {
+				queries = append(queries, fmt.Sprintf("--  type does not match. new:%s old:%s", field.Type, strings.ToLower(r.ColumnType)))
+				diff = true
+			}
+			if field.Comment != r.Comment {
+				queries = append(queries, fmt.Sprintf("--  comment does not match. new:%s old:%s", field.Comment, r.Comment))
+				diff = true
+			}
+			if field.Default != getString(r.ColumnDefault) {
+				if !(field.Default == "NULL" && r.ColumnDefault == nil) {
+					queries = append(queries, fmt.Sprintf("--  default value does not match. new:%s old:%s", field.Default, getString(r.ColumnDefault)))
+					diff = true
+				}
+			}
+			if field.Nullable != (r.Nullable == "YES") {
+				queries = append(queries, fmt.Sprintf("--  nullable does not match. new:%t old:%t", field.Nullable, r.Nullable == "YES"))
+				diff = true
+			}
+			if diff {
+				queries = append(queries, "ALTER TABLE "+quote(local.Name)+" MODIFY COLUMN "+getFieldQuery(&field)+";")
+			}
+		}
+	}
+	var pks []string
+	var pksMatch = true
+	for _, column := range remote.Columns {
+		if column.ColumnKey == "PRI" {
+			pks = append(pks, column.Name)
+			var col = local.PrimaryKey.Find(column.Name)
+			if col == nil || !col.PrimaryKey {
+				pksMatch = false
+			}
+		}
+	}
+	if pksMatch {
+		pksMatch = len(pks) == len(local.PrimaryKey.Keys())
+	}
+	if !pksMatch {
+		queries = append(queries, fmt.Sprintf("-- primary key does not match. new:%s old:%s", strings.Join(local.PrimaryKey.Keys(), ","), strings.Join(pks, ",")))
+		queries = append(queries, "ALTER TABLE "+quote(local.Name)+" DROP PRIMARY KEY;")
+		queries = append(queries, "ALTER TABLE "+quote(local.Name)+" ADD PRIMARY KEY("+strings.Join(local.PrimaryKey.Keys(), ",")+");")
+	}
+
+	for _, index := range local.Index {
+		var r = remote.Indexes.Find(index.Name)
+		if r == nil {
+			var query = "CREATE "
+			if index.Unique {
+				query += "UNIQUE "
+			}
+			var keys = index.Columns.Keys()
+			for idx, _ := range keys {
+				keys[idx] = quote(keys[idx])
+			}
+			query += "INDEX `" + index.Name + "` ON `" + local.Name + "` (" + strings.Join(keys, ",") + ");"
+			queries = append(queries, "-- append not existing index")
+			queries = append(queries, query)
+		} else {
+			var changed = false
+			if r.Unique != index.Unique {
+				changed = true
+				queries = append(queries, fmt.Sprintf("-- index unique flag not match. new:%t old:%t", index.Unique, r.Unique))
+			}
+			if len(r.Columns) != len(index.Columns) {
+				queries = append(queries, fmt.Sprintf("-- index columns does not match. new:%s old:%s", strings.Join(index.Columns.Keys(), ","), strings.Join(r.Columns.Keys(), ",")))
+				changed = true
+			} else {
+				for idx, n := range index.Columns {
+					if n.Name != r.Columns[idx].Name {
+						queries = append(queries, fmt.Sprintf("-- index columns does not match. new:%s old:%s", strings.Join(index.Columns.Keys(), ","), strings.Join(r.Columns.Keys(), ",")))
+						changed = true
+						break
+					}
+				}
+			}
+			if changed {
+				queries = append(queries, "DROP INDEX "+quote(index.Name)+" ON "+local.Name+";")
+				var query = "CREATE "
+				if index.Unique {
+					query += "UNIQUE "
+				}
+				var keys = index.Columns.Keys()
+				for idx, _ := range keys {
+					keys[idx] = quote(keys[idx])
+				}
+				query += "INDEX `" + index.Name + "` ON `" + local.Name + "` (" + strings.Join(keys, ",") + ");"
+				queries = append(queries, query)
+			}
+		}
+
+	}
+	for _, index := range remote.Indexes {
+		if local.Index.Find(index.Name) == nil {
+			queries = append(queries, "-- drop unnecessary index")
+			queries = append(queries, "DROP INDEX "+quote(index.Name)+" ON "+quote(local.Name)+";")
+		}
+	}
+	return queries
+}
+
+func getInt(v *int) int {
+	if v == nil {
+		return 0
+	}
+	return *v
+}
+
+func getString(v *string) string {
+	if v == nil {
+		return ""
+	} else {
+		return *v
+	}
+}
+
+func quote(name string) string {
+	return "`" + name + "`"
+}

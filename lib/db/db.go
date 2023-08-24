@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"github.com/getevo/evo/v2/lib/db/schema"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -482,4 +483,24 @@ func Unscoped() (tx *gorm.DB) {
 
 func Raw(sql string, values ...interface{}) (tx *gorm.DB) {
 	return db.Raw(sql, values...)
+}
+
+func UseModel(models ...interface{}) {
+	schema.UseModel(db, models...)
+}
+
+func GetMigrationScript() []string {
+	return schema.GetMigrationScript(db.Debug())
+}
+
+func DoMigration() {
+	schema.DoMigration(db.Debug())
+}
+
+func Models() []schema.Model {
+	return schema.Models
+}
+
+func GetModel(name string) *schema.Model {
+	return schema.Find(name)
 }
