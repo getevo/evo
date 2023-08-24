@@ -2,6 +2,7 @@ package evo
 
 import (
 	"fmt"
+	"github.com/getevo/evo/v2/lib/db/schema"
 	"github.com/getevo/evo/v2/lib/settings"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/sqlite"
@@ -82,4 +83,16 @@ type Model struct {
 	CreatedAt time.Time  `json:"created_at"`
 	UpdatedAt time.Time  `json:"updated_at"`
 	DeletedAt *time.Time `json:"deleted_at" sql:"index"`
+}
+
+func DoMigration() error {
+	return schema.DoMigration(db)
+}
+
+func Models() []schema.Model {
+	return schema.Models
+}
+
+func GetModel(name string) *schema.Model {
+	return schema.Find(name)
 }

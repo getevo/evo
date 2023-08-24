@@ -490,11 +490,11 @@ func UseModel(models ...interface{}) {
 }
 
 func GetMigrationScript() []string {
-	return schema.GetMigrationScript(db.Debug())
+	return schema.GetMigrationScript(db)
 }
 
 func DoMigration() error {
-	return schema.DoMigration(db.Debug())
+	return schema.DoMigration(db)
 }
 
 func Models() []schema.Model {

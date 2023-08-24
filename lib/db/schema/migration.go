@@ -141,15 +141,20 @@ func GetMigrationScript(db *gorm.DB) []string {
 
 func DoMigration(db *gorm.DB) error {
 	//check if tidb
-	var tidbMultiStatementMode = ""
-	db.Raw("SELECT @@GLOBAL.tidb_multi_statement_mode").Scan(&tidbMultiStatementMode)
-	if tidbMultiStatementMode != "" {
-		// enable possibility to run multiple queries at once. BEWARE: DONT LEAVE IT ON FOR SECURITY MEASUREMENTS
-		db.Exec("SET tidb_multi_statement_mode='ON';")
-		defer func() {
-			// back to original value
-			db.Exec("SET tidb_multi_statement_mode='" + tidbMultiStatementMode + "';")
-		}()
+	var t []map[string]interface{}
+	db.Debug().Raw("SHOW VARIABLES LIKE 'tidb_multi_statement_mode'").Scan(&t)
+	if len(t) > 0 {
+		if tidbMultiStatementMode, ok := t[0]["Value"]; ok {
+			// enable possibility to run multiple queries at once. BEWARE: DONT LEAVE IT ON FOR SECURITY MEASUREMENTS
+			db.Debug().Exec("SET tidb_multi_statement_mode='ON';")
+			if fmt.Sprint(tidbMultiStatementMode) == "ON" {
+				log.Warning("BEWARE: tidb_multi_statement_mode has set to ON which cause security issues. it is recommended to set to OFF. SET tidb_multi_statement_mode='OFF';")
+			}
+			defer func() {
+				// back to original value
+				db.Debug().Exec("SET tidb_multi_statement_mode='" + fmt.Sprint(tidbMultiStatementMode) + "';")
+			}()
+		}
 	}
 	var err error
 	err = db.Transaction(func(tx *gorm.DB) error {
