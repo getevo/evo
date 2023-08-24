@@ -109,7 +109,9 @@ func GetMigrationScript(db *gorm.DB) []string {
 		}
 		if caller, ok := el.(interface{ Migration() []Migration }); ok {
 			var currentVersion = "0.0.0"
-			db.Raw("SELECT table_comment FROM INFORMATION_SCHEMA.TABLES  WHERE table_schema=?  AND table_name=?", database, table.Table).Scan(&currentVersion)
+			if table != nil {
+				db.Raw("SELECT table_comment FROM INFORMATION_SCHEMA.TABLES  WHERE table_schema=?  AND table_name=?", database, table.Table).Scan(&currentVersion)
+			}
 			var buff []string
 			var ptr = "0.0.0"
 			for _, item := range caller.Migration() {
@@ -119,15 +121,16 @@ func GetMigrationScript(db *gorm.DB) []string {
 					}
 					item.Query = strings.TrimSpace(item.Query)
 					if !strings.HasSuffix(item.Query, ";") {
-						buff = append(buff, item.Query)
+						item.Query += ";"
 					}
+					buff = append(buff, item.Query)
 				}
 			}
 
 			if len(buff) > 0 {
 				queries = append(queries, "\r\n\r\n-- Migrate "+stmt.Schema.Table+".Migrate:")
 				queries = append(queries, buff...)
-				queries = append(queries, "ALTER TABLE `"+table.Table+"`  COMMENT '"+ptr+"';")
+				queries = append(queries, "ALTER TABLE `"+stmt.Schema.Table+"`  COMMENT '"+ptr+"';")
 			}
 		}
 
@@ -136,7 +139,7 @@ func GetMigrationScript(db *gorm.DB) []string {
 	return queries
 }
 
-func DoMigration(db *gorm.DB) {
+func DoMigration(db *gorm.DB) error {
 	//check if tidb
 	var tidbMultiStatementMode = ""
 	db.Raw("SELECT @@GLOBAL.tidb_multi_statement_mode").Scan(&tidbMultiStatementMode)
@@ -148,13 +151,21 @@ func DoMigration(db *gorm.DB) {
 			db.Exec("SET tidb_multi_statement_mode='" + tidbMultiStatementMode + "';")
 		}()
 	}
-
-	for _, query := range GetMigrationScript(db) {
-		if !strings.HasPrefix(query, "--") {
-			db.Debug().Exec(query)
+	var err error
+	err = db.Transaction(func(tx *gorm.DB) error {
+		for _, query := range GetMigrationScript(db) {
+			if !strings.HasPrefix(query, "--") {
+				err = tx.Debug().Exec(query).Error
+				if err != nil {
+					return err
+				}
+			}
 		}
-	}
 
+		return nil
+
+	})
+	return err
 }
 
 type Migration struct {

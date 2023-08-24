@@ -493,8 +493,8 @@ func GetMigrationScript() []string {
 	return schema.GetMigrationScript(db.Debug())
 }
 
-func DoMigration() {
-	schema.DoMigration(db.Debug())
+func DoMigration() error {
+	return schema.DoMigration(db.Debug())
 }
 
 func Models() []schema.Model {
