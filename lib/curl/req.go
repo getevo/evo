@@ -118,6 +118,21 @@ func BodyXML(v interface{}) *bodyXml {
 	return &bodyXml{v: v}
 }
 
+// BodyRaw make the object for raw body. accepts string, []byte, io.Reader, io.ReadCloser
+func BodyRaw(v interface{}) io.Reader {
+	switch value := v.(type) {
+	case []byte:
+		return bytes.NewReader(value)
+	case string:
+		return strings.NewReader(value)
+	case io.Reader:
+		return value
+	case io.ReadCloser:
+		return value
+	}
+	return nil
+}
+
 // Req is a convenient client for initiating requests
 type Req struct {
 	client           *http.Client
