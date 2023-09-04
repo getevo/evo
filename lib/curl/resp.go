@@ -226,17 +226,3 @@ func (r *Resp) miniFormat(s fmt.State) {
 		fmt.Fprint(s, " ", str)
 	}
 }
-
-// Format fort the response
-func (r *Resp) Format(s fmt.State, verb rune) {
-	if r == nil || r.req == nil {
-		return
-	}
-	if s.Flag('+') { // include header and format pretty.
-		fmt.Fprint(s, r.Dump())
-	} else if s.Flag('-') { // keep all informations in one line.
-		r.miniFormat(s)
-	} else { // auto
-		r.autoFormat(s)
-	}
-}
