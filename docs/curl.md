@@ -5,6 +5,33 @@ An uncomplicated HTTP request-handling library designed with the purpose of prov
     import "github.com/getevo/evo/v2/lib/curl"
 ```
 ### Examples:
+
+
+- [Simple Request Example](#simple-request)
+- [Custom Method Request Example](#custom-method-request)
+- [Get Response Body Example](#get-response-body)
+- [Simple Post Request with Response Parser Example](#simple-post-request-with-response-parser)
+- [Debug Single Request Example](#debug-single-request)
+- [Debug All Requests Example](#debug-all-requests)
+- [Set Object as JSON Body Example](#set-object-as-json-body)
+- [Set Object as XML Body Example](#set-object-as-xml-body)
+- [Set RAW Body Example](#set-raw-body)
+- [Set Form Value Example](#set-form-value)
+- [Set Query String Value Example](#set-query-string-value)
+- [Set Cache on Results Example](#set-cache-on-results)
+- [Set Header Example](#set-header)
+- [Force Headers Example](#force-headers)
+- [Set Header from Struct Example](#set-header-from-struct)
+- [Request with Context Example](#request-with-context)
+- [Request with Custom HTTP Client Example](#request-with-custom-http-client)
+- [Timeout Example](#timeout)
+- [BasicAuth Example](#basicauth)
+- [Download Progress Example](#download-progress)
+- [Upload File Example](#upload-file)
+- [Request Cost Example](#request-cost)
+- [Access to Underlay http.Request and http.Response Example](#access-to-underlay-httprequest-and-httpresponse)
+
+
 #### Simple Request
 This Go code performs an HTTP GET request retrieve the client's public IP address in JSON format. If there's an error during the request, it panics. Otherwise, it prints the server's response (the IP address in JSON) to the console.
 
