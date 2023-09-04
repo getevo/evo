@@ -329,7 +329,9 @@ Calculates the time spent to run an HTTP request and receive a valid response
 
 
 #### Access to underlay http.Request and http.Response
-These actions can be useful when you need to access lower-level HTTP details in your code, beyond what the curl library provides in its high-level response object.```go
+These actions can be useful when you need to access lower-level HTTP details in your code, beyond what the curl library provides in its high-level response object.
+
+```go
     var resp, err = curl.Get("https://api.ipify.org?format=json")
     if err != nil {
         panic(err)
