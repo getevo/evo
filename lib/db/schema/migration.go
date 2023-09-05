@@ -22,7 +22,7 @@ func GetMigrationScript(db *gorm.DB) []string {
 	var database = ""
 	db.Raw("SELECT DATABASE();").Scan(&database)
 	var is table.Tables
-	db.Where(table.Table{Database: database}).Find(&is)
+	db.Raw(`SELECT CCSA.character_set_name  AS 'TABLE_CHARSET',T.* FROM information_schema.TABLES T, information_schema.COLLATION_CHARACTER_SET_APPLICABILITY CCSA WHERE CCSA.collation_name = T.table_collation AND T.table_schema = ?`, database).Scan(&is)
 
 	var columns table.Columns
 	db.Where(table.Table{Database: database}).Order("TABLE_NAME ASC,ORDINAL_POSITION ASC").Find(&columns)

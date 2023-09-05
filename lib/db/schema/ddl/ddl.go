@@ -258,6 +258,19 @@ func getFieldQuery(field *Column) string {
 func (local Table) GetDiff(remote table.Table) []string {
 	var queries []string
 	var primaryKeys []string
+	if local.Collate != remote.Collation {
+		queries = append(queries, fmt.Sprintf("--  table collation does not match. new:%s old:%s", local.Collate, remote.Collation))
+		queries = append(queries, fmt.Sprintf("ALTER TABLE %s CONVERT TO COLLATE %s;", quote(local.Name), local.Collate))
+	}
+	if local.Charset != remote.Charset {
+		queries = append(queries, fmt.Sprintf("--  table charset does not match. new:%s old:%s", local.Charset, remote.Charset))
+		queries = append(queries, fmt.Sprintf("ALTER TABLE %s CONVERT TO CHARACTER SET %s;", local.Name, local.Charset))
+	}
+
+	if strings.ToLower(local.Engine) != strings.ToLower(remote.Engine) {
+		queries = append(queries, fmt.Sprintf("--  table engine does not match. new:%s old:%s", local.Engine, remote.Engine))
+		queries = append(queries, fmt.Sprintf("ALTER TABLE %s ENGINE=%s;", quote(local.Name), local.Engine))
+	}
 
 	for idx, _ := range local.Columns {
 		var field = local.Columns[idx]
@@ -267,7 +280,7 @@ func (local Table) GetDiff(remote table.Table) []string {
 		}
 
 		if r := remote.Columns.GetColumn(field.Name); r == nil {
-			//does not exist
+			queries = append(queries, fmt.Sprintf("--  column %s does not exists", field.Name))
 			queries = append(queries, "ALTER TABLE "+quote(local.Name)+" ADD "+getFieldQuery(&field)+";")
 		} else {
 			var diff = false

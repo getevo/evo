@@ -46,6 +46,7 @@ type Table struct {
 	Rows          int           `json:"rows" gorm:"column:TABLE_ROWS"`
 	AutoIncrement int           `json:"auto_increment" gorm:"column:AUTO_INCREMENT"`
 	Collation     string        `json:"collation" gorm:"column:TABLE_COLLATION"`
+	Charset       string        `json:"charset" gorm:"column:TABLE_CHARSET"`
 	Columns       Columns       `json:"columns" gorm:"-"`
 	Indexes       Indexes       `json:"indexes" gorm:"-"`
 	Model         interface{}   `json:"-" gorm:"-"`

@@ -281,7 +281,5 @@ In this Go code snippet, database settings are being customized using the db pac
     // Change default collation
     db.SetDefaultCollation("utf8mb4_bin")
 ```
-> Note: This only applies on creation of tables.
-
 ---
 #### [< Table of Contents](https://github.com/getevo/evo#table-of-contents)
