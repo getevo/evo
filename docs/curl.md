@@ -67,7 +67,7 @@ This Go code performs an HTTP with custom method request to retrieve the client'
 ```
 
 ### Get Response Body
-Calculates the time spent to run an HTTP request and receive a valid response
+You may get response body using one of ToString, String, ToBytes, Bytes functions.
 ```go
     var resp, err = curl.Get("https://api.ipify.org?format=json")
     if err != nil {
@@ -371,3 +371,4 @@ These actions can be useful when you need to access lower-level HTTP details in 
     var response *http.Response = resp.Response()
 ```
 
+#### [< Table of Contents](https://github.com/getevo/evo#table-of-contents)
