@@ -15,6 +15,7 @@ With EVO Framework, you can focus on your programming logic and rapidly develop 
 - [Getting Started](#getting-started)
 - [Configuration and Settings](docs/configuration.md)
 - [Database](docs/database.md)
+- [Database Migration](docs/migration.md)
 - [Modules](storage_interface.md)
 - [Web Server](docs/webserver.md)
 - [Storage Interface](storage_interface.md)
