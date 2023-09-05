@@ -47,7 +47,7 @@ func (Model) TableName() string {
 // create versioned schema with roll back on DML queries.
 func (Model) Migration() []schema.Migration {
     return []schema.Migration{
-        {"0.0.1", "ALTER TABLE lambda AUTO_INCREMENT = " + fmt.Sprint(time.Now().Unix())},
+        {"0.0.1", "ALTER TABLE my_model AUTO_INCREMENT = " + fmt.Sprint(time.Now().Unix())},
     }
 }
 func main() {
