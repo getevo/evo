@@ -28,10 +28,15 @@ import (
 
 // Define the model
 type Model struct {
-    Identifier string `gorm:"column:identifier;primaryKey;size:255" json:"identifier"`
-    Definition string `gorm:"column:definition;" json:"definition"`
-    Type       string `gorm:"column:type;type:enum('event','runtime','schedule')"`
-    Invoker    string `gorm:"column:invoker;size:512" json:"invoker"`
+    Identifier    string `gorm:"column:identifier;primaryKey;size:255" json:"identifier"`
+    Name          string `gorm:"column:name;" json:"definition"`
+    Type          string `gorm:"column:type;type:enum('user','admin','developer')"`
+    Invoker       string `gorm:"column:invoker;size:512;index" json:"invoker"`
+	Price         float64 `gorm:"column:price;precision:2;scale:2" json:"invoker"`
+    NullableField *string `gorm:"column:nullable_field;size:512" json:"invoker"`
+    CreatedAt     time.Time
+    UpdatedAt     time.Time
+    DeletedAt     *time.Time
 }
 
 // Set model table name
