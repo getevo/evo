@@ -10,8 +10,7 @@ Before altering the collation of a column, it's crucial to:
 > - **Understand the implications:** Carefully assess how the change in collation may impact your data and application. Test the changes in a controlled environment if possible.
 > - **Plan and script the changes:** Develop a well-thought-out plan for altering collations, including any necessary data conversion or migration steps.
 > - **Consider data migration:** In some cases, it may be safer to export the data, create a new column with the desired collation, and then import the data into the new column.
-
-Involve database administrators: If you're not experienced with database administration, consider consulting with a DBA or database expert who can help you make informed decisions and execute the changes safely.
+> - **Involve database administrators:** If you're not experienced with database administration, consider consulting with a DBA or database expert who can help you make informed decisions and execute the changes safely.
 ## Usage
 
 To use this package, import it in your Go code:
