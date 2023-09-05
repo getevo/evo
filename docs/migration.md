@@ -48,7 +48,10 @@ func (Model) TableName() string {
 }
 
 // create versioned schema with roll back on DML queries.
-func (Model) Migration() []schema.Migration {
+func (Model) Migration(currentVersion string) []schema.Migration {
+    if version.Compare(currentVersion, "1", "<") {
+        db.Exec("-- SOME QUERY HERE")
+    }
     return []schema.Migration{
         {"0.0.1", "ALTER TABLE my_model AUTO_INCREMENT = " + fmt.Sprint(time.Now().Unix())},
     }
@@ -283,6 +286,39 @@ In this Go code snippet, database settings are being customized using the db pac
     
     // Change default collation
     db.SetDefaultCollation("utf8mb4_bin")
+```
+---
+### Custom migrations
+The migrator offers valuable capabilities beyond just migrating database schema changes. It can also handle data migration and transformation as needed, making it a powerful tool for ensuring data consistency and structure during application updates. Additionally, the migrator can manage versioning of the database schema, which is useful for tracking and applying incremental changes over time.
+
+**It's essential to be aware that the migrator uses table comments to store version information.** If you plan to use table comments in your database for other purposes, such as documentation or annotations, the migrator's versioning mechanism may overwrite or interfere with your existing comments. To avoid conflicts, consider carefully how you use table comments and whether they may be affected by the migrator's versioning approach. Clear documentation and communication within your development team can help ensure that everyone understands how table comments are being utilized in your database schema.
+
+```go
+
+// Define the model
+type Model struct {
+    Identifier    string `gorm:"column:identifier;primaryKey;size:255" `
+    Name          string `gorm:"column:name;"`
+    Type          string `gorm:"column:type;type:enum('user','admin','developer')"`
+    Invoker       string `gorm:"column:invoker;size:512;index"`
+    Price         float64 `gorm:"column:price;precision:2;scale:2"`
+    NullableField *string `gorm:"column:nullable_field;size:512"`
+    CreatedAt     time.Time
+    UpdatedAt     time.Time
+    DeletedAt     *time.Time
+}
+
+
+// create versioned schema with roll back on DML queries.
+func (Model) Migration(currentVersion string) []schema.Migration {
+    if version.Compare(currentVersion, "1", "<") {
+        db.Exec("-- SOME QUERY HERE")
+		// do some stuff here
+    }
+    return []schema.Migration{
+        {"0.0.1", "ALTER TABLE my_model AUTO_INCREMENT = " + fmt.Sprint(time.Now().Unix())},
+    }
+}
 ```
 ---
 #### [< Table of Contents](https://github.com/getevo/evo#table-of-contents)

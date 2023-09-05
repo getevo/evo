@@ -107,14 +107,16 @@ func GetMigrationScript(db *gorm.DB) []string {
 			queries = append(queries, "\r\n\r\n-- Migrate Table:"+stmt.Schema.Table)
 			queries = append(queries, q...)
 		}
-		if caller, ok := el.(interface{ Migration() []Migration }); ok {
+		if caller, ok := el.(interface {
+			Migration(version string) []Migration
+		}); ok {
 			var currentVersion = "0.0.0"
 			if table != nil {
 				db.Raw("SELECT table_comment FROM INFORMATION_SCHEMA.TABLES  WHERE table_schema=?  AND table_name=?", database, table.Table).Scan(&currentVersion)
 			}
 			var buff []string
 			var ptr = "0.0.0"
-			for _, item := range caller.Migration() {
+			for _, item := range caller.Migration(currentVersion) {
 				if version.Compare(currentVersion, item.Version, "<") {
 					if version.Compare(ptr, item.Version, "<=") {
 						ptr = item.Version
