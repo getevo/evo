@@ -56,6 +56,13 @@ Database:
 
 By configuring the database settings according to your requirements, you can utilize the database connection seamlessly within your EVO Framework applications.
 
+## Usage
+
+To use this package, import it in your Go code:
+```go
+import "github.com/getevo/evo/v2"
+```
+
 ### Accessing the database by creating a new instance
 To access the database, you can obtain a database object, which is an instance of **`gorm.DB`**, by requesting the database instance and saving it in a variable:
 

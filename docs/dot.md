@@ -1,6 +1,13 @@
 # dot package
 The dot package provides functionality for accessing and manipulating map, struct, and array values using dot notation.
 
+## Usage
+
+To use this package, import it in your Go code:
+```go
+import "github.com/getevo/evo/v2/lib/dot"
+```
+
 ### Functions
 #### Get
 ```go

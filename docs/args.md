@@ -1,6 +1,17 @@
 # args Package
 
-The Args package is used to check or retrieve the values of application arguments. It provides two simple functions:
+The Args package is used to check or retrieve the values of application arguments.
+
+## Usage
+
+To use this package, import it in your Go code:
+```go
+import "github.com/getevo/evo/v2/lib/args"
+```
+
+### Functions
+
+It provides two simple functions:
 
 ```go
 //$ ./myapp -arg1 hello

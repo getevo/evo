@@ -1,8 +1,11 @@
 # CURL
 An uncomplicated HTTP request-handling library designed with the purpose of providing a user-friendly wrapper for the native GoLang HTTP client.
-### Import
+## Usage
+
+To use this package, import it in your Go code:
 ```go
-    import "github.com/getevo/evo/v2/lib/curl"
+import "github.com/getevo/evo/v2/lib/curl"
+```
 ```
 ### Examples:
 

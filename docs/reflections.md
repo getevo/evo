@@ -2,6 +2,12 @@
 
 The `reflections` package provides functionality for working with reflection in Go.
 
+## Usage
+To use this package, import it in your Go code:
+```go
+import "github.com/getevo/evo/v2/lib/reflections"
+```
+
 ## Functions
 
 ### GetField
