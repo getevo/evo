@@ -5,7 +5,7 @@ Database migration poses a fundamental challenge for developers. Synchronizing d
 
 ## Warning
 > Altering column in a database may potentially lead to data loss or corruption of text data. Column type, size, collation, charset, precision and scale determines how data are interpreted and stored, modifying them could cause permanent data loss.
-Before altering the collation of a column, it's crucial to:
+Before altering a column, it's crucial to:
 > - **Back up your data:** Always make a full backup of your database before making any significant changes like altering collations.
 > - **Understand the implications:** Carefully assess how the change in collation may impact your data and application. Test the changes in a controlled environment if possible.
 > - **Plan and script the changes:** Develop a well-thought-out plan for altering collations, including any necessary data conversion or migration steps.
