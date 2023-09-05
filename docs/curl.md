@@ -6,7 +6,8 @@ To use this package, import it in your Go code:
 ```go
 import "github.com/getevo/evo/v2/lib/curl"
 ```
-```
+
+
 ### Examples:
 
 
