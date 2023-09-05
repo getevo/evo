@@ -9,9 +9,9 @@ import (
 )
 
 var (
-	DefaultEngine  = "INNODB"
-	DefaultCharset = "utf8mb4"
-	DefaultCollate = "utf8mb4_unicode_ci"
+	DefaultEngine    = "INNODB"
+	DefaultCharset   = "utf8mb4"
+	DefaultCollation = "utf8mb4_unicode_ci"
 )
 
 type Table struct {
@@ -413,8 +413,8 @@ func GetCharset(statement *gorm.Statement) string {
 }
 
 func GetCollate(statement *gorm.Statement) string {
-	if v, ok := statement.Model.(interface{ TableCollate() string }); ok {
-		return v.TableCollate()
+	if v, ok := statement.Model.(interface{ TableCollation() string }); ok {
+		return v.TableCollation()
 	}
-	return DefaultCollate
+	return DefaultCollation
 }

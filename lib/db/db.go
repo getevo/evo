@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"github.com/getevo/evo/v2/lib/db/schema"
+	"github.com/getevo/evo/v2/lib/db/schema/ddl"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -503,4 +504,16 @@ func Models() []schema.Model {
 
 func GetModel(name string) *schema.Model {
 	return schema.Find(name)
+}
+
+func SetDefaultCollation(collation string) {
+	ddl.DefaultCollation = collation
+}
+
+func SetDefaultCharset(charset string) {
+	ddl.DefaultCharset = charset
+}
+
+func SetDefaultEngine(engine string) {
+	ddl.DefaultEngine = engine
 }

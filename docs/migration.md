@@ -234,5 +234,49 @@ type Model struct {
 ```
 
 
+
+---
+### Table options
+
+In addition to the struct definition, there are methods implemented for customizing the table's name, charset, and collation. The `TableName()`, `TableCharset()`, and `TableCollation()` methods allow developers to specify the name of the database table, the character set, and the collation used for that table. This level of customization can be valuable when tailoring the database schema to specific project requirements, especially when dealing with internationalization and character encoding considerations.
+
+```go
+type Model struct {
+    ID        int
+    CreatedAt time.Time
+    UpdatedAt time.Time
+    DeletedAt *time.Time
+}
+
+// Set Table Name
+func (Model)TableName() string{
+	return "table_name"
+}
+
+// Set Table Charset
+func (Model)TableCharset() string{
+    return "utf8"
+}
+
+// Set Table Collation
+func (Model)TableCollation() string{
+    return "utf8mb4_bin"
+}
+```
+---
+### Change Defaults
+In this Go code snippet, database settings are being customized using the db package. These settings are applied globally and will affect all database operations in the application.
+```go
+    // Change default table engine
+    db.SetDefaultEngine("MEMORY")
+
+    // Change default charset
+    db.SetDefaultCharset("utf8mb4")
+    
+    // Change default collation
+    db.SetDefaultCollation("utf8mb4_bin")
+```
+> Note: This only applies on creation of tables.
+
 ---
 #### [< Table of Contents](https://github.com/getevo/evo#table-of-contents)
