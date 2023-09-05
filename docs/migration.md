@@ -4,7 +4,7 @@ Database migration poses a fundamental challenge for developers. Synchronizing d
 > The EVO migration system conducts a routine check of the database structure during each startup. It then compares this structure with the application's requirements and endeavors to apply any necessary patches if discrepancies are detected.
 
 ## Warning
-> Altering column in a database may potentially lead to data loss or corruption of text data. Collation determines how string comparison and sorting operations are performed in a database, including how data are interpreted and ordered.
+> Altering column in a database may potentially lead to data loss or corruption of text data. Column type, size, collation, charset, precision and scale determines how data are interpreted and stored, modifying them could cause permanent data loss.
 Before altering the collation of a column, it's crucial to:
 > - **Back up your data:** Always make a full backup of your database before making any significant changes like altering collations.
 > - **Understand the implications:** Carefully assess how the change in collation may impact your data and application. Test the changes in a controlled environment if possible.
