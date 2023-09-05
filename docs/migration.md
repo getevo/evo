@@ -26,6 +26,7 @@ import (
     "time"
 )
 
+// Define the model
 type Model struct {
     Identifier string `gorm:"column:identifier;primaryKey;size:255" json:"identifier"`
     Definition string `gorm:"column:definition;" json:"definition"`
@@ -33,24 +34,24 @@ type Model struct {
     Invoker    string `gorm:"column:invoker;size:512" json:"invoker"`
 }
 
+// Set model table name
 func (Model) TableName() string {
     return "my_model"
 }
 
+// create versioned schema with roll back on DML queries.
 func (Model) Migration() []schema.Migration {
     return []schema.Migration{
         {"0.0.1", "ALTER TABLE lambda AUTO_INCREMENT = " + fmt.Sprint(time.Now().Unix())},
-        {"0.1.2", "INSERT INTO lambda VALUES ('test1','def','evt','invoker')"},
-        {"0.1.3", "INSERT INTO lambda VALUES ('test2','def','evt','invoker')"},
-        {"0.1.4", "INSERT INTO lambda VALUES ('test3','def','evt','invoker')"},
-        {"0.1.5", "INSERT INTO lambda VALUES ('test4','def','evt','invoker')"},
     }
 }
 func main() {
     evo.Setup()
+	
+	// introduce model to list of our models
     db.UseModel(&Model{})
 
-	// get migration queries
+	// get and print migration queries
     var queries []string = db.GetMigrationScript()
     for _,query := range queries{
 	    	fmt.Println(query)
