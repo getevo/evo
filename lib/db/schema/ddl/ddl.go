@@ -8,12 +8,20 @@ import (
 	"strings"
 )
 
+var (
+	DefaultEngine  = "INNODB"
+	DefaultCharset = "utf8mb4"
+	DefaultCollate = "utf8mb4_unicode_ci"
+)
+
 type Table struct {
 	Columns    Columns
 	PrimaryKey Columns
 	Index      Indexes
 	Engine     string
 	Name       string
+	Charset    string
+	Collate    string
 }
 
 type Column struct {
@@ -21,14 +29,16 @@ type Column struct {
 	Nullable   bool
 	PrimaryKey bool
 	//Size          int
-	//Scale         int
+	Scale         int
 	Precision     int
 	Type          string
 	Default       string
 	AutoIncrement bool
 	Unique        bool
 	Comment       string
+	Charset       string
 	OnUpdate      string
+	Collate       string
 }
 
 type Columns []Column
@@ -69,8 +79,10 @@ func (list Indexes) Find(name string) *Index {
 
 func FromStatement(stmt *gorm.Statement) Table {
 	var table = Table{
-		Name:   stmt.Table,
-		Engine: "INNODB",
+		Name:    stmt.Table,
+		Engine:  GetEngine(stmt),
+		Charset: GetCharset(stmt),
+		Collate: GetCollate(stmt),
 	}
 
 	for _, field := range stmt.Schema.Fields {
@@ -96,12 +108,21 @@ func FromStatement(stmt *gorm.Statement) Table {
 		var column = Column{
 			Name:          field.DBName,
 			Type:          datatype,
+			Scale:         field.Scale,
 			Precision:     field.Precision,
 			Default:       field.DefaultValue,
 			AutoIncrement: field.AutoIncrement,
 			Comment:       field.Comment,
 			PrimaryKey:    field.PrimaryKey,
 			Unique:        field.Unique,
+		}
+
+		if v, ok := field.TagSettings["CHARSET"]; ok {
+			column.Charset = v
+		}
+
+		if v, ok := field.TagSettings["COLLATE"]; ok {
+			column.Collate = v
 		}
 
 		if strings.ToLower(column.Type) == "datetime(3)" {
@@ -183,7 +204,7 @@ func (table Table) GetCreateQuery() []string {
 		query += ","
 		query += "\r\n\t" + "PRIMARY KEY (" + strings.Join(primaryKeys, ",") + ")"
 	}
-	query += "\r\n) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ENGINE=" + table.Engine + " COMMENT '0.0.0';"
+	query += "\r\n) DEFAULT CHARSET=" + table.Charset + " COLLATE=" + table.Collate + " ENGINE=" + table.Engine + " COMMENT '0.0.0';"
 	queries = append(queries, query)
 
 	for _, index := range table.Index {
@@ -208,12 +229,6 @@ func getFieldQuery(field *Column) string {
 		query += " AUTO_INCREMENT"
 	}
 
-	if field.Nullable {
-		query += " NULL"
-	} else {
-		query += " NOT NULL"
-	}
-
 	if field.Default != "" {
 		query += " DEFAULT " + field.Default
 	}
@@ -222,6 +237,20 @@ func getFieldQuery(field *Column) string {
 	}
 	if len(field.Comment) > 0 {
 		query += " COMMENT " + strconv.Quote(field.Comment)
+	}
+
+	if len(field.Charset) > 0 {
+		query += " CHARACTER SET " + field.Charset
+	}
+
+	if len(field.Collate) > 0 {
+		query += " COLLATE " + field.Collate
+	}
+
+	if field.Nullable {
+		query += " NULL"
+	} else {
+		query += " NOT NULL"
 	}
 	return query
 }
@@ -244,6 +273,14 @@ func (local Table) GetDiff(remote table.Table) []string {
 			var diff = false
 			if field.Type != strings.ToLower(r.ColumnType) {
 				queries = append(queries, fmt.Sprintf("--  type does not match. new:%s old:%s", field.Type, strings.ToLower(r.ColumnType)))
+				diff = true
+			}
+			if len(field.Collate) > 0 && field.Collate != r.Collation {
+				queries = append(queries, fmt.Sprintf("--  collation does not match. new:%s old:%s", field.Collate, r.Collation))
+				diff = true
+			}
+			if len(field.Charset) > 0 && field.Charset != r.CharacterSet {
+				queries = append(queries, fmt.Sprintf("--  charset does not match. new:%s old:%s", field.Charset, r.CharacterSet))
 				diff = true
 			}
 			if field.Comment != r.Comment {
@@ -359,4 +396,25 @@ func getString(v *string) string {
 
 func quote(name string) string {
 	return "`" + name + "`"
+}
+
+func GetEngine(statement *gorm.Statement) string {
+	if v, ok := statement.Model.(interface{ TableEngine() string }); ok {
+		return v.TableEngine()
+	}
+	return DefaultEngine
+}
+
+func GetCharset(statement *gorm.Statement) string {
+	if v, ok := statement.Model.(interface{ TableCharset() string }); ok {
+		return v.TableCharset()
+	}
+	return DefaultCharset
+}
+
+func GetCollate(statement *gorm.Statement) string {
+	if v, ok := statement.Model.(interface{ TableCollate() string }); ok {
+		return v.TableCollate()
+	}
+	return DefaultCollate
 }

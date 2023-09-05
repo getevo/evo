@@ -196,3 +196,6 @@ settings.AddDriver(driver) // Add your driver to the configuration system
 ```
 
 Your driver will now be available for use in the EVO Framework.
+
+---
+#### [< Table of Contents](https://github.com/getevo/evo#table-of-contents)

@@ -9,6 +9,8 @@ import "github.com/getevo/evo/v2/lib/dot"
 ```
 
 ### Functions
+
+---
 #### Get
 ```go
 func Get(obj interface{}, prop string) (interface{}, error)
@@ -18,7 +20,7 @@ The **`Get`** function retrieves the value of a property specified by **`prop`**
 - **`obj`**: The object from which to retrieve the property value.
 - **`prop`**: The property to retrieve, specified in dot notation (e.g., "nested.property").
 Returns the value of the property and nil if the property exists and can be retrieved successfully. If the property does not exist, both the return value and the error will be nil. If an error occurs during retrieval, the function returns nil and an error describing the issue.
-
+---
 #### Set
 ```go
 func Set(input interface{}, prop string, value interface{}) error
