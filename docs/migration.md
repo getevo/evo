@@ -53,10 +53,10 @@ func (Model) Migration() []schema.Migration {
 func main() {
     evo.Setup()
 	
-	// introduce model to list of our models
+    // introduce model to list of our models
     db.UseModel(&Model{})
 
-	// get and print migration queries
+    // get and print migration queries
     var queries []string = db.GetMigrationScript()
     for _,query := range queries{
 	    	fmt.Println(query)
