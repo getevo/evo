@@ -104,6 +104,9 @@ func (fv *FilterView) Debug() *FilterView {
 func (fv FilterView) GetData() []map[string]interface{} {
 	return fv.data
 }
+func (fv *FilterView) SetData(in []map[string]interface{}) {
+	fv.data = in
+}
 
 func getName(t reflect.Type) string {
 	parts := strings.Split(t.Name(), ".")
