@@ -25,7 +25,7 @@ With EVO Framework, you can focus on your programming logic and rapidly develop 
 - [Internationalization](storage_interface.md)
 - [TPL Templates](docs/tpl.md)
 - [CURL](docs/curl.md)
-- [Build](storage_interface.md)
+- [Build](docs/build.md)
 - [Args](docs/args.md)
 - [Logging](storage_interface.md)
 - [Concurrency Patterns](storage_interface.md)
