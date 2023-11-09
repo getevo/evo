@@ -318,13 +318,13 @@ func (v Value) SizeInBytes() uint64 {
 		case "kb":
 			base *= 1024
 		case "mb":
-			base *= 1024 * 1024 * 1024
+			base *= 1024 * 1024
 		case "gb":
-			base *= 1024 * 1024 * 1024 * 1024
+			base *= 1024 * 1024 * 1024
 		case "tb":
-			base *= 1024 * 1024 * 1024 * 1024 * 1024
+			base *= 1024 * 1024 * 1024 * 1024
 		case "eb":
-			base *= 1024 * 1024 * 1024 * 1024 * 1024 * 1024
+			base *= 1024 * 1024 * 1024 * 1024 * 1024
 		}
 
 		return base
