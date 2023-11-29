@@ -7,7 +7,7 @@ import (
 )
 
 var drivers = []Interface{&yml.Yaml{}}
-var defaultDriver Interface = &proxy{}
+var defaultDriver Interface = &yml.Yaml{}
 
 type Interface interface {
 	Name() string                               // Name returns driver name
