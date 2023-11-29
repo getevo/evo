@@ -71,4 +71,7 @@ type Interface interface {
 
 	// SetUnMarshaller set []byte to interface{} unmarshalling function
 	SetUnMarshaller(func(bytes []byte, out interface{}) error)
+
+	// SetPrefix set a key prefix
+	SetPrefix(p string)
 }

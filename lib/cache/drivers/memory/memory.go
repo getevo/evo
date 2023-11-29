@@ -15,6 +15,10 @@ var unmarshaller func(bytes []byte, out interface{}) error = binary.Unmarshal
 
 type driver struct{}
 
+func (d driver) SetPrefix(p string) {
+	return
+}
+
 var items sync.Map
 
 func (driver) Register() error {

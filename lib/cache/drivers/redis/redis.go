@@ -242,3 +242,7 @@ func toInt64(n interface{}) int64 {
 	}
 	return 0
 }
+
+func (d driver) SetPrefix(p string) {
+	prefix = p
+}

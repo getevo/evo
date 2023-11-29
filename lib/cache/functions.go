@@ -133,3 +133,7 @@ func Register() error {
 func DefaultDriver() Interface {
 	return defaultDriver
 }
+
+func SetPrefix(prefix string) {
+	defaultDriver.SetPrefix(prefix)
+}
