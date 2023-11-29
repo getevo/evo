@@ -575,7 +575,7 @@ func (v Value) Cast(dst interface{}) error {
 	case reflect.Func, reflect.Struct, reflect.Interface:
 		return nil
 	default:
-		return fmt.Errorf("couldnt convert to %s", ref.Type().String())
+		return fmt.Errorf("couldnt convert to %s", ref.String())
 	}
 	ref.Set(reflect.ValueOf(x).Convert(ref.Type()))
 	return nil

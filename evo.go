@@ -23,6 +23,7 @@ func Setup() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	settings.Register("HTTP", &http)
 	settings.Get("HTTP").Cast(&http)
 	err = generic.Parse(http).Cast(&fiberConfig)
