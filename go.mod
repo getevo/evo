@@ -12,7 +12,7 @@ require (
 	github.com/fatih/structs v1.1.0
 	github.com/ganbarodigital/go_glob v1.0.0
 	github.com/go-redis/redis/v8 v8.11.5
-	github.com/gofiber/fiber/v2 v2.42.0
+	github.com/gofiber/fiber/v2 v2.51.0
 	github.com/gofiber/utils/v2 v2.0.0-beta.1
 	github.com/iancoleman/strcase v0.2.0
 	github.com/jlaffaye/ftp v0.1.0
