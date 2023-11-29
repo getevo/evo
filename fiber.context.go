@@ -321,11 +321,21 @@ func (r *Request) Header(key string) string {
 }
 
 func (r *Request) RespHeaders() map[string]string {
-	return r.Context.GetRespHeaders()
+	var headers = map[string]string{}
+	var t = r.Context.GetRespHeaders()
+	for k, _ := range t {
+		headers[k] = t[k][0]
+	}
+	return headers
 }
 
 func (r *Request) ReqHeaders() map[string]string {
-	return r.Context.GetReqHeaders()
+	var headers = map[string]string{}
+	var t = r.Context.GetReqHeaders()
+	for k, _ := range t {
+		headers[k] = t[k][0]
+	}
+	return headers
 }
 
 func (r *Request) SetHeader(key, val string) {
