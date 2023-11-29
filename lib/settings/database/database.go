@@ -122,9 +122,9 @@ func (config *Database) Init(params ...string) error {
 	if args.Exists("-migrate") {
 		db.Unscoped().AutoMigrate(&Setting{}, &SettingDomain{})
 	}
-	if config.data == nil {
-		config.data = map[string]map[string]generic.Value{}
-	}
+
+	config.data = map[string]map[string]generic.Value{}
+
 	db.Find(&items)
 	for _, item := range items {
 		item.Domain = strings.ToUpper(item.Domain)

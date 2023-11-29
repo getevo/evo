@@ -32,7 +32,6 @@ func Setup() {
 		db = GetDBO()
 		dbo.Register(db)
 		settings.SetDefaultDriver(database.Driver)
-
 	}
 
 	cache.Register()
