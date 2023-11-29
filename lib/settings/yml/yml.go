@@ -52,9 +52,6 @@ func (config *Yaml) SetMulti(data map[string]interface{}) error {
 	return config.write()
 }
 func (config *Yaml) Register(settings ...interface{}) error {
-	if config.data == nil {
-		config.data = map[string]interface{}{}
-	}
 	for _, s := range settings {
 		var v = generic.Parse(s)
 		if !v.Is("settings.Setting") {

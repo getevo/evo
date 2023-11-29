@@ -112,6 +112,21 @@ func SetMulti(data map[string]interface{}) error {
 
 func Register(settings ...interface{}) {
 	defaultDriver.Register(settings...)
+	/*	var key = ""
+		for idx, _ := range settings {
+			var v = generic.Parse(settings[idx])
+			if v.Is("string") {
+				key = v.String()
+				continue
+			}
+			if v.Is("settings.SettingDomain") || v.Is("settings.Setting") {
+				continue
+			}
+			c := Get(key)
+			if !c.IsEmpty() && !c.IsNil() {
+				c.Cast(v)
+			}
+		}*/
 }
 
 func Init(params ...string) error {

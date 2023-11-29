@@ -3,21 +3,16 @@ package database
 import (
 	"fmt"
 	"github.com/getevo/evo/v2/lib/args"
+	"github.com/getevo/evo/v2/lib/db"
 
 	"github.com/getevo/evo/v2/lib/generic"
-	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"strings"
 	"sync"
 )
 
-var db *gorm.DB
 var Driver = &Database{}
 var domains = map[string]SettingDomain{}
-
-func SetDBO(v *gorm.DB) {
-	db = v
-}
 
 type Database struct {
 	mu   sync.Mutex
@@ -125,7 +120,7 @@ func (config *Database) Init(params ...string) error {
 	config.mu.Lock()
 	var items []Setting
 	if args.Exists("-migrate") {
-		db.AutoMigrate(&Setting{}, &SettingDomain{})
+		db.Unscoped().AutoMigrate(&Setting{}, &SettingDomain{})
 	}
 	if config.data == nil {
 		config.data = map[string]map[string]generic.Value{}

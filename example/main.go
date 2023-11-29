@@ -3,15 +3,12 @@ package main
 import (
 	"fmt"
 	"github.com/getevo/evo/v2"
-	"github.com/getevo/evo/v2/lib/log"
+	"github.com/getevo/evo/v2/lib/settings"
 )
 
 func main() {
 	evo.Setup()
-	log.SetLevel(log.NoticeLevel)
-	log.SetWriters(func(message string) {
-
-	})
+	fmt.Println(settings.Get("NATS.SERVER").String())
 	//var db = evo.GetDBO()
 	/*	var data = map[string]interface{}{}
 		db.Raw("SELECT * FROM services").Scan(&data)

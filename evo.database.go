@@ -20,7 +20,9 @@ var db *gorm.DB
 func setupDatabase() {
 	var err error
 	var config = DatabaseConfig{}
+
 	settings.Register("Database", &config)
+	settings.Get("Database").Cast(&config)
 	if !config.Enabled {
 		return
 	}

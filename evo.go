@@ -24,14 +24,15 @@ func Setup() {
 		log.Fatal(err)
 	}
 	settings.Register("HTTP", &http)
-
+	settings.Get("HTTP").Cast(&http)
 	err = generic.Parse(http).Cast(&fiberConfig)
 
 	app = fiber.New(fiberConfig)
 	if settings.Get("Database.Enabled").Bool() {
-		database.SetDBO(GetDBO())
-		settings.SetDefaultDriver(database.Driver)
+		db = GetDBO()
 		dbo.Register(db)
+		settings.SetDefaultDriver(database.Driver)
+
 	}
 
 	cache.Register()
