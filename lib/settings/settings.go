@@ -82,7 +82,7 @@ func AddDriver(driver Interface) {
 		drivers = append(drivers, driver)
 		var err = driver.Init()
 		if err != nil {
-			log.Fatal("unable to initiate pub/sub driver", "name", driver.Name(), "error", err)
+			log.Fatal("unable to initiate config driver", "name", driver.Name(), "error", err)
 		}
 	}
 	if defaultDriver == nil {

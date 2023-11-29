@@ -123,9 +123,9 @@ func (config *Database) Init(params ...string) error {
 		db.Unscoped().AutoMigrate(&Setting{}, &SettingDomain{})
 	}
 
-	config.data = map[string]map[string]generic.Value{}
+	config.data = make(map[string]map[string]generic.Value)
 
-	db.Find(&items)
+	db.Debug().Find(&items)
 	for _, item := range items {
 		item.Domain = strings.ToUpper(item.Domain)
 		item.Name = strings.ToUpper(item.Name)
@@ -135,7 +135,7 @@ func (config *Database) Init(params ...string) error {
 		config.data[item.Domain][item.Name] = generic.Parse(item.Value)
 	}
 	var list []SettingDomain
-	db.Find(&list)
+	db.Debug().Find(&list)
 	for idx, item := range list {
 		domains[item.Domain] = list[idx]
 	}
