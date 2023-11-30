@@ -13,7 +13,7 @@ func TestIs(t *testing.T) {
 		Name: "test name",
 	}
 
-	var y = map[string]interface{}{
+	var y = map[string]any{
 		"a": "b",
 	}
 	Parse(&x).SetProp("Name", "Reza")

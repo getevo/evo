@@ -9,7 +9,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"github.com/getevo/evo/v2/lib/cache"
+	"github.com/getevo/evo/v2/lib/memo"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
@@ -42,16 +42,16 @@ const (
 type dbg bool
 
 // Param represents  http request param
-type Param map[string]interface{}
+type Param map[string]any
 
 // Cache set a cache time to keep request in memory
 type Cache struct {
 	Duration  time.Duration
-	Interface cache.Interface
+	Interface memo.Interface
 }
 
 // QueryParam is used to force append http request param to the uri
-type QueryParam map[string]interface{}
+type QueryParam map[string]any
 
 // Host is used for set request's Host
 type Host string
@@ -72,7 +72,7 @@ type UploadProgress func(current, total int64)
 
 // File upload files matching the name pattern such as
 // /usr/*/bin/go* (assuming the Separator is '/')
-func File(patterns ...string) interface{} {
+func File(patterns ...string) any {
 	matches := []string{}
 	for _, pattern := range patterns {
 		m, err := filepath.Glob(pattern)
@@ -101,25 +101,25 @@ func File(patterns ...string) interface{} {
 }
 
 type bodyJson struct {
-	v interface{}
+	v any
 }
 
 type bodyXml struct {
-	v interface{}
+	v any
 }
 
 // BodyJSON make the object be encoded in json format and set it to the request body
-func BodyJSON(v interface{}) *bodyJson {
+func BodyJSON(v any) *bodyJson {
 	return &bodyJson{v: v}
 }
 
 // BodyXML make the object be encoded in xml format and set it to the request body
-func BodyXML(v interface{}) *bodyXml {
+func BodyXML(v any) *bodyXml {
 	return &bodyXml{v: v}
 }
 
 // BodyRaw make the object for raw body. accepts string, []byte, io.Reader, io.ReadCloser
-func BodyRaw(v interface{}) io.Reader {
+func BodyRaw(v any) io.Reader {
 	switch value := v.(type) {
 	case []byte:
 		return bytes.NewReader(value)
@@ -170,7 +170,7 @@ func (p *param) Copy(pp param) {
 		}
 	}
 }
-func (p *param) Adds(m map[string]interface{}) {
+func (p *param) Adds(m map[string]any) {
 	if len(m) == 0 {
 		return
 	}
@@ -186,7 +186,7 @@ func (p *param) Empty() bool {
 
 // Do execute a http request with sepecify method and url,
 // and it can also have some optional params, depending on your needs.
-func (r *Req) Do(method, rawurl string, vs ...interface{}) (resp *Resp, err error) {
+func (r *Req) Do(method, rawurl string, vs ...any) (resp *Resp, err error) {
 	if rawurl == "" {
 		return nil, errors.New("req: url not specified")
 	}
@@ -357,11 +357,11 @@ func (r *Req) Do(method, rawurl string, vs ...interface{}) (resp *Resp, err erro
 			rawurl = rawurl + "&" + paramStr
 		}
 	}
-	var cacheDriver cache.Interface
+	var cacheDriver memo.Interface
 	if cacheConfig != nil && (req.Method == "GET" || req.Method == "HEAD") {
 		cacheDriver = cacheConfig.Interface
 		if cacheDriver == nil {
-			cacheDriver = cache.DefaultDriver()
+			cacheDriver = memo.DefaultDriver()
 		}
 		var response SerializedResponse
 		if cacheDriver.Get("http#req#"+req.Method+"#"+rawurl, &response) {
@@ -451,7 +451,7 @@ func setBodyBytes(req *http.Request, resp *Resp, data []byte) {
 	req.ContentLength = int64(len(data))
 }
 
-func setBodyJson(req *http.Request, resp *Resp, opts *jsonEncOpts, v interface{}) (func(), error) {
+func setBodyJson(req *http.Request, resp *Resp, opts *jsonEncOpts, v any) (func(), error) {
 	var data []byte
 	switch vv := v.(type) {
 	case string:
@@ -486,7 +486,7 @@ func setBodyJson(req *http.Request, resp *Resp, opts *jsonEncOpts, v interface{}
 	return delayedFunc, nil
 }
 
-func setBodyXml(req *http.Request, resp *Resp, opts *xmlEncOpts, v interface{}) (func(), error) {
+func setBodyXml(req *http.Request, resp *Resp, opts *xmlEncOpts, v any) (func(), error) {
 	var data []byte
 	switch vv := v.(type) {
 	case string:
@@ -706,36 +706,36 @@ func (m *multipartHelper) writeFile(w *multipart.Writer, fieldname, filename str
 }
 
 // Get execute a http GET request
-func (r *Req) Get(url string, v ...interface{}) (*Resp, error) {
+func (r *Req) Get(url string, v ...any) (*Resp, error) {
 	return r.Do("GET", url, v...)
 }
 
 // Post execute a http POST request
-func (r *Req) Post(url string, v ...interface{}) (*Resp, error) {
+func (r *Req) Post(url string, v ...any) (*Resp, error) {
 	return r.Do("POST", url, v...)
 }
 
 // Put execute a http PUT request
-func (r *Req) Put(url string, v ...interface{}) (*Resp, error) {
+func (r *Req) Put(url string, v ...any) (*Resp, error) {
 	return r.Do("PUT", url, v...)
 }
 
 // Patch execute a http PATCH request
-func (r *Req) Patch(url string, v ...interface{}) (*Resp, error) {
+func (r *Req) Patch(url string, v ...any) (*Resp, error) {
 	return r.Do("PATCH", url, v...)
 }
 
 // Delete execute a http DELETE request
-func (r *Req) Delete(url string, v ...interface{}) (*Resp, error) {
+func (r *Req) Delete(url string, v ...any) (*Resp, error) {
 	return r.Do("DELETE", url, v...)
 }
 
 // Head execute a http HEAD request
-func (r *Req) Head(url string, v ...interface{}) (*Resp, error) {
+func (r *Req) Head(url string, v ...any) (*Resp, error) {
 	return r.Do("HEAD", url, v...)
 }
 
 // Options execute a http OPTIONS request
-func (r *Req) Options(url string, v ...interface{}) (*Resp, error) {
+func (r *Req) Options(url string, v ...any) (*Resp, error) {
 	return r.Do("OPTIONS", url, v...)
 }

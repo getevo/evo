@@ -68,7 +68,7 @@ func (f *file) WriteString(v string) error {
 }
 
 // WriteJson take struct and write to file as json
-func (f *file) WriteJson(v interface{}, pretty bool) error {
+func (f *file) WriteJson(v any, pretty bool) error {
 	if pretty {
 		b, err := json.MarshalIndent(v, "", "    ")
 		if err != nil {
@@ -134,7 +134,7 @@ func (f *file) ReadAllString() (string, error) {
 }
 
 // UnmarshalJson read file and parse as json
-func (f *file) UnmarshalJson(v interface{}) error {
+func (f *file) UnmarshalJson(v any) error {
 	b, err := f.ReadAll()
 	if err != nil {
 		return err

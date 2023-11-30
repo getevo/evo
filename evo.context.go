@@ -33,9 +33,9 @@ type Request struct {
 }
 
 type Response struct {
-	Success bool        `json:"success"`
-	Error   []string    `json:"errors,omitempty"`
-	Data    interface{} `json:"data,omitempty"`
+	Success bool     `json:"success"`
+	Error   []string `json:"errors,omitempty"`
+	Data    any      `json:"data,omitempty"`
 }
 
 type URL struct {
@@ -72,7 +72,7 @@ func (r *Request) URL() *URL {
 	}
 	return r.url
 }
-func (u *URL) Set(key string, value interface{}) *URL {
+func (u *URL) Set(key string, value any) *URL {
 	u.Query.Set(key, fmt.Sprint(value))
 	return u
 }
@@ -87,7 +87,7 @@ func Upgrade(ctx *fiber.Ctx) *Request {
 	return &r
 }
 
-func (r *Request) WriteResponse(resp ...interface{}) {
+func (r *Request) WriteResponse(resp ...any) {
 
 	if len(resp) == 0 {
 		return
@@ -215,7 +215,7 @@ func (r *Request) _writeResponse(resp Response) {
 
 }
 
-func (r *Request) Error(err interface{}, code ...int) bool {
+func (r *Request) Error(err any, code ...int) bool {
 	if err == nil {
 		return false
 	}
@@ -234,7 +234,7 @@ func (r *Request) Error(err interface{}, code ...int) bool {
 	return true
 }
 
-func (r *Request) PushError(err interface{}, code ...int) bool {
+func (r *Request) PushError(err any, code ...int) bool {
 	if err == nil {
 		return false
 	}
@@ -256,7 +256,7 @@ func (r *Request) HasError() bool {
 	return len(r.Response.Error) > 0
 }
 
-func (r *Request) Var(key string, value ...interface{}) generic.Value {
+func (r *Request) Var(key string, value ...any) generic.Value {
 	return generic.Parse(r.Context.Locals(key, value...))
 }
 

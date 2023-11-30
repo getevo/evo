@@ -3,26 +3,26 @@ package e
 import "fmt"
 
 type Error struct {
-	Type     string         `json:"type"`
-	Field    string         `json:"field,omitempty"`
-	Message  string         `json:"message"`
-	Solution string         `json:"solution,omitempty"`
-	Params   *[]interface{} `json:"params,omitempty"`
+	Type     string `json:"type"`
+	Field    string `json:"field,omitempty"`
+	Message  string `json:"message"`
+	Solution string `json:"solution,omitempty"`
+	Params   *[]any `json:"params,omitempty"`
 }
 
 type Errors []Error
 
-func New(t, field, message, solution string, params ...interface{}) *Error {
+func New(t, field, message, solution string, params ...any) *Error {
 	return &Error{
 		t, field, message, solution, &params,
 	}
 }
 
-func Field(field, message interface{}, params ...interface{}) *Error {
+func Field(field, message any, params ...any) *Error {
 	return New("field", fmt.Sprint(field), fmt.Sprint(message), "", params)
 }
 
-func Context(message interface{}, params ...interface{}) *Error {
+func Context(message any, params ...any) *Error {
 	return New("context", "", fmt.Sprint(message), "", params)
 }
 
@@ -31,7 +31,7 @@ func (e *Error) SetSolution(s string) *Error {
 	return e
 }
 
-func (e *Error) SetParams(params ...interface{}) *Error {
+func (e *Error) SetParams(params ...any) *Error {
 	e.Params = &params
 	return e
 }

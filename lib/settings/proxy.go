@@ -47,7 +47,7 @@ func (config *proxy) Has(key string) (bool, generic.Value) {
 func (config *proxy) All() map[string]generic.Value {
 	return drivers[len(drivers)-1].All()
 }
-func (config *proxy) Set(key string, value interface{}) error {
+func (config *proxy) Set(key string, value any) error {
 	drivers[len(drivers)-1].Set(key, value)
 	delete(fastAccess, key)
 	if v, ok := tracker[key]; ok {
@@ -55,7 +55,7 @@ func (config *proxy) Set(key string, value interface{}) error {
 	}
 	return nil
 }
-func (config *proxy) SetMulti(data map[string]interface{}) error {
+func (config *proxy) SetMulti(data map[string]any) error {
 	drivers[len(drivers)-1].SetMulti(data)
 	for key, _ := range data {
 		if v, ok := tracker[key]; ok {
@@ -64,7 +64,7 @@ func (config *proxy) SetMulti(data map[string]interface{}) error {
 	}
 	return nil
 }
-func (config *proxy) Register(settings ...interface{}) error {
+func (config *proxy) Register(settings ...any) error {
 	if len(settings) > 0 {
 		if _, ok := settings[0].(Setting); ok {
 			return drivers[len(drivers)-1].Register(settings...)
@@ -72,7 +72,7 @@ func (config *proxy) Register(settings ...interface{}) error {
 			return drivers[len(drivers)-1].Register(settings...)
 		} else {
 			var pkg = ""
-			var set []interface{}
+			var set []any
 			for _, setting := range settings {
 				var s = generic.Parse(setting)
 				var ref = s.Indirect()

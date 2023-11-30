@@ -3,22 +3,23 @@ package redis
 import (
 	"context"
 	"github.com/getevo/evo/v2/lib/log"
+	"github.com/getevo/evo/v2/lib/memo/kv"
 	"github.com/getevo/evo/v2/lib/pubsub"
+	"github.com/getevo/evo/v2/lib/serializer"
 	"github.com/getevo/evo/v2/lib/settings"
 	"github.com/go-redis/redis/v8"
-	"github.com/kelindar/binary"
 	"strings"
 	"time"
 )
 
 var Driver = driver{}
-var marshaller func(input interface{}) ([]byte, error) = binary.Marshal
-var unmarshaller func(bytes []byte, out interface{}) error = binary.Unmarshal
+var _serializer = serializer.JSON
 var listeners = map[string][]func(topic string, message []byte, driver pubsub.Interface){}
 
 type driver struct{}
 
-func (d driver) Subscribe(topic string, onMessage func(topic string, message []byte, driver pubsub.Interface), params ...interface{}) {
+func (d driver) Subscribe(topic string, onMessage func(topic string, message []byte, driver pubsub.Interface), params ...any) {
+	topic = prefix + topic
 	if _, ok := listeners[topic]; !ok {
 		listeners[topic] = []func(topic string, message []byte, driver pubsub.Interface){}
 	}
@@ -37,7 +38,17 @@ func (d driver) Subscribe(topic string, onMessage func(topic string, message []b
 		}
 	}()
 }
-func (d driver) Publish(topic string, message []byte, params ...interface{}) error {
+
+func (d driver) Publish(topic string, data any, params ...any) error {
+	b, err := _serializer.Marshal(data)
+	if err != nil {
+		return err
+	}
+	return d.PublishBytes(topic, b, params...)
+}
+
+func (d driver) PublishBytes(topic string, message []byte, params ...any) error {
+	topic = prefix + topic
 	return Client.Publish(context.Background(), prefix+topic, message).Err()
 }
 
@@ -87,37 +98,55 @@ func (driver) Name() string {
 }
 
 // Set add an item to the cache, replacing any existing item. If the duration is 0
-func (driver) Set(key string, value interface{}, duration time.Duration) {
-	b, err := marshaller(value)
-	if err != nil {
-		log.Error("unable to marshal message", "error", err)
-		return
+func (driver) Set(key string, value any, params ...any) error {
+	var p = kv.Parse(params)
+	if p.Bucket != "" {
+		key = p.Bucket + "." + key
 	}
-	Client.Set(context.Background(), prefix+key, b, duration)
+	b, err := _serializer.Marshal(value)
+	if err != nil {
+		return err
+	}
+	return Client.Set(context.Background(), prefix+key, b, p.Duration).Err()
 }
 
 // SetRaw add an item to the cache, replacing any existing item. If the duration is 0
-func (driver) SetRaw(key string, value []byte, duration time.Duration) {
-	Client.Set(context.Background(), prefix+key, value, duration)
+func (driver) SetRaw(key string, value []byte, params ...any) error {
+	var p = kv.Parse(params)
+	if p.Bucket != "" {
+		key = p.Bucket + "." + key
+	}
+	return Client.Set(context.Background(), prefix+key, value, p.Duration).Err()
 }
 
 // Replace set a new value for the cache key only if it already exists, and the existing
 // item hasn't expired. Returns an error otherwise.
-func (d driver) Replace(key string, value interface{}, duration time.Duration) bool {
+func (d driver) Replace(key string, value any, params ...any) bool {
+	var p = kv.Parse(params)
+	if p.Bucket != "" {
+		key = p.Bucket + "." + key
+	}
 	if _, ok := d.GetRaw(key); !ok {
 		return false
 	}
-	d.Set(key, value, duration)
+	err := d.Set(key, value, p.Duration)
+	if err != nil {
+		return false
+	}
 	return true
 }
 
 // Get an item from the cache. Returns a bool indicating whether the key was found.
-func (driver) Get(key string, out interface{}) bool {
+func (driver) Get(key string, out any, params ...any) bool {
+	var p = kv.Parse(params)
+	if p.Bucket != "" {
+		key = p.Bucket + "." + key
+	}
 	result, err := Client.Get(context.Background(), prefix+key).Bytes()
 	if err != nil {
 		return false
 	}
-	err = unmarshaller(result, out)
+	err = _serializer.Unmarshal(result, out)
 	if err != nil {
 		log.Error("unable to unmarshal message", "error", err)
 		return false
@@ -126,7 +155,11 @@ func (driver) Get(key string, out interface{}) bool {
 }
 
 // GetRaw get an item from the cache. Returns cache content in []byte and a bool indicating whether the key was found.
-func (driver) GetRaw(key string) ([]byte, bool) {
+func (driver) GetRaw(key string, params ...any) ([]byte, bool) {
+	var p = kv.Parse(params)
+	if p.Bucket != "" {
+		key = p.Bucket + "." + key
+	}
 	result, err := Client.Get(context.Background(), prefix+key).Bytes()
 	if err == nil {
 		return result, true
@@ -138,7 +171,11 @@ func (driver) GetRaw(key string) ([]byte, bool) {
 // It returns the item exported to out, the expiration time if one is set (if the item
 // never expires a zero value for time.Time is returned), and a bool indicating
 // whether the key was found.
-func (d driver) GetWithExpiration(key string, out interface{}) (time.Time, bool) {
+func (d driver) GetWithExpiration(key string, out any, params ...any) (time.Time, bool) {
+	var p = kv.Parse(params)
+	if p.Bucket != "" {
+		key = p.Bucket + "." + key
+	}
 	var exists = d.Get(key, out)
 	if !exists {
 		return time.Time{}, false
@@ -154,7 +191,11 @@ func (d driver) GetWithExpiration(key string, out interface{}) (time.Time, bool)
 // It returns the content in []byte, the expiration time if one is set (if the item
 // never expires a zero value for time.Time is returned), and a bool indicating
 // whether the key was found.
-func (driver) GetRawWithExpiration(key string) ([]byte, time.Time, bool) {
+func (driver) GetRawWithExpiration(key string, params ...any) ([]byte, time.Time, bool) {
+	var p = kv.Parse(params)
+	if p.Bucket != "" {
+		key = p.Bucket + "." + key
+	}
 	result, err := Client.Get(context.Background(), prefix+key).Bytes()
 	if err != nil {
 		return result, time.Time{}, false
@@ -170,29 +211,45 @@ func (driver) GetRawWithExpiration(key string) ([]byte, time.Time, bool) {
 // uint8, uint32, or uint64, float32 or float64 by n. Returns an error if the
 // item's value is not an integer, if it was not found, or if it is not
 // possible to increment it by n.
-func (driver) Increment(key string, n interface{}) int64 {
+func (driver) Increment(key string, n any, params ...any) (int64, error) {
+	var p = kv.Parse(params)
+	if p.Bucket != "" {
+		key = p.Bucket + "." + key
+	}
 	v := toInt64(n)
 	var result = Client.IncrBy(context.Background(), prefix+key, v)
-	return result.Val()
+	return result.Val(), result.Err()
 }
 
 // Decrement an item of type int, int8, int16, int32, int64, uintptr, uint,
 // uint8, uint32, or uint64, float32 or float64 by n. Returns an error if the
 // item's value is not an integer, if it was not found, or if it is not
 // possible to decrement it by n.
-func (driver) Decrement(key string, n interface{}) int64 {
+func (driver) Decrement(key string, n any, params ...any) (int64, error) {
+	var p = kv.Parse(params)
+	if p.Bucket != "" {
+		key = p.Bucket + "." + key
+	}
 	v := toInt64(n)
 	var result = Client.IncrBy(context.Background(), prefix+key, v)
-	return result.Val()
+	return result.Val(), result.Err()
 }
 
 // Delete an item from the cache. Does nothing if the key is not in the cache.
-func (driver) Delete(key string) {
-	Client.Del(context.Background(), prefix+key)
+func (driver) Delete(key string, params ...any) error {
+	var p = kv.Parse(params)
+	if p.Bucket != "" {
+		key = p.Bucket + "." + key
+	}
+	return Client.Del(context.Background(), prefix+key).Err()
 }
 
 // Expire re-set expiration duration for a key
-func (driver) Expire(key string, t time.Time) error {
+func (driver) Expire(key string, t time.Time, params ...any) error {
+	var p = kv.Parse(params)
+	if p.Bucket != "" {
+		key = p.Bucket + "." + key
+	}
 	return Client.Expire(context.Background(), prefix+key, time.Now().Sub(t)).Err()
 }
 
@@ -207,17 +264,7 @@ func (driver) Flush() error {
 	return nil
 }
 
-// SetMarshaller set interface{} to []byte marshalling function
-func (driver) SetMarshaller(fn func(input interface{}) ([]byte, error)) {
-	marshaller = fn
-}
-
-// SetUnMarshaller set []byte to interface{} unmarshalling function
-func (driver) SetUnMarshaller(fn func(bytes []byte, out interface{}) error) {
-	unmarshaller = fn
-}
-
-func toInt64(n interface{}) int64 {
+func toInt64(n any) int64 {
 	switch v := n.(type) {
 	case int:
 		return int64(v)
@@ -243,6 +290,22 @@ func toInt64(n interface{}) int64 {
 	return 0
 }
 
-func (d driver) SetPrefix(p string) {
-	prefix = p
+// SetSerializer set data serialization method
+func (driver) SetSerializer(v serializer.Interface) {
+	_serializer = v
+}
+
+func (driver) SetPrefix(s string) {
+	prefix = s
+}
+func (driver) Serializer() serializer.Interface {
+	return _serializer
+}
+
+func (driver) Marshal(data any) ([]byte, error) {
+	return _serializer.Marshal(data)
+}
+
+func (driver) Unmarshal(data []byte, v any) error {
+	return _serializer.Unmarshal(data, v)
 }

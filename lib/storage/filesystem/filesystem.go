@@ -128,7 +128,7 @@ func (driver *Driver) Touch(path string) error {
 	return nil
 }
 
-func (driver *Driver) WriteJson(path string, content interface{}) error {
+func (driver *Driver) WriteJson(path string, content any) error {
 	var b, err = json.Marshal(content)
 	if err != nil {
 		return err
@@ -136,7 +136,7 @@ func (driver *Driver) WriteJson(path string, content interface{}) error {
 	return driver.Write(path, b)
 }
 
-func (driver *Driver) Append(path string, content interface{}) error {
+func (driver *Driver) Append(path string, content any) error {
 	path = driver.getRealPath(path)
 	return gpath.Append(path, content)
 }
@@ -222,7 +222,7 @@ func (driver *Driver) MkdirAll(path string, perm ...fs.FileMode) error {
 	return os.MkdirAll(path, perm[0])
 }
 
-func (driver *Driver) Write(path string, content interface{}) error {
+func (driver *Driver) Write(path string, content any) error {
 	return gpath.Write(path, content)
 }
 

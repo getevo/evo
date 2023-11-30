@@ -4,7 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-type Handler func(request *Request) interface{}
+type Handler func(request *Request) any
 type Middleware func(request *Request) error
 
 type group struct {

@@ -49,7 +49,7 @@ const (
 //
 //	@param i
 //	@return Value
-func Parse(i interface{}) Value {
+func Parse(i any) Value {
 	return Value{
 		Input: i,
 	}
@@ -57,13 +57,13 @@ func Parse(i interface{}) Value {
 
 // Type lib structure to keep input and its type
 type Type struct {
-	input interface{}
+	input any
 	iType reflect.Type
 }
 
 // Value wraps over interface
 type Value struct {
-	Input interface{}
+	Input any
 }
 
 // IsNil returns if the value is nil
@@ -74,7 +74,7 @@ func (v Value) IsNil() bool {
 	return !reflect.ValueOf(v.Input).IsValid()
 }
 
-func (v Value) direct() interface{} {
+func (v Value) direct() any {
 	ref := reflect.ValueOf(v.Input)
 	if !ref.IsValid() {
 		return nil
@@ -90,7 +90,7 @@ func (v Value) direct() interface{} {
 //	@receiver v
 //	@param in
 //	@return error
-func (v Value) ParseJSON(in interface{}) error {
+func (v Value) ParseJSON(in any) error {
 	var value = v.direct()
 	return json.Unmarshal([]byte(fmt.Sprint(value)), in)
 }
@@ -240,7 +240,7 @@ func (v Value) Duration() (time.Duration, error) {
 //
 //	@param v
 //	@return string
-func ToString(v interface{}) string {
+func ToString(v any) string {
 	ref := reflect.ValueOf(v)
 	if !ref.IsValid() {
 		return ""
@@ -269,7 +269,7 @@ func ToString(v interface{}) string {
 //
 //	@param input
 //	@return *Type
-func TypeOf(input interface{}) *Type {
+func TypeOf(input any) *Type {
 	var el = Type{
 		input: input,
 		iType: reflect.TypeOf(input),
@@ -282,7 +282,7 @@ func TypeOf(input interface{}) *Type {
 //	@receiver t
 //	@param input
 //	@return bool
-func (t *Type) Is(input interface{}) bool {
+func (t *Type) Is(input any) bool {
 	switch v := input.(type) {
 	case reflect.Kind:
 		return v == t.iType.Kind()
@@ -362,7 +362,7 @@ func (v *Value) UnmarshalYAML(data []byte) error {
 	return yaml.Unmarshal(data, &v.Input)
 }
 
-func (v *Value) Scan(value interface{}) error {
+func (v *Value) Scan(value any) error {
 	switch cast := value.(type) {
 	case string:
 		v.Input = cast
@@ -384,7 +384,7 @@ func (v Value) Is(s string) bool {
 	return typ == s
 }
 
-func (v Value) SameAs(s interface{}) bool {
+func (v Value) SameAs(s any) bool {
 	return reflect.TypeOf(v.Input) == reflect.TypeOf(s)
 }
 
@@ -414,7 +414,7 @@ func (v Value) PropByTag(tag string) Value {
 	return Parse(nil)
 }
 
-func (v Value) SetProp(property string, value interface{}) error {
+func (v Value) SetProp(property string, value any) error {
 	ref := v.Indirect()
 	if ref.Kind() == reflect.Struct {
 		//var x = ref.FieldByName(property).Interface()
@@ -443,7 +443,7 @@ func (v Value) SetProp(property string, value interface{}) error {
 	return fmt.Errorf("value is not struct or map")
 }
 
-func (v Value) Cast(dst interface{}) error {
+func (v Value) Cast(dst any) error {
 	var ref reflect.Value
 	if v, ok := dst.(reflect.Value); ok {
 		ref = v
@@ -492,7 +492,7 @@ func (v Value) Cast(dst interface{}) error {
 			x.SetProp(prop.Name, v.Prop(prop.Name).Input)
 		}
 	}
-	var x interface{}
+	var x any
 	switch kind {
 	case reflect.Int:
 		if sizeRegex.MatchString(v.String()) {
@@ -620,7 +620,7 @@ func (v Value) Indirect() reflect.Value {
 	return indirect(v.Input)
 }
 
-func indirect(input interface{}) reflect.Value {
+func indirect(input any) reflect.Value {
 	var ref = reflect.ValueOf(input)
 	for ref.Kind() == reflect.Ptr {
 		ref = ref.Elem()
@@ -632,7 +632,7 @@ func (v Value) IndirectType() reflect.Type {
 	return indirectType(v.Input)
 }
 
-func indirectType(input interface{}) reflect.Type {
+func indirectType(input any) reflect.Type {
 	var ref = reflect.TypeOf(input)
 	for ref.Kind() == reflect.Ptr {
 		ref = ref.Elem()
@@ -644,7 +644,7 @@ func (v Value) IsEmpty() bool {
 	return v.Input == nil || reflect.ValueOf(v.Input).IsNil()
 }
 
-func (v Value) IsAny(s ...interface{}) bool {
+func (v Value) IsAny(s ...any) bool {
 	var t = v.IndirectType()
 	var kind = t.Kind()
 	for _, item := range s {

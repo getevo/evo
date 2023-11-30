@@ -1,19 +1,25 @@
 package kafka
 
 import (
-	"github.com/getevo/evo/v2/lib/kafka"
+	"github.com/getevo/evo/v2/lib/connectors/kafka/lib/kafka"
 	"github.com/getevo/evo/v2/lib/pubsub"
+	"github.com/getevo/evo/v2/lib/serializer"
 	"github.com/getevo/evo/v2/lib/settings"
 )
 
-var Driver = driver{}
+var Driver = Kafka{}
 
 var listeners = map[string][]func(topic string, message []byte, driver pubsub.Interface){}
 var producers = map[string]*kafka.Producer{}
+var _serializer = serializer.JSON
 
-type driver struct{}
+type Kafka struct{}
 
-func (d driver) Subscribe(topic string, onMessage func(topic string, message []byte, driver pubsub.Interface), params ...interface{}) {
+func (d Kafka) Subscribe(topic string, onMessage func(topic string, message []byte, driver pubsub.Interface), params ...any) {
+	p := Parse(params)
+	if !p.IgnorePrefix {
+		topic = prefix + topic
+	}
 	if _, ok := listeners[topic]; !ok {
 		listeners[topic] = []func(topic string, message []byte, driver pubsub.Interface){onMessage}
 		var configs []*kafka.ConsumerConfig
@@ -36,7 +42,20 @@ func (d driver) Subscribe(topic string, onMessage func(topic string, message []b
 	}
 
 }
-func (d driver) Publish(topic string, message []byte, params ...interface{}) error {
+
+func (d Kafka) Publish(topic string, data any, params ...any) error {
+	b, err := _serializer.Marshal(data)
+	if err != nil {
+		return err
+	}
+	return d.PublishBytes(topic, b, params...)
+}
+
+func (d Kafka) PublishBytes(topic string, message []byte, params ...any) error {
+	p := Parse(params)
+	if !p.IgnorePrefix {
+		topic = prefix + topic
+	}
 	if _, ok := producers[topic]; !ok {
 		var config = kafka.ProducerConfig{}
 		switch settings.Get("KAFKA.COMPRESSION").String() {
@@ -44,8 +63,6 @@ func (d driver) Publish(topic string, message []byte, params ...interface{}) err
 			config.Compression(kafka.Gzip)
 		case "snappy":
 			config.Compression(kafka.Snappy)
-		case "lz4":
-			config.Compression(kafka.Lz4)
 		case "zstd":
 			config.Compression(kafka.Zstd)
 		}
@@ -96,7 +113,7 @@ func (d driver) Publish(topic string, message []byte, params ...interface{}) err
 var prefix = ""
 var Client *kafka.Client
 
-func (driver) Register() error {
+func (Kafka) Register() error {
 	if Client != nil {
 		return nil
 	}
@@ -230,16 +247,27 @@ func (driver) Register() error {
 	return nil
 }
 
-func (driver) Name() string {
+func (Kafka) Name() string {
 	return "kafka"
 }
 
-// SetMarshaller set interface{} to []byte marshalling function
-func (driver) SetMarshaller(fn func(input interface{}) ([]byte, error)) {
-
+// SetSerializer set data serialization method
+func (Kafka) SetSerializer(v serializer.Interface) {
+	_serializer = v
 }
 
-// SetUnMarshaller set []byte to interface{} unmarshalling function
-func (driver) SetUnMarshaller(fn func(bytes []byte, out interface{}) error) {
+func (Kafka) SetPrefix(s string) {
+	prefix = s
+}
 
+func (Kafka) Serializer() serializer.Interface {
+	return _serializer
+}
+
+func (Kafka) Marshal(data any) ([]byte, error) {
+	return _serializer.Marshal(data)
+}
+
+func (Kafka) Unmarshal(data []byte, v any) error {
+	return _serializer.Unmarshal(data, v)
 }

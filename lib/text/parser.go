@@ -26,7 +26,7 @@ func ParseWildCard(input, expr string) []string {
 	return res[0][1:]
 }
 
-func ToJSON(v interface{}) string {
+func ToJSON(v any) string {
 	b, _ := json.Marshal(v)
 	return string(b)
 }

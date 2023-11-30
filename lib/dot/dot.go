@@ -12,7 +12,7 @@ import (
 
 var arrayRegex = regexp.MustCompile(`\[[\"\'\x60]{0,1}(.*?)[\"\'\x60]{0,1}\]`)
 
-func Get(obj interface{}, prop string) (interface{}, error) {
+func Get(obj any, prop string) (any, error) {
 	// fmt.Println("getting property")
 	// fmt.Println(args)
 
@@ -50,7 +50,7 @@ func Get(obj interface{}, prop string) (interface{}, error) {
 }
 
 // Loop through this to get properties via dot notation
-func getProperty(obj interface{}, prop string) (interface{}, error) {
+func getProperty(obj any, prop string) (any, error) {
 	var _type = reflect.TypeOf(obj)
 	if _type.Kind() == reflect.Array || _type.Kind() == reflect.Slice {
 		val := reflect.ValueOf(obj)
@@ -81,7 +81,7 @@ func getProperty(obj interface{}, prop string) (interface{}, error) {
 	return reflections.GetField(obj, prop)
 }
 
-func Set(input interface{}, prop string, value interface{}) error {
+func Set(input any, prop string, value any) error {
 	// Get the array access
 	arr := strings.Split(prop, ".")
 	var val = reflect.ValueOf(input)
@@ -101,7 +101,7 @@ func Set(input interface{}, prop string, value interface{}) error {
 			if v.IsValid() {
 				obj = v
 			} else {
-				var m = map[string]interface{}{}
+				var m = map[string]any{}
 				obj.SetMapIndex(reflect.ValueOf(key), reflect.ValueOf(m))
 				obj = obj.MapIndex(reflect.ValueOf(key))
 			}
@@ -121,7 +121,7 @@ func Set(input interface{}, prop string, value interface{}) error {
 
 }
 
-func setProperty(obj interface{}, prop string, val interface{}) error {
+func setProperty(obj any, prop string, val any) error {
 	var ref = reflect.ValueOf(obj)
 	if ref.Kind() == reflect.Map {
 		ref.SetMapIndex(reflect.ValueOf(prop), reflect.ValueOf(val))

@@ -44,11 +44,15 @@ func AddDriver(driver Interface) {
 	}
 }
 
-func Subscribe(topic string, onMessage func(topic string, message []byte, driver Interface), params ...interface{}) {
+func Subscribe(topic string, onMessage func(topic string, message []byte, driver Interface), params ...any) {
 	defaultDriver.Subscribe(topic, onMessage, params...)
 }
-func Publish(topic string, message []byte, params ...interface{}) error {
+func Publish(topic string, message []byte, params ...any) error {
 	return defaultDriver.Publish(topic, message, params...)
+}
+
+func SetPrefix(s string) {
+	defaultDriver.SetPrefix(s)
 }
 
 func Register() error {

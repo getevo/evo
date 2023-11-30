@@ -49,7 +49,7 @@ type Table struct {
 	Charset       string        `json:"charset" gorm:"column:TABLE_CHARSET"`
 	Columns       Columns       `json:"columns" gorm:"-"`
 	Indexes       Indexes       `json:"indexes" gorm:"-"`
-	Model         interface{}   `json:"-" gorm:"-"`
+	Model         any           `json:"-" gorm:"-"`
 	Reflect       reflect.Value `json:"-" gorm:"-"`
 }
 

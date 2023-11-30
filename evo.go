@@ -1,9 +1,9 @@
 package evo
 
 import (
-	"github.com/getevo/evo/v2/lib/cache"
 	dbo "github.com/getevo/evo/v2/lib/db"
 	"github.com/getevo/evo/v2/lib/generic"
+	"github.com/getevo/evo/v2/lib/memo"
 	"github.com/getevo/evo/v2/lib/settings"
 	"github.com/getevo/evo/v2/lib/settings/database"
 	"github.com/gofiber/fiber/v2"
@@ -35,7 +35,7 @@ func Setup() {
 		settings.SetDefaultDriver(database.Driver)
 	}
 
-	cache.Register()
+	memo.Register()
 
 }
 

@@ -58,7 +58,7 @@ func (config *Database) All() map[string]generic.Value {
 	}
 	return m
 }
-func (config *Database) Set(key string, value interface{}) error {
+func (config *Database) Set(key string, value any) error {
 	key = strings.ToUpper(key)
 	var chunks = strings.SplitN(key, ".", 2)
 	if len(chunks) == 2 {
@@ -66,7 +66,7 @@ func (config *Database) Set(key string, value interface{}) error {
 	}
 	return nil
 }
-func (config *Database) SetMulti(data map[string]interface{}) error {
+func (config *Database) SetMulti(data map[string]any) error {
 	for key, value := range data {
 		key = strings.ToUpper(key)
 		var chunks = strings.SplitN(key, ".", 2)
@@ -76,7 +76,7 @@ func (config *Database) SetMulti(data map[string]interface{}) error {
 	}
 	return nil
 }
-func (config *Database) Register(settings ...interface{}) error {
+func (config *Database) Register(settings ...any) error {
 	for _, s := range settings {
 		var v = generic.Parse(s)
 

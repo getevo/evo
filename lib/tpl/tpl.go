@@ -10,7 +10,7 @@ import (
 
 var varRegex = regexp.MustCompile(`(?mi)\$([a-z\.\_\[\]0-9]+)*`)
 
-func Render(src string, params ...interface{}) string {
+func Render(src string, params ...any) string {
 	return varRegex.ReplaceAllStringFunc(src, func(s string) string {
 		var key = s[1:]
 		for _, item := range params {

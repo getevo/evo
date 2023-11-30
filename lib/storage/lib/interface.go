@@ -12,9 +12,9 @@ type Driver interface {
 	SetWorkingDir(path string) error
 	WorkingDir() string
 	Touch(path string) error
-	WriteJson(path string, content interface{}) error
-	Write(path string, content interface{}) error
-	Append(path string, content interface{}) error
+	WriteJson(path string, content any) error
+	Write(path string, content any) error
+	Append(path string, content any) error
 	SetMetadata(path string, meta Metadata) error
 	GetMetadata(path string) (*Metadata, error)
 	CopyDir(src, dest string) error
@@ -85,14 +85,14 @@ func (f FileInfo) Sys() any {
 	return f.sys
 }
 
-func (f FileInfo) Append(content interface{}) error {
+func (f FileInfo) Append(content any) error {
 	if f.IsDir() {
 		return fmt.Errorf("cant write on directory")
 	}
 	return f.storage.Append(f.path, content)
 }
 
-func (f FileInfo) Write(content interface{}) error {
+func (f FileInfo) Write(content any) error {
 	if f.IsDir() {
 		return fmt.Errorf("cant write on directory")
 	}

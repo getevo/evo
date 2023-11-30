@@ -5,7 +5,7 @@ import "github.com/getevo/evo/v2/lib/panics"
 const rethrow_panic = "_____rethrow"
 
 type (
-	Error     interface{}
+	Error     any
 	exception struct {
 		finally   func()
 		Error     Error

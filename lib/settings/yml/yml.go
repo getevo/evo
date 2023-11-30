@@ -12,7 +12,7 @@ import (
 var Driver = &Yaml{}
 
 type Yaml struct {
-	data    map[string]interface{}
+	data    map[string]any
 	path    string
 	writeFn func()
 }
@@ -40,18 +40,18 @@ func (config *Yaml) Has(key string) (bool, generic.Value) {
 func (config *Yaml) All() map[string]generic.Value {
 	return map[string]generic.Value{}
 }
-func (config *Yaml) Set(key string, value interface{}) error {
+func (config *Yaml) Set(key string, value any) error {
 	dot.Set(config.data, key, value)
 	return config.write()
 }
-func (config *Yaml) SetMulti(data map[string]interface{}) error {
+func (config *Yaml) SetMulti(data map[string]any) error {
 	for key, value := range data {
 		dot.Set(&config.data, key, value)
 	}
 
 	return config.write()
 }
-func (config *Yaml) Register(settings ...interface{}) error {
+func (config *Yaml) Register(settings ...any) error {
 	for _, s := range settings {
 		var v = generic.Parse(s)
 		if !v.Is("settings.Setting") {
@@ -65,7 +65,7 @@ func (config *Yaml) Register(settings ...interface{}) error {
 	return nil
 }
 func (config *Yaml) Init(params ...string) error {
-	config.data = map[string]interface{}{}
+	config.data = map[string]any{}
 	if len(params) != 0 {
 		for _, path := range params {
 			bytes, err := gpath.ReadFile(path)

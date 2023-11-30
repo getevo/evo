@@ -10,14 +10,14 @@ var drivers = []Interface{&yml.Yaml{}}
 var defaultDriver Interface = &yml.Yaml{}
 
 type Interface interface {
-	Name() string                               // Name returns driver name
-	Get(key string) generic.Value               // Get returns single value
-	Has(key string) (bool, generic.Value)       // Has check if key exists
-	All() map[string]generic.Value              // All returns all of configuration values
-	Set(key string, value interface{}) error    // Set sets value of a key
-	SetMulti(data map[string]interface{}) error // SetMulti sets multiple keys at once
-	Register(settings ...interface{}) error     // Register a new key to be used in the future
-	Init(params ...string) error                // Init will be called at the initialization of application
+	Name() string                         // Name returns driver name
+	Get(key string) generic.Value         // Get returns single value
+	Has(key string) (bool, generic.Value) // Has check if key exists
+	All() map[string]generic.Value        // All returns all of configuration values
+	Set(key string, value any) error      // Set sets value of a key
+	SetMulti(data map[string]any) error   // SetMulti sets multiple keys at once
+	Register(settings ...any) error       // Register a new key to be used in the future
+	Init(params ...string) error          // Init will be called at the initialization of application
 }
 
 type Setting struct {
@@ -102,15 +102,15 @@ func All() map[string]generic.Value {
 	return defaultDriver.All()
 }
 
-func Set(key string, value interface{}) error {
+func Set(key string, value any) error {
 	return defaultDriver.Set(key, value)
 }
 
-func SetMulti(data map[string]interface{}) error {
+func SetMulti(data map[string]any) error {
 	return defaultDriver.SetMulti(data)
 }
 
-func Register(settings ...interface{}) {
+func Register(settings ...any) {
 	defaultDriver.Register(settings...)
 	/*	var key = ""
 		for idx, _ := range settings {

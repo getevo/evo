@@ -117,7 +117,7 @@ func (client *Client) CreateTopic(topic string, replica, partitions int) error {
 	return nil
 }
 
-func applyConfig(src interface{}, dst interface{}) {
+func applyConfig(src any, dst any) {
 
 	var srcDesc = structs.New(src)
 	var srcRef = reflect.ValueOf(src).Elem()

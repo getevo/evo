@@ -11,7 +11,7 @@ import (
 
 type Response struct {
 	ContentType string
-	Data        interface{}
+	Data        any
 	StatusCode  int
 	Headers     map[string]string
 	RedirectURL string
@@ -56,7 +56,7 @@ func RedirectTemporary(to string) *Response {
 	return response.Redirect(to, fiber.StatusTemporaryRedirect)
 }
 
-func Json(input interface{}) *Response {
+func Json(input any) *Response {
 	var response = Response{
 		ContentType: fiber.MIMEApplicationJSONCharsetUTF8,
 		StatusCode:  200,
@@ -78,7 +78,7 @@ func (response *Response) Header(key, value string) *Response {
 	return response
 }
 
-func (response *Response) Content(input interface{}) *Response {
+func (response *Response) Content(input any) *Response {
 	switch v := input.(type) {
 	case string:
 		response.Data = []byte(v)
@@ -111,7 +111,7 @@ type Cookie struct {
 	SameSite string    `json:"same_site"`
 }
 
-func (response *Response) Cookie(key string, val interface{}, params ...interface{}) *Response {
+func (response *Response) Cookie(key string, val any, params ...any) *Response {
 	cookie := new(Cookie)
 	cookie.Name = key
 	cookie.Path = "/"
@@ -164,7 +164,7 @@ func (response *Response) RedirectTemporary(to string) *Response {
 	return response.Redirect(to, fiber.StatusTemporaryRedirect)
 }
 
-func (response *Response) Error(value interface{}, code ...int) *Response {
+func (response *Response) Error(value any, code ...int) *Response {
 	if len(code) > 0 {
 		response.StatusCode = code[0]
 	} else {

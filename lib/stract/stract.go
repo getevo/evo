@@ -314,7 +314,7 @@ func cleanText(t string) string {
 	return t
 }
 
-func PrettyStruct(data interface{}) string {
+func PrettyStruct(data any) string {
 	val, err := json.MarshalIndent(data, "", "    ")
 	if err != nil {
 		return ""

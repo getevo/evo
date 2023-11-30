@@ -9,16 +9,16 @@ import (
 
 // Executable represents a singular logic block.
 // It can be used with several functions.
-type Executable func(context.Context) (interface{}, error)
+type Executable func(context.Context) (any, error)
 
 // ExecutableInSequence represents one of a sequence of logic blocks.
-type ExecutableInSequence func(context.Context, interface{}) (interface{}, error)
+type ExecutableInSequence func(context.Context, any) (any, error)
 
 // IndexedValue stores the output of Executables,
 // along with the index of the source Executable for ordering.
 type IndexedValue struct {
 	Index int
-	Value interface{}
+	Value any
 }
 
 // IndexedExecutableOutput stores both output and error values from a Excetable.
@@ -27,8 +27,8 @@ type IndexedExecutableOutput struct {
 	Err   error
 }
 
-func pluckVals(iVals []IndexedValue) []interface{} {
-	vals := []interface{}{}
+func pluckVals(iVals []IndexedValue) []any {
+	vals := []any{}
 	for _, val := range iVals {
 		vals = append(vals, val.Value)
 	}
@@ -50,7 +50,7 @@ func sortIdxVals(iVals []IndexedValue) []IndexedValue {
 }
 
 // Take returns the first `num` values outputted by the Executables.
-func Take(parentCtx context.Context, num int, execs ...Executable) ([]interface{}, error) {
+func Take(parentCtx context.Context, num int, execs ...Executable) ([]any, error) {
 	execCount := len(execs)
 
 	if num > execCount {
@@ -143,7 +143,7 @@ func takeUntilEnough(fail chan error, success chan []IndexedValue, num int, outp
 }
 
 // All returns all the outputs from all Executables, order guaranteed.
-func All(parentCtx context.Context, execs ...Executable) ([]interface{}, error) {
+func All(parentCtx context.Context, execs ...Executable) ([]any, error) {
 	// Create a new sub-context for possible cancelation.
 	ctx, cancel := context.WithCancel(parentCtx)
 	defer cancel()
@@ -177,7 +177,7 @@ func All(parentCtx context.Context, execs ...Executable) ([]interface{}, error) 
 /*
 Last returns the last `num` values outputted by the Executables.
 */
-func Last(parentCtx context.Context, num int, execs ...Executable) ([]interface{}, error) {
+func Last(parentCtx context.Context, num int, execs ...Executable) ([]any, error) {
 	execCount := len(execs)
 	if num > execCount {
 		num = execCount
@@ -215,13 +215,13 @@ func (err MaxRetriesExceededError) Error() string {
 // Retry attempts to get a value from an Executable instead of an Error.
 // It will keeps re-running the Executable when failed no more than `retries` times.
 // Also, when the parent Context canceled, it returns the `Err()` of it immediately.
-func Retry(parentCtx context.Context, retries int, fn Executable) (interface{}, error) {
+func Retry(parentCtx context.Context, retries int, fn Executable) (any, error) {
 	ctx, cancel := context.WithCancel(parentCtx)
 	defer cancel()
 
 	c := 0
 	fail := make(chan error, 1)
-	success := make(chan interface{}, 1)
+	success := make(chan any, 1)
 
 	for {
 		go func() {
@@ -260,15 +260,15 @@ func Retry(parentCtx context.Context, retries int, fn Executable) (interface{}, 
 // passing previous result to next Executable as input.
 // When an error occurred, it stop the process then returns the error.
 // When the parent Context canceled, it returns the `Err()` of it immediately.
-func Waterfall(parentCtx context.Context, execs ...ExecutableInSequence) (interface{}, error) {
+func Waterfall(parentCtx context.Context, execs ...ExecutableInSequence) (any, error) {
 	ctx, cancel := context.WithCancel(parentCtx)
 	defer cancel()
 
-	var lastVal interface{}
+	var lastVal any
 	execCount := len(execs)
 	i := 0
 	fail := make(chan error, 1)
-	success := make(chan interface{}, 1)
+	success := make(chan any, 1)
 
 	for {
 		go func() {

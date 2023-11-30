@@ -22,7 +22,7 @@ func (h Header) Clone() Header {
 }
 
 // ParseStruct parse struct into header
-func ParseStruct(h Header, v interface{}) Header {
+func ParseStruct(h Header, v any) Header {
 	data, err := json.Marshal(v)
 	if err != nil {
 		return h
@@ -33,7 +33,7 @@ func ParseStruct(h Header, v interface{}) Header {
 }
 
 // HeaderFromStruct init header from struct
-func HeaderFromStruct(v interface{}) Header {
+func HeaderFromStruct(v any) Header {
 
 	var header Header
 	header = ParseStruct(header, v)

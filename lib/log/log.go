@@ -72,7 +72,7 @@ func SetStackTrace(lvl int) {
 	stackTraceLevel = lvl
 }
 
-func msg(message interface{}, level Level, params ...interface{}) {
+func msg(message any, level Level, params ...any) {
 	if message == nil {
 		return
 	}
@@ -105,7 +105,7 @@ func msg(message interface{}, level Level, params ...interface{}) {
 	}
 }
 
-func toValue(param interface{}) string {
+func toValue(param any) string {
 	var ref = reflect.ValueOf(param)
 	for ref.Kind() == reflect.Ptr {
 		ref = ref.Elem()
@@ -135,7 +135,7 @@ func quote(s string) string {
 }
 
 // Fatal is just like func l.Critical logger except that it is followed by exit to program
-func Fatal(message interface{}, params ...interface{}) {
+func Fatal(message any, params ...any) {
 	if level >= CriticalLevel {
 		msg(message, CriticalLevel, params...)
 	}
@@ -143,7 +143,7 @@ func Fatal(message interface{}, params ...interface{}) {
 }
 
 // FatalF is just like func l.CriticalF logger except that it is followed by exit to program
-func FatalF(message interface{}, params ...interface{}) {
+func FatalF(message any, params ...any) {
 	if level >= CriticalLevel {
 		msg(message, CriticalLevel, params...)
 	}
@@ -151,7 +151,7 @@ func FatalF(message interface{}, params ...interface{}) {
 }
 
 // FatalF is just like func l.CriticalF logger except that it is followed by exit to program
-func Fatalf(message interface{}, params ...interface{}) {
+func Fatalf(message any, params ...any) {
 	if level >= CriticalLevel {
 		msg(message, CriticalLevel, params...)
 	}
@@ -159,7 +159,7 @@ func Fatalf(message interface{}, params ...interface{}) {
 }
 
 // Panic is just like func l.Critical except that it is followed by a call to panic
-func Panic(message interface{}, params ...interface{}) {
+func Panic(message any, params ...any) {
 	if level >= CriticalLevel {
 		msg(message, CriticalLevel, params...)
 	}
@@ -167,7 +167,7 @@ func Panic(message interface{}, params ...interface{}) {
 }
 
 // PanicF is just like func l.CriticalF except that it is followed by a call to panic
-func PanicF(message interface{}, params ...interface{}) {
+func PanicF(message any, params ...any) {
 	if level >= CriticalLevel {
 		msg(message, CriticalLevel, params...)
 	}
@@ -175,7 +175,7 @@ func PanicF(message interface{}, params ...interface{}) {
 }
 
 // PanicF is just like func l.CriticalF except that it is followed by a call to panic
-func Panicf(message interface{}, params ...interface{}) {
+func Panicf(message any, params ...any) {
 	if level >= CriticalLevel {
 		msg(message, CriticalLevel, params...)
 	}
@@ -183,21 +183,21 @@ func Panicf(message interface{}, params ...interface{}) {
 }
 
 // Critical logs a message at a Critical Level
-func Critical(message interface{}, params ...interface{}) {
+func Critical(message any, params ...any) {
 	if level >= CriticalLevel {
 		msg(message, CriticalLevel, params...)
 	}
 }
 
 // CriticalF logs a message at Critical level using the same syntax and options as fmt.Printf
-func CriticalF(message interface{}, params ...interface{}) {
+func CriticalF(message any, params ...any) {
 	if level >= CriticalLevel {
 		msg(message, CriticalLevel, params...)
 	}
 }
 
 // CriticalF logs a message at Critical level using the same syntax and options as fmt.Printf
-func Criticalf(message interface{}, params ...interface{}) {
+func Criticalf(message any, params ...any) {
 	if level >= CriticalLevel {
 		msg(message, CriticalLevel, params...)
 	}
@@ -205,7 +205,7 @@ func Criticalf(message interface{}, params ...interface{}) {
 }
 
 // Error logs a message at Error level
-func Error(message interface{}, params ...interface{}) {
+func Error(message any, params ...any) {
 	if level >= ErrorLevel {
 		msg(message, ErrorLevel, params...)
 	}
@@ -213,98 +213,98 @@ func Error(message interface{}, params ...interface{}) {
 }
 
 // ErrorF logs a message at Error level using the same syntax and options as fmt.Printf
-func ErrorF(message interface{}, params ...interface{}) {
+func ErrorF(message any, params ...any) {
 	if level >= ErrorLevel {
 		msg(message, ErrorLevel, params...)
 	}
 }
 
 // ErrorF logs a message at Error level using the same syntax and options as fmt.Printf
-func Errorf(message interface{}, params ...interface{}) {
+func Errorf(message any, params ...any) {
 	if level >= ErrorLevel {
 		msg(message, ErrorLevel, params...)
 	}
 }
 
 // Warning logs a message at Warning level
-func Warning(message interface{}, params ...interface{}) {
+func Warning(message any, params ...any) {
 	if level >= WarningLevel {
 		msg(message, WarningLevel, params...)
 	}
 }
 
 // WarningF logs a message at Warning level using the same syntax and options as fmt.Printf
-func WarningF(message interface{}, params ...interface{}) {
+func WarningF(message any, params ...any) {
 	if level >= WarningLevel {
 		msg(message, WarningLevel, params...)
 	}
 }
 
 // WarningF logs a message at Warning level using the same syntax and options as fmt.Printf
-func Warningf(message interface{}, params ...interface{}) {
+func Warningf(message any, params ...any) {
 	if level >= WarningLevel {
 		msg(message, WarningLevel, params...)
 	}
 }
 
 // Notice logs a message at Notice level
-func Notice(message interface{}, params ...interface{}) {
+func Notice(message any, params ...any) {
 	if level >= NoticeLevel {
 		msg(message, NoticeLevel, params...)
 	}
 }
 
 // NoticeF logs a message at Notice level using the same syntax and options as fmt.Printf
-func NoticeF(message interface{}, params ...interface{}) {
+func NoticeF(message any, params ...any) {
 	if level >= NoticeLevel {
 		msg(message, NoticeLevel, params...)
 	}
 }
 
 // NoticeF logs a message at Notice level using the same syntax and options as fmt.Printf
-func Noticef(message interface{}, params ...interface{}) {
+func Noticef(message any, params ...any) {
 	if level >= NoticeLevel {
 		msg(message, NoticeLevel, params...)
 	}
 }
 
 // Info logs a message at Info level
-func Info(message interface{}, params ...interface{}) {
+func Info(message any, params ...any) {
 	if level >= InfoLevel {
 		msg(message, InfoLevel, params...)
 	}
 }
 
 // InfoF logs a message at Info level using the same syntax and options as fmt.Printf
-func InfoF(message interface{}, params ...interface{}) {
+func InfoF(message any, params ...any) {
 	if level >= InfoLevel {
 		msg(message, InfoLevel, params...)
 	}
 }
 
 // InfoF logs a message at Info level using the same syntax and options as fmt.Printf
-func Infof(message interface{}, params ...interface{}) {
+func Infof(message any, params ...any) {
 	if level >= InfoLevel {
 		msg(message, InfoLevel, params...)
 	}
 }
 
 // Debug logs a message at Debug level
-func Debug(message interface{}, params ...interface{}) {
+func Debug(message any, params ...any) {
 	if level >= DebugLevel {
 		msg(message, DebugLevel, params...)
 	}
 }
 
 // DebugF logs a message at Debug level using the same syntax and options as fmt.Printf
-func DebugF(message interface{}, params ...interface{}) {
+func DebugF(message any, params ...any) {
 	if level >= DebugLevel {
 		msg(message, DebugLevel, params...)
 	}
 }
 
 // DebugF logs a message at Debug level using the same syntax and options as fmt.Printf
-func Debugf(message interface{}, params ...interface{}) {
+func Debugf(message any, params ...any) {
 	if level >= DebugLevel {
 		msg(message, DebugLevel, params...)
 	}

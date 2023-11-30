@@ -12,7 +12,7 @@ func (r *Request) User() *UserInterface {
 
 type DefaultUserInterface struct{}
 
-type Attributes map[string]interface{}
+type Attributes map[string]any
 
 func (d DefaultUserInterface) Attributes() Attributes {
 	return Attributes{}

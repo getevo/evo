@@ -11,7 +11,7 @@ import (
 var Models []Model
 
 type Model struct {
-	Sample      interface{}     `json:"sample"`
+	Sample      any             `json:"sample"`
 	Value       reflect.Value   `json:"-"`
 	Type        reflect.Type    `json:"-"`
 	Kind        reflect.Kind    `json:"-"`
@@ -47,7 +47,7 @@ func quote(s string) string {
 	return "`" + s + "`"
 }
 
-func UseModel(db *gorm.DB, values ...interface{}) {
+func UseModel(db *gorm.DB, values ...any) {
 	migrations = append(migrations, values...)
 	for index, _ := range values {
 		ref := reflect.ValueOf(values[index])

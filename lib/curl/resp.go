@@ -99,7 +99,7 @@ func (r *Resp) ToString() (string, error) {
 }
 
 // ToJSON convert json response body to struct or map
-func (r *Resp) ToJSON(v interface{}) error {
+func (r *Resp) ToJSON(v any) error {
 	data, err := r.ToBytes()
 	if err != nil {
 		return err
@@ -108,7 +108,7 @@ func (r *Resp) ToJSON(v interface{}) error {
 }
 
 // ToXML convert xml response body to struct or map
-func (r *Resp) ToXML(v interface{}) error {
+func (r *Resp) ToXML(v any) error {
 	data, err := r.ToBytes()
 	if err != nil {
 		return err

@@ -2,10 +2,10 @@ package evo
 
 import "github.com/alecthomas/repr"
 
-func Repr(v interface{}) string {
+func Repr(v any) string {
 	return repr.String(v)
 }
 
-func Dump(v interface{}) {
+func Dump(v any) {
 	repr.Println(v)
 }

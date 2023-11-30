@@ -1,6 +1,9 @@
 package pubsub
 
-import "time"
+import (
+	"github.com/getevo/evo/v2/lib/serializer"
+	"time"
+)
 
 type Message struct {
 	Time    time.Time
@@ -10,12 +13,17 @@ type Message struct {
 type Interface interface {
 	Name() string
 	Register() error
-	Subscribe(topic string, onMessage func(topic string, message []byte, driver Interface), params ...interface{})
-	Publish(topic string, message []byte, params ...interface{}) error
+	Subscribe(topic string, onMessage func(topic string, message []byte, driver Interface), params ...any)
+	Publish(topic string, message any, params ...any) error
+	PublishBytes(topic string, message []byte, params ...any) error
 
-	// SetMarshaller set interface{} to []byte marshalling function
-	SetMarshaller(func(input interface{}) ([]byte, error))
+	// SetSerializer change serialization method
+	SetSerializer(v serializer.Interface)
 
-	// SetUnMarshaller set []byte to interface{} unmarshalling function
-	SetUnMarshaller(func(bytes []byte, out interface{}) error)
+	Serializer() serializer.Interface
+
+	Marshal(v any) ([]byte, error)
+	Unmarshal(data []byte, v any) error
+
+	SetPrefix(s string)
 }

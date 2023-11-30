@@ -3,14 +3,22 @@ package main
 import (
 	"fmt"
 	"github.com/getevo/evo/v2"
+	"github.com/getevo/evo/v2/lib/connectors/nats"
+	"github.com/getevo/evo/v2/lib/connectors/redis"
+	"github.com/getevo/evo/v2/lib/memo"
+	"github.com/getevo/evo/v2/lib/pubsub"
 	"github.com/getevo/evo/v2/lib/settings"
 )
 
 func main() {
 	evo.Setup()
 	fmt.Println(settings.Get("NATS.SERVER").String())
+
+	pubsub.AddDriver(redis.Driver)
+	memo.SetDefaultDriver(nats.Driver)
+
 	//var db = evo.GetDBO()
-	/*	var data = map[string]interface{}{}
+	/*	var data = map[string]any{}
 		db.Raw("SELECT * FROM services").Scan(&data)
 
 		cache.SetDefaultDriver(redis.Driver)
@@ -32,12 +40,12 @@ func main() {
 		log.SetLevel(log.DebugLevel)*/
 
 	var group = evo.Group("/group").Name("mygroup")
-	group.Get("/:id", func(request *evo.Request) interface{} {
+	group.Get("/:id", func(request *evo.Request) any {
 		var r = request.Route("mygroup.gregory", 125)
 		return r
 	}).Name("gregory")
 
-	evo.Get("/struct", func(request *evo.Request) interface{} {
+	evo.Get("/struct", func(request *evo.Request) any {
 		return struct {
 			Text    string `json:"text"`
 			Integer int    `json:"integer"`
@@ -46,11 +54,11 @@ func main() {
 		}
 	})
 
-	evo.Get("/bytes", func(request *evo.Request) interface{} {
+	evo.Get("/bytes", func(request *evo.Request) any {
 		return []byte{'H', 'e', 'l', 'l', 'o', ' ', 'W', 'o', 'r', 'l', 'd'}
 	})
 
-	evo.Get("/outcome", func(request *evo.Request) interface{} {
+	evo.Get("/outcome", func(request *evo.Request) any {
 		return []error{fmt.Errorf("my error 1"), fmt.Errorf("my error 2")}
 	})
 	evo.Run()

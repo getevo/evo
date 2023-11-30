@@ -71,7 +71,7 @@ func (r *Request) Body() string {
 // BodyParser binds the request body to a struct.
 // It supports decoding the following content types based on the Content-Type header:
 // application/json, application/xml, application/x-www-form-urlencoded, multipart/form-data
-func (r *Request) BodyParser(out interface{}) error {
+func (r *Request) BodyParser(out any) error {
 	ctype := r.ContentType()
 
 	if strings.HasPrefix(ctype, MIMEApplicationJSON) {
@@ -164,7 +164,7 @@ func (r *Request) Download(file string, name ...string) error {
 // Format performs content-negotiation on the Accept HTTP header.
 // It uses Accepts to select a proper format.
 // If the header is not specified or there is no proper format, text/plain is used.
-func (r *Request) Format(body interface{}) error {
+func (r *Request) Format(body any) error {
 	var b string
 	accept := r.Context.Accepts("html", "json")
 
@@ -350,7 +350,7 @@ func (r *Request) Is(extension string) (match bool) {
 
 // JSON converts any interface or string to JSON using Jsoniter.
 // This method also sets the content header to application/json.
-func (r *Request) JSON(data interface{}) error {
+func (r *Request) JSON(data any) error {
 	raw, err := json.Marshal(data)
 	// Check for errors
 	if err != nil {
@@ -366,7 +366,7 @@ func (r *Request) JSON(data interface{}) error {
 // JSONP sends a JSON response with JSONP support.
 // This method is identical to JSON, except that it opts-in to JSONP callback support.
 // By default, the callback name is simply callback.
-func (r *Request) JSONP(json interface{}, callback ...string) error {
+func (r *Request) JSONP(json any, callback ...string) error {
 	return r.Context.JSONP(json, callback...)
 }
 
@@ -375,9 +375,9 @@ func (r *Request) Links(link ...string) {
 	r.Context.Links(link...)
 }
 
-// Locals makes it possible to pass interface{} values under string keys scoped to the request
+// Locals makes it possible to pass any values under string keys scoped to the request
 // and therefore available to all following routes that match the request.
-func (r *Request) Locals(key string, value ...interface{}) (val interface{}) {
+func (r *Request) Locals(key string, value ...any) (val any) {
 	return r.Context.Locals(key, value...)
 }
 
@@ -447,7 +447,7 @@ func (r *Request) IsSecure() bool {
 }
 
 // Send sets the HTML response body. The Send body can be of any type.
-func (r *Request) SendHTML(body interface{}) {
+func (r *Request) SendHTML(body any) {
 	r.Set("Content-Type", "text/html")
 	r.Write(body)
 }
@@ -518,7 +518,7 @@ func (r *Request) Vary(fields ...string) {
 }
 
 // Write appends any input to the HTTP body response.
-func (r *Request) Write(body interface{}) {
+func (r *Request) Write(body any) {
 	var data []byte
 	switch body := body.(type) {
 	case string:
@@ -548,7 +548,7 @@ func (r *Request) XHR() bool {
 }
 
 // SetCookie set cookie with given name,value and optional params (wise function)
-func (r *Request) SetCookie(key string, val interface{}, params ...interface{}) {
+func (r *Request) SetCookie(key string, val any, params ...any) {
 	cookie := new(outcome.Cookie)
 	cookie.Name = key
 	cookie.Path = "/"
@@ -585,7 +585,7 @@ func (r *Request) Params() map[string]string {
 }
 
 // Route generate route for named routes
-func (r *Request) Route(name string, params ...interface{}) string {
+func (r *Request) Route(name string, params ...any) string {
 	var m = fiber.Map{}
 	var jump = false
 	var route = app.GetRoute(name)
@@ -605,7 +605,7 @@ func (r *Request) Route(name string, params ...interface{}) string {
 					m[p] = params[idx+1]
 					jump = true
 				}
-			case map[string]interface{}:
+			case map[string]any:
 				m = p
 			}
 		}

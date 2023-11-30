@@ -33,22 +33,22 @@ func Debug() (tx *gorm.DB) {
 }
 
 // Set store value with key into current db instance's context
-func Set(key string, value interface{}) *gorm.DB {
+func Set(key string, value any) *gorm.DB {
 	return db.Set(key, value)
 }
 
 // Get get value with key from current db instance's context
-func Get(key string) (interface{}, bool) {
+func Get(key string) (any, bool) {
 	return db.Get(key)
 }
 
 // InstanceSet store value with key into current db instance's context
-func InstanceSet(key string, value interface{}) *gorm.DB {
+func InstanceSet(key string, value any) *gorm.DB {
 	return db.InstanceSet(key, value)
 }
 
 // InstanceGet get value with key from current db instance's context
-func InstanceGet(key string) (interface{}, bool) {
+func InstanceGet(key string) (any, bool) {
 	return db.InstanceGet(key)
 }
 
@@ -63,7 +63,7 @@ func DB() (*sql.DB, error) {
 }
 
 // SetupJoinTable setup join table schema
-func SetupJoinTable(model interface{}, field string, joinTable interface{}) error {
+func SetupJoinTable(model any, field string, joinTable any) error {
 	return db.SetupJoinTable(model, field, joinTable)
 }
 
@@ -85,42 +85,42 @@ func ToSQL(queryFn func(tx *gorm.DB) *gorm.DB) string {
 }
 
 // Create inserts value, returning the inserted data's primary key in value's id
-func Create(value interface{}) (tx *gorm.DB) {
+func Create(value any) (tx *gorm.DB) {
 	return db.Create(value)
 }
 
 // CreateInBatches inserts value in batches of batchSize
-func CreateInBatches(value interface{}, batchSize int) (tx *gorm.DB) {
+func CreateInBatches(value any, batchSize int) (tx *gorm.DB) {
 	return db.CreateInBatches(value, batchSize)
 }
 
 // Save updates value in database. If value doesn't contain a matching primary key, value is inserted.
-func Save(value interface{}) (tx *gorm.DB) {
+func Save(value any) (tx *gorm.DB) {
 	return db.Save(value)
 }
 
 // First finds the first record ordered by primary key, matching given conditions conds
-func First(dest interface{}, conds ...interface{}) (tx *gorm.DB) {
+func First(dest any, conds ...any) (tx *gorm.DB) {
 	return db.First(dest, conds...)
 }
 
 // Take finds the first record returned by the database in no specified order, matching given conditions conds
-func Take(dest interface{}, conds ...interface{}) (tx *gorm.DB) {
+func Take(dest any, conds ...any) (tx *gorm.DB) {
 	return db.Take(dest, conds...)
 }
 
 // Last finds the last record ordered by primary key, matching given conditions conds
-func Last(dest interface{}, conds ...interface{}) (tx *gorm.DB) {
+func Last(dest any, conds ...any) (tx *gorm.DB) {
 	return db.Last(dest, conds...)
 }
 
 // Find finds all records matching given conditions conds
-func Find(dest interface{}, conds ...interface{}) (tx *gorm.DB) {
+func Find(dest any, conds ...any) (tx *gorm.DB) {
 	return db.Find(dest, conds...)
 }
 
 // FindInBatches finds all records in batches of batchSize
-func FindInBatches(dest interface{}, batchSize int, fc func(tx *gorm.DB, batch int) error) *gorm.DB {
+func FindInBatches(dest any, batchSize int, fc func(tx *gorm.DB, batch int) error) *gorm.DB {
 	return db.FindInBatches(dest, batchSize, fc)
 }
 
@@ -136,7 +136,7 @@ func FindInBatches(dest interface{}, batchSize int, fc func(tx *gorm.DB, batch i
 //	// assign email regardless of if record is found
 //	db.Where(User{Name: "jinzhu"}).Assign(User{Email: "fake@fake.org"}).FirstOrInit(&user)
 //	// user -> User{Name: "jinzhu", Age: 20, Email: "fake@fake.org"}
-func FirstOrInit(dest interface{}, conds ...interface{}) (tx *gorm.DB) {
+func FirstOrInit(dest any, conds ...any) (tx *gorm.DB) {
 	return db.FirstOrInit(dest, conds...)
 }
 
@@ -154,32 +154,32 @@ func FirstOrInit(dest interface{}, conds ...interface{}) (tx *gorm.DB) {
 //	result := db.Where(User{Name: "jinzhu"}).Assign(User{Email: "fake@fake.org"}).FirstOrCreate(&user)
 //	// user -> User{Name: "jinzhu", Age: 20, Email: "fake@fake.org"}
 //	// result.RowsAffected -> 1
-func FirstOrCreate(dest interface{}, conds ...interface{}) (tx *gorm.DB) {
+func FirstOrCreate(dest any, conds ...any) (tx *gorm.DB) {
 	return db.FirstOrCreate(dest, conds...)
 }
 
 // Update updates column with value using callbacks. Reference: https://gorm.io/docs/update.html#Update-Changed-Fields
-func Update(column string, value interface{}) (tx *gorm.DB) {
+func Update(column string, value any) (tx *gorm.DB) {
 	return db.Update(column, value)
 }
 
 // Updates updates attributes using callbacks. values must be a struct or map. Reference: https://gorm.io/docs/update.html#Update-Changed-Fields
-func Updates(values interface{}) (tx *gorm.DB) {
+func Updates(values any) (tx *gorm.DB) {
 	return db.Updates(values)
 }
 
-func UpdateColumn(column string, value interface{}) (tx *gorm.DB) {
+func UpdateColumn(column string, value any) (tx *gorm.DB) {
 	return db.UpdateColumn(column, value)
 }
 
-func UpdateColumns(values interface{}) (tx *gorm.DB) {
+func UpdateColumns(values any) (tx *gorm.DB) {
 	return db.UpdateColumns(values)
 }
 
 // Delete deletes value matching given conditions. If value contains primary key it is included in the conditions. If
 // value includes a deleted_at field, then Delete performs a soft delete instead by setting deleted_at with the current
 // time if null.
-func Delete(value interface{}, conds ...interface{}) (tx *gorm.DB) {
+func Delete(value any, conds ...any) (tx *gorm.DB) {
 	return db.Delete(value, conds...)
 }
 
@@ -196,7 +196,7 @@ func Rows() (*sql.Rows, error) {
 }
 
 // Scan scans selected value to the struct dest
-func Scan(dest interface{}) (tx *gorm.DB) {
+func Scan(dest any) (tx *gorm.DB) {
 	return db.Scan(dest)
 }
 
@@ -204,11 +204,11 @@ func Scan(dest interface{}) (tx *gorm.DB) {
 //
 //	var ages []int64
 //	db.Model(&users).Pluck("age", &ages)
-func Pluck(column string, dest interface{}) (tx *gorm.DB) {
+func Pluck(column string, dest any) (tx *gorm.DB) {
 	return db.Pluck(column, dest)
 }
 
-func ScanRows(rows *sql.Rows, dest interface{}) error {
+func ScanRows(rows *sql.Rows, dest any) error {
 	return db.ScanRows(rows, dest)
 }
 
@@ -249,7 +249,7 @@ func RollbackTo(name string) *gorm.DB {
 }
 
 // Exec executes raw sql
-func Exec(sql string, values ...interface{}) (tx *gorm.DB) {
+func Exec(sql string, values ...any) (tx *gorm.DB) {
 	return db.Exec(sql, values...)
 }
 
@@ -259,7 +259,7 @@ func Exec(sql string, values ...interface{}) (tx *gorm.DB) {
 //	db.Model(&User{}).Update("name", "hello")
 //	// if user's primary key is non-blank, will use it as condition, then will only update that user's name to `hello`
 //	db.Model(&user).Update("name", "hello")
-func Model(value interface{}) (tx *gorm.DB) {
+func Model(value any) (tx *gorm.DB) {
 	return db.Model(value)
 }
 
@@ -285,7 +285,7 @@ func Clauses(conds ...clause.Expression) (tx *gorm.DB) {
 //
 //	// Get a user
 //	db.Table("users").take(&result)
-func Table(name string, args ...interface{}) (tx *gorm.DB) {
+func Table(name string, args ...any) (tx *gorm.DB) {
 	return db.Table(name, args...)
 }
 
@@ -295,7 +295,7 @@ func Table(name string, args ...interface{}) (tx *gorm.DB) {
 //	db.Distinct("name").Find(&results)
 //	// Select distinct name/age pairs from users
 //	db.Distinct("name", "age").Find(&results)
-func Distinct(args ...interface{}) (tx *gorm.DB) {
+func Distinct(args ...any) (tx *gorm.DB) {
 	return db.Distinct(args...)
 }
 
@@ -308,7 +308,7 @@ func Distinct(args ...interface{}) (tx *gorm.DB) {
 //	db.Select("name", "age").Find(&users)
 //	// Select name and age of user using an array
 //	db.Select([]string{"name", "age"}).Find(&users)
-func Select(query interface{}, args ...interface{}) (tx *gorm.DB) {
+func Select(query any, args ...any) (tx *gorm.DB) {
 	return db.Select(query, args...)
 }
 
@@ -329,7 +329,7 @@ func Omit(columns ...string) (tx *gorm.DB) {
 //	db.Where("name = ?", "jinzhu").Where("age <> ?", "20").First(&user)
 //
 // [docs]: https://gorm.io/docs/query.html#Conditions
-func Where(query interface{}, args ...interface{}) (tx *gorm.DB) {
+func Where(query any, args ...any) (tx *gorm.DB) {
 	return db.Where(query, args...)
 }
 
@@ -339,7 +339,7 @@ func Where(query interface{}, args ...interface{}) (tx *gorm.DB) {
 //
 //	// Find the first user with name not equal to jinzhu
 //	db.Not("name = ?", "jinzhu").First(&user)
-func Not(query interface{}, args ...interface{}) (tx *gorm.DB) {
+func Not(query any, args ...any) (tx *gorm.DB) {
 	return db.Not(query, args...)
 }
 
@@ -349,7 +349,7 @@ func Not(query interface{}, args ...interface{}) (tx *gorm.DB) {
 //
 //	// Find the first user with name equal to jinzhu or john
 //	db.Where("name = ?", "jinzhu").Or("name = ?", "john").First(&user)
-func Or(query interface{}, args ...interface{}) (tx *gorm.DB) {
+func Or(query any, args ...any) (tx *gorm.DB) {
 	return db.Or(query, args...)
 }
 
@@ -358,13 +358,13 @@ func Or(query interface{}, args ...interface{}) (tx *gorm.DB) {
 //	db.Joins("Account").Find(&user)
 //	db.Joins("JOIN emails ON emails.user_id = users.id AND emails.email = ?", "jinzhu@example.org").Find(&user)
 //	db.Joins("Account", DB.Select("id").Where("user_id = users.id AND name = ?", "someName").Model(&Account{}))
-func Joins(query string, args ...interface{}) (tx *gorm.DB) {
+func Joins(query string, args ...any) (tx *gorm.DB) {
 	return db.Joins(query, args...)
 }
 
 // InnerJoins specify inner joins conditions
 // db.InnerJoins("Account").Find(&user)
-func InnerJoins(query string, args ...interface{}) (tx *gorm.DB) {
+func InnerJoins(query string, args ...any) (tx *gorm.DB) {
 	return db.InnerJoins(query, args...)
 }
 
@@ -380,7 +380,7 @@ func Group(name string) (tx *gorm.DB) {
 //
 //	// Select the sum age of users with name jinzhu
 //	db.Model(&User{}).Select("name, sum(age) as total").Group("name").Having("name = ?", "jinzhu").Find(&result)
-func Having(query interface{}, args ...interface{}) (tx *gorm.DB) {
+func Having(query any, args ...any) (tx *gorm.DB) {
 	return db.Having(query, args...)
 }
 
@@ -388,7 +388,7 @@ func Having(query interface{}, args ...interface{}) (tx *gorm.DB) {
 //
 //	db.Order("name DESC")
 //	db.Order(clause.OrderByColumn{Column: clause.Column{Name: "name"}, Desc: true})
-func Order(value interface{}) (tx *gorm.DB) {
+func Order(value any) (tx *gorm.DB) {
 	return db.Order(value)
 }
 
@@ -437,7 +437,7 @@ func Scopes(funcs ...func(*gorm.DB) *gorm.DB) (tx *gorm.DB) {
 //
 //	// get all users, and preload all non-cancelled orders
 //	db.Preload("Orders", "state NOT IN (?)", "cancelled").Find(&users)
-func Preload(query string, args ...interface{}) (tx *gorm.DB) {
+func Preload(query string, args ...any) (tx *gorm.DB) {
 	return db.Preload(query, args...)
 }
 
@@ -455,7 +455,7 @@ func Preload(query string, args ...interface{}) (tx *gorm.DB) {
 //
 // [FirstOrCreate]: https://gorm.io/docs/advanced_query.html#FirstOrCreate
 // [FirstOrInit]: https://gorm.io/docs/advanced_query.html#FirstOrInit
-func Attrs(attrs ...interface{}) (tx *gorm.DB) {
+func Attrs(attrs ...any) (tx *gorm.DB) {
 	return db.Attrs(attrs...)
 }
 
@@ -474,7 +474,7 @@ func Attrs(attrs ...interface{}) (tx *gorm.DB) {
 //
 // [FirstOrCreate]: https://gorm.io/docs/advanced_query.html#FirstOrCreate
 // [FirstOrInit]: https://gorm.io/docs/advanced_query.html#FirstOrInit
-func Assign(attrs ...interface{}) (tx *gorm.DB) {
+func Assign(attrs ...any) (tx *gorm.DB) {
 	return Assign(attrs...)
 }
 
@@ -482,11 +482,11 @@ func Unscoped() (tx *gorm.DB) {
 	return db.Unscoped()
 }
 
-func Raw(sql string, values ...interface{}) (tx *gorm.DB) {
+func Raw(sql string, values ...any) (tx *gorm.DB) {
 	return db.Raw(sql, values...)
 }
 
-func UseModel(models ...interface{}) {
+func UseModel(models ...any) {
 	schema.UseModel(db, models...)
 }
 

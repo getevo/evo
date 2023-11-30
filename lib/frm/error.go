@@ -59,6 +59,6 @@ func (s *Error) Cause() error {
 	return s.err
 }
 
-func newError(code uint8, field, path, format string, a ...interface{}) error {
+func newError(code uint8, field, path, format string, a ...any) error {
 	return &Error{code: code, field: field, path: path, err: fmt.Errorf(format, a...)}
 }

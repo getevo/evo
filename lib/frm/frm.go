@@ -41,7 +41,7 @@ func (m pathMaps) find(id reflect.Value, key string) *pathMap {
 }
 
 // DecodeCustomTypeFunc for decoding a custom type.
-type DecodeCustomTypeFunc func([]string) (interface{}, error)
+type DecodeCustomTypeFunc func([]string) (any, error)
 
 // decodeCustomTypeField is registered for a specific field.
 type decodeCustomTypeField struct {
@@ -98,7 +98,7 @@ type DecoderOptions struct {
 }
 
 // RegisterCustomType registers a functions for decoding custom types.
-func (dec *Decoder) RegisterCustomType(fn DecodeCustomTypeFunc, types []interface{}, fields []interface{}) *Decoder {
+func (dec *Decoder) RegisterCustomType(fn DecodeCustomTypeFunc, types []any, fields []any) *Decoder {
 	if dec.customTypes == nil {
 		dec.customTypes = make(map[reflect.Type]*decodeCustomType, 100)
 	}
@@ -137,7 +137,7 @@ func NewDecoder(opts *DecoderOptions) *Decoder {
 
 // Decode the url.Values and populate the destination dst, which must be a
 // pointer.
-func (dec Decoder) Decode(vs url.Values, dst interface{}) error {
+func (dec Decoder) Decode(vs url.Values, dst any) error {
 	main := reflect.ValueOf(dst)
 	if main.Kind() != reflect.Ptr {
 		return newError(ErrCodeNotAPointer, "", "", "dst %q is not a pointer", main.Kind())
@@ -149,7 +149,7 @@ func (dec Decoder) Decode(vs url.Values, dst interface{}) error {
 
 // Decode the url.Values and populate the destination dst, which must be a
 // pointer.
-func Decode(vs url.Values, dst interface{}) error {
+func Decode(vs url.Values, dst any) error {
 	main := reflect.ValueOf(dst)
 	if main.Kind() != reflect.Ptr {
 		return newError(ErrCodeNotAPointer, "", "", "dst %q is not a pointer", main.Kind())

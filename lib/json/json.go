@@ -19,7 +19,7 @@ import (
 	"gorm.io/gorm/schema"
 )
 
-func Unmarshal(input interface{}, output interface{}) error {
+func Unmarshal(input any, output any) error {
 	switch v := input.(type) {
 	case string:
 		return json.Unmarshal([]byte(v), output)
@@ -54,20 +54,20 @@ func Unmarshal(input interface{}, output interface{}) error {
 	return fmt.Errorf("unreconized input")
 }
 
-func Marshal(v interface{}) (JSON, error) {
+func Marshal(v any) (JSON, error) {
 	return TryParse(v)
 }
 
-func (j JSON) Unmarshal(v interface{}) error {
+func (j JSON) Unmarshal(v any) error {
 	return json.Unmarshal(j, v)
 }
 
-func Parse(v interface{}) JSON {
+func Parse(v any) JSON {
 	b, _ := json.Marshal(v)
 	return JSON(b)
 }
 
-func TryParse(v interface{}) (JSON, error) {
+func TryParse(v any) (JSON, error) {
 	b, err := json.Marshal(v)
 	return JSON(b), err
 }
@@ -96,7 +96,7 @@ func (j JSON) Value() (driver.Value, error) {
 }
 
 // Scan scan value into Jsonb, implements sql.Scanner interface
-func (j *JSON) Scan(value interface{}) error {
+func (j *JSON) Scan(value any) error {
 	if value == nil {
 		*j = JSON("null")
 		return nil
@@ -177,7 +177,7 @@ type JSONQueryExpression struct {
 	keys        []string
 	hasKeys     bool
 	equals      bool
-	equalsValue interface{}
+	equalsValue any
 	extract     bool
 	path        string
 }
@@ -202,7 +202,7 @@ func (jsonQuery *JSONQueryExpression) HasKey(keys ...string) *JSONQueryExpressio
 }
 
 // Keys returns clause.Expression
-func (jsonQuery *JSONQueryExpression) Equals(value interface{}, keys ...string) *JSONQueryExpression {
+func (jsonQuery *JSONQueryExpression) Equals(value any, keys ...string) *JSONQueryExpression {
 	jsonQuery.keys = keys
 	jsonQuery.equals = true
 	jsonQuery.equalsValue = value
@@ -355,13 +355,13 @@ func jsonQueryJoin(keys []string) string {
 // JSONSetExpression json set expression, implements clause.Expression interface to use as updater
 type JSONSetExpression struct {
 	column     string
-	path2value map[string]interface{}
+	path2value map[string]any
 	mutex      sync.RWMutex
 }
 
 // JSONSet update fields of json column
 func JSONSet(column string) *JSONSetExpression {
-	return &JSONSetExpression{column: column, path2value: make(map[string]interface{})}
+	return &JSONSetExpression{column: column, path2value: make(map[string]any)}
 }
 
 // Set return clause.Expression.
@@ -378,7 +378,7 @@ func JSONSet(column string) *JSONSetExpression {
 //
 //	// In PostgreSQL, path is `{age}`, `{name}`, `{orgs,orga}`, `{tags, 0}`, `{tags, 1}`.
 //	DB.UpdateColumn("attr", JSONSet("attr").Set("{orgs, orga}", "bar"))
-func (jsonSet *JSONSetExpression) Set(path string, value interface{}) *JSONSetExpression {
+func (jsonSet *JSONSetExpression) Set(path string, value any) *JSONSetExpression {
 	jsonSet.mutex.Lock()
 	jsonSet.path2value[path] = value
 	jsonSet.mutex.Unlock()
@@ -478,10 +478,10 @@ func JSONArrayQuery(column string) *JSONArrayExpression {
 
 type JSONArrayExpression struct {
 	column      string
-	equalsValue interface{}
+	equalsValue any
 }
 
-func (json *JSONArrayExpression) Contains(value interface{}) *JSONArrayExpression {
+func (json *JSONArrayExpression) Contains(value any) *JSONArrayExpression {
 	json.equalsValue = value
 	return json
 }

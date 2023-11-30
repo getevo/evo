@@ -150,7 +150,7 @@ func ReadFile(path string) ([]byte, error) {
 }
 
 // Write bytes to file
-func Write(path string, content interface{}) error {
+func Write(path string, content any) error {
 	var f *os.File
 	var err error
 	if !IsFileExist(path) {
@@ -174,7 +174,7 @@ func Write(path string, content interface{}) error {
 }
 
 // Append bytes to file
-func Append(path string, content interface{}) error {
+func Append(path string, content any) error {
 	var f *os.File
 	var err error
 	f, err = os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)

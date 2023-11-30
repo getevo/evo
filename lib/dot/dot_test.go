@@ -8,7 +8,7 @@ import (
 
 func TestGet(t *testing.T) {
 	// Test case 1: Accessing a valid property in a map
-	obj := map[string]interface{}{
+	obj := map[string]any{
 		"foo": "bar",
 	}
 	result, err := dot.Get(obj, "foo")
@@ -36,7 +36,7 @@ func TestGet(t *testing.T) {
 
 func TestSet(t *testing.T) {
 	// Test case 1: Setting a property in a map
-	/*	obj := map[string]interface{}{
+	/*	obj := map[string]any{
 			"foo": "bar",
 		}
 		err := dot.Set(&obj, "foo", "new value")

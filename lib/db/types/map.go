@@ -16,7 +16,7 @@ import (
 )
 
 // JSONMap defined JSON data type, need to implements driver.Valuer, sql.Scanner interface
-type JSONMap map[string]interface{}
+type JSONMap map[string]any
 
 // Value return json value, implement driver.Valuer interface
 func (m JSONMap) Value() (driver.Value, error) {
@@ -28,7 +28,7 @@ func (m JSONMap) Value() (driver.Value, error) {
 }
 
 // Scan scan value into Jsonb, implements sql.Scanner interface
-func (m *JSONMap) Scan(val interface{}) error {
+func (m *JSONMap) Scan(val any) error {
 	if val == nil {
 		*m = make(JSONMap)
 		return nil
@@ -42,7 +42,7 @@ func (m *JSONMap) Scan(val interface{}) error {
 	default:
 		return errors.New(fmt.Sprint("Failed to unmarshal JSONB value:", val))
 	}
-	t := map[string]interface{}{}
+	t := map[string]any{}
 	rd := bytes.NewReader(ba)
 	decoder := json.NewDecoder(rd)
 	decoder.UseNumber()
@@ -56,13 +56,13 @@ func (m JSONMap) MarshalJSON() ([]byte, error) {
 	if m == nil {
 		return []byte("null"), nil
 	}
-	t := (map[string]interface{})(m)
+	t := (map[string]any)(m)
 	return json.Marshal(t)
 }
 
 // UnmarshalJSON to deserialize []byte
 func (m *JSONMap) UnmarshalJSON(b []byte) error {
-	t := map[string]interface{}{}
+	t := map[string]any{}
 	err := json.Unmarshal(b, &t)
 	*m = JSONMap(t)
 	return err

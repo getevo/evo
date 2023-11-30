@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-var migrations []interface{}
+var migrations []any
 
 const null = "NULL"
 
@@ -143,7 +143,7 @@ func GetMigrationScript(db *gorm.DB) []string {
 
 func DoMigration(db *gorm.DB) error {
 	//check if tidb
-	var t []map[string]interface{}
+	var t []map[string]any
 	db.Debug().Raw("SHOW VARIABLES LIKE 'tidb_multi_statement_mode'").Scan(&t)
 	if len(t) > 0 {
 		if tidbMultiStatementMode, ok := t[0]["Value"]; ok {
