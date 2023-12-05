@@ -2,12 +2,12 @@ package evo
 
 import "github.com/getevo/evo/v2/lib/generic"
 
-func (r *Request) User() *UserInterface {
+func (r *Request) User() UserInterface {
 	if r.user == nil {
 		var user = (UserInterfaceInstance).FromRequest(r)
 		r.user = &user
 	}
-	return r.user
+	return *r.user
 }
 
 type DefaultUserInterface struct{}
