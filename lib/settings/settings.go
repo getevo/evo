@@ -130,6 +130,7 @@ func Register(settings ...any) {
 }
 
 func Init(params ...string) error {
+	SetDefaultDriver(yml.Driver)
 	return defaultDriver.Init(params...)
 }
 
