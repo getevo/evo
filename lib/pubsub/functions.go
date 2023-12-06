@@ -47,8 +47,12 @@ func AddDriver(driver Interface) {
 func Subscribe(topic string, onMessage func(topic string, message []byte, driver Interface), params ...any) {
 	defaultDriver.Subscribe(topic, onMessage, params...)
 }
-func Publish(topic string, message []byte, params ...any) error {
+func Publish(topic string, message any, params ...any) error {
 	return defaultDriver.Publish(topic, message, params...)
+}
+
+func PublishBytes(topic string, message []byte, params ...any) error {
+	return defaultDriver.PublishBytes(topic, message, params...)
 }
 
 func SetPrefix(s string) {
