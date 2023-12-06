@@ -6,8 +6,8 @@ import (
 	"github.com/getevo/evo/v2/lib/settings/yml"
 )
 
-var drivers = []Interface{&yml.Yaml{}}
-var defaultDriver Interface = &yml.Yaml{}
+var drivers []Interface
+var defaultDriver Interface
 
 type Interface interface {
 	Name() string                         // Name returns driver name
@@ -84,9 +84,9 @@ func AddDriver(driver Interface) {
 		if err != nil {
 			log.Fatal("unable to initiate config driver", "name", driver.Name(), "error", err)
 		}
-	}
-	if defaultDriver == nil {
-		defaultDriver = driver
+		if defaultDriver == nil {
+			defaultDriver = driver
+		}
 	}
 }
 
@@ -112,21 +112,6 @@ func SetMulti(data map[string]any) error {
 
 func Register(settings ...any) {
 	defaultDriver.Register(settings...)
-	/*	var key = ""
-		for idx, _ := range settings {
-			var v = generic.Parse(settings[idx])
-			if v.Is("string") {
-				key = v.String()
-				continue
-			}
-			if v.Is("settings.SettingDomain") || v.Is("settings.Setting") {
-				continue
-			}
-			c := Get(key)
-			if !c.IsEmpty() && !c.IsNil() {
-				c.Cast(v)
-			}
-		}*/
 }
 
 func Init(params ...string) error {
