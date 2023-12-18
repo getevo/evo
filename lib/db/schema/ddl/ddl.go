@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/getevo/evo/v2/lib/db/schema/table"
 	"gorm.io/gorm"
+	"reflect"
 	"strconv"
 	"strings"
 )
@@ -127,6 +128,15 @@ func FromStatement(stmt *gorm.Statement) Table {
 
 		if strings.ToLower(column.Type) == "datetime(3)" {
 			column.Type = "TIMESTAMP"
+		}
+
+		if field.FieldType.Kind() == reflect.Ptr {
+			if _, ok := field.TagSettings["NOT NULL"]; !ok {
+				column.Nullable = true
+				if field.DefaultValue == "" {
+					field.DefaultValue = "NULL"
+				}
+			}
 		}
 		if column.Name == "deleted_at" {
 			column.Nullable = true
