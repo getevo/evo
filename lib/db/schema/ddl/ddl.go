@@ -138,6 +138,7 @@ func FromStatement(stmt *gorm.Statement) Table {
 				}
 			}
 		}
+
 		if column.Name == "deleted_at" {
 			column.Nullable = true
 			column.Default = "NULL"
