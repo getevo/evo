@@ -2,14 +2,15 @@ package evo
 
 import (
 	"fmt"
-	"github.com/getevo/evo/v2/lib/generic"
-	"github.com/getevo/evo/v2/lib/outcome"
-	"github.com/gofiber/fiber/v2"
-	"github.com/tidwall/gjson"
 	"net/url"
 	"reflect"
 	"strings"
 	"time"
+
+	"github.com/getevo/evo/v2/lib/generic"
+	"github.com/getevo/evo/v2/lib/outcome"
+	"github.com/gofiber/fiber/v2"
+	"github.com/tidwall/gjson"
 )
 
 var errorType = reflect.TypeOf(fmt.Errorf(""))
@@ -93,6 +94,7 @@ func (r *Request) WriteResponse(resp ...any) {
 		return
 	}
 	var message = false
+	r.Response.Success = false
 	for _, item := range resp {
 		ref := reflect.ValueOf(item)
 
@@ -140,7 +142,7 @@ func (r *Request) WriteResponse(resp ...any) {
 					r.Status(v.StatusCode)
 				}
 				if len(v.Cookies) > 0 {
-					for idx, _ := range v.Cookies {
+					for idx := range v.Cookies {
 						r.SetRawCookie(v.Cookies[idx])
 					}
 				}
@@ -170,9 +172,7 @@ func (r *Request) WriteResponse(resp ...any) {
 
 				if len(v.Errors) > 0 {
 					r.Response.Success = false
-					for _, err := range v.Errors {
-						r.Response.Error = append(r.Response.Error, err)
-					}
+					r.Response.Error = append(r.Response.Error, v.Errors...)
 				}
 			} else {
 				r.Response.Data = item
@@ -180,10 +180,8 @@ func (r *Request) WriteResponse(resp ...any) {
 
 		case reflect.Bool:
 			r.Response.Success = item.(bool)
-			break
 		case reflect.Int32, reflect.Int16, reflect.Int64:
 			r.Response.Data = item.(int)
-			break
 		case reflect.String:
 			if !message {
 				r.Response.Data = item.(string)
@@ -191,18 +189,13 @@ func (r *Request) WriteResponse(resp ...any) {
 			} else {
 				r.Response.Data = item
 			}
-			break
 		default:
 			r.Response.Data = item
 			r.Response.Success = true
 		}
 
 	}
-	if r.Response.Data == nil {
-		r.Response.Success = false
-	}
 	r._writeResponse(r.Response)
-
 }
 
 func (r *Request) _writeResponse(resp Response) {
