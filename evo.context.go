@@ -258,10 +258,6 @@ func (r *Request) RestartRouting() error {
 }
 
 func (r *Request) SetCacheControl(t time.Duration, headers ...string) {
-	if len(headers) == 0 {
-		return
-	}
-
 	var ccHeader string = fmt.Sprintf("max-age=%.0f", t.Seconds())
 	var options string
 
