@@ -4,9 +4,10 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/gofiber/fiber/v2"
 	"reflect"
 	"time"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 type Response struct {
@@ -183,5 +184,23 @@ func (response *Response) Filename(filename string) *Response {
 }
 
 func (response *Response) ResponseSerializer() *Response {
+	return response
+}
+
+func (response *Response) SetCacheControl(t time.Duration, headers ...string) *Response {
+	var ccHeader string = fmt.Sprintf("max-age=%.0f", t.Seconds())
+	var options string
+
+	for _, header := range headers {
+		options = options + fmt.Sprintf(", %s", header)
+	}
+
+	ccHeader = ccHeader + options
+
+	if response.Headers == nil {
+		response.Headers = map[string]string{}
+	}
+	response.Headers["Cache-Control"] = ccHeader
+
 	return response
 }
