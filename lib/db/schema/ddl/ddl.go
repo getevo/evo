@@ -118,6 +118,12 @@ func FromStatement(stmt *gorm.Statement) Table {
 			Unique:        field.Unique,
 		}
 
+		if len(column.Default) > 0 {
+			if !(column.Default[0] == '\'' || column.Default[0] == '"' || column.Default[0] == '`') {
+				column.Default = strconv.Quote(column.Default)
+			}
+		}
+
 		if v, ok := field.TagSettings["CHARSET"]; ok {
 			column.Charset = v
 		}
