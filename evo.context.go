@@ -89,19 +89,17 @@ func Upgrade(ctx *fiber.Ctx) *Request {
 }
 
 func (r *Request) WriteResponse(resp ...any) {
-
 	if len(resp) == 0 {
 		return
 	}
 	var message = false
-	r.Response.Success = false
 	for _, item := range resp {
 		ref := reflect.ValueOf(item)
-
 		switch ref.Kind() {
 		case reflect.Slice:
 			if ref.Type() == errorsType {
 				r.Response.Success = false
+				r.Status(StatusBadRequest)
 				for _, err := range item.([]error) {
 					r.Response.Error = append(r.Response.Error, err.Error())
 				}
@@ -120,7 +118,8 @@ func (r *Request) WriteResponse(resp ...any) {
 			}
 		case reflect.Struct, reflect.Ptr:
 			if ref.Type() == errorType {
-				r.Response.Success = true
+				r.Response.Success = false
+				r.Status(StatusBadRequest)
 				r.Response.Error = append(r.Response.Error, item.(error).Error())
 				r._writeResponse(r.Response)
 				return
@@ -172,6 +171,7 @@ func (r *Request) WriteResponse(resp ...any) {
 
 				if len(v.Errors) > 0 {
 					r.Response.Success = false
+					r.Status(StatusBadRequest)
 					r.Response.Error = append(r.Response.Error, v.Errors...)
 				}
 			} else {
