@@ -256,3 +256,16 @@ func (r *Request) Var(key string, value ...any) generic.Value {
 func (r *Request) RestartRouting() error {
 	return r.Context.RestartRouting()
 }
+
+func (r *Request) SetCacheControl(t time.Duration, headers ...string) {
+	var ccHeader string = fmt.Sprintf("max-age=%.0f", t.Seconds())
+	var options string
+
+	for _, header := range headers {
+		options = options + fmt.Sprintf(", %s", header)
+	}
+
+	ccHeader = ccHeader + options
+
+	r.SetHeader("Cache-Control", ccHeader)
+}

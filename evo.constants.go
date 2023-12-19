@@ -225,3 +225,14 @@ const (
 	HeaderXRobotsTag                      = "X-Robots-Tag"
 	HeaderXUACompatible                   = "X-UA-Compatible"
 )
+
+// Cache control headers
+const (
+	CachePrivate        = "private"
+	CachePublic         = "public"
+	CacheNoStore        = "no-store"
+	CacheNoCache        = "no-cache"
+	CacheNoTransform    = "no-transform"
+	CacheMustUnderstand = "must-understand"
+	CacheImmutable      = "immutable"
+)

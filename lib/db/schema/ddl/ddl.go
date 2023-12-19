@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/getevo/evo/v2/lib/db/schema/table"
 	"gorm.io/gorm"
+	"reflect"
 	"strconv"
 	"strings"
 )
@@ -128,6 +129,23 @@ func FromStatement(stmt *gorm.Statement) Table {
 		if strings.ToLower(column.Type) == "datetime(3)" {
 			column.Type = "TIMESTAMP"
 		}
+
+		if field.FieldType.Kind() == reflect.Ptr {
+			if _, ok := field.TagSettings["NOT NULL"]; !ok {
+				column.Nullable = true
+				if column.Type == "TIMESTAMP" && column.Default == "0000-00-00 00:00:00" {
+					column.Default = "NULL"
+				}
+				if column.Default == "" {
+					column.Default = "NULL"
+				}
+			}
+		}
+
+		if column.Type == "TIMESTAMP" && column.Default == "" && !column.Nullable {
+			column.Default = "0000-00-00 00:00:00"
+		}
+
 		if column.Name == "deleted_at" {
 			column.Nullable = true
 			column.Default = "NULL"
@@ -230,8 +248,13 @@ func getFieldQuery(field *Column) string {
 	}
 
 	if field.Default != "" {
-		query += " DEFAULT " + field.Default
+		var v = field.Default
+		/*		if !(v[0] == '\'' || v[0] == '"' || v[0] == '`') {
+				v = strconv.Quote(v)
+			}*/
+		query += " DEFAULT " + v
 	}
+
 	if field.OnUpdate != "" {
 		query += " ON UPDATE " + field.OnUpdate
 	}
