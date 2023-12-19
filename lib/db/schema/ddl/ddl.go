@@ -142,6 +142,10 @@ func FromStatement(stmt *gorm.Statement) Table {
 			}
 		}
 
+		if column.Type == "TIMESTAMP" && column.Default == "" && !column.Nullable {
+			column.Default = "0000-00-00 00:00:00"
+		}
+
 		if column.Name == "deleted_at" {
 			column.Nullable = true
 			column.Default = "NULL"
@@ -245,9 +249,9 @@ func getFieldQuery(field *Column) string {
 
 	if field.Default != "" {
 		var v = field.Default
-		if !(v[0] == '\'' || v[0] == '"' || v[0] == '`') {
-			v = strconv.Quote(v)
-		}
+		/*		if !(v[0] == '\'' || v[0] == '"' || v[0] == '`') {
+				v = strconv.Quote(v)
+			}*/
 		query += " DEFAULT " + v
 	}
 
