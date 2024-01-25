@@ -191,7 +191,7 @@ func (config *Database) Register(sets ...any) error {
 					grandfatherDomainId = 0
 					break
 				}
-				err = db.Where("domain = ? AND parent_domain = ?", parentDomain.Domain, grandfatherDomainId).Save(&parentDomain).Error
+				err = db.Clauses(clause.Insert{Modifier: "IGNORE"}).Where("domain = ? AND parent_domain = ?", parentDomain.Domain, grandfatherDomainId).Save(&parentDomain).Error
 				if err != nil {
 					return err
 				}
@@ -260,7 +260,7 @@ func (config *Database) Register(sets ...any) error {
 				}
 
 				// Now we can finally create the setting parameter, subdomain and domain in one go
-				err = db.Where("parent_domain = 0 AND domain = ?", parentDomain.Domain).Save(&parentDomain).Error
+				err = db.Clauses(clause.Insert{Modifier: "IGNORE"}).Where("parent_domain = 0 AND domain = ?", parentDomain.Domain).Save(&parentDomain).Error
 				if err != nil {
 					return err
 				}
