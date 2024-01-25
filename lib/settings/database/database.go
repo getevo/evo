@@ -275,10 +275,10 @@ func (config *Database) Register(sets ...any) error {
 func (config *Database) Init(params ...string) error {
 	// Check if the database structure is the old one or the new one
 	if err := db.Model(&SettingDomain{}).Where("parent_domain = 0").First(&SettingDomain{}).Error; err == nil {
-		log.Error("new db version detected")
+		log.Info("new db version detected")
 		dbVersion = 1
 	} else {
-		log.Error("old db version detected")
+		log.Info("old db version detected")
 		dbVersion = 0
 	}
 
