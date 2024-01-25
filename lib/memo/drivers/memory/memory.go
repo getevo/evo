@@ -2,12 +2,13 @@ package memory
 
 import (
 	"fmt"
+	"sync"
+	"time"
+
 	"github.com/getevo/evo/v2/lib/log"
 	"github.com/getevo/evo/v2/lib/memo/kv"
 	"github.com/getevo/evo/v2/lib/serializer"
 	"github.com/getevo/evo/v2/lib/settings"
-	"sync"
-	"time"
 )
 
 var Driver = driver{}
@@ -28,7 +29,7 @@ func (driver) Register() error {
 	settings.Register(
 		settings.SettingDomain{
 			Title:       "Cache",
-			Domain:      "Cache",
+			Domain:      "CACHE",
 			Description: "system cache configurations",
 			ReadOnly:    false,
 			Visible:     true,

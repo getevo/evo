@@ -1,13 +1,14 @@
 package evo
 
 import (
+	"log"
+
 	dbo "github.com/getevo/evo/v2/lib/db"
 	"github.com/getevo/evo/v2/lib/generic"
 	"github.com/getevo/evo/v2/lib/memo"
 	"github.com/getevo/evo/v2/lib/settings"
 	"github.com/getevo/evo/v2/lib/settings/database"
 	"github.com/gofiber/fiber/v2"
-	"log"
 )
 
 var (
@@ -27,6 +28,9 @@ func Setup() {
 	settings.Register("HTTP", &http)
 	settings.Get("HTTP").Cast(&http)
 	err = generic.Parse(http).Cast(&fiberConfig)
+	if err != nil {
+		log.Fatal("Unable to retrieve HTTP server configurations: ", err)
+	}
 
 	app = fiber.New(fiberConfig)
 	if settings.Get("Database.Enabled").Bool() {

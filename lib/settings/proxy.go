@@ -2,9 +2,10 @@ package settings
 
 import (
 	"fmt"
-	"github.com/getevo/evo/v2/lib/generic"
 	"reflect"
 	"strings"
+
+	"github.com/getevo/evo/v2/lib/generic"
 )
 
 var fastAccess = map[string]generic.Value{}

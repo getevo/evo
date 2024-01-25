@@ -4,15 +4,16 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
-	"github.com/araddon/dateparse"
-	"github.com/getevo/evo/v2/lib/log"
-	"github.com/iancoleman/strcase"
-	"gopkg.in/yaml.v3"
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/araddon/dateparse"
+	"github.com/getevo/evo/v2/lib/log"
+	"github.com/iancoleman/strcase"
+	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -463,17 +464,17 @@ func (v Value) Cast(dst any) error {
 		for _, prop := range v.Props() {
 
 			if vRef.Kind() == reflect.Struct {
-				if x.HasProp(strcase.ToCamel(prop.Name)) {
-					x.SetProp(prop.Name, vRef.FieldByName(prop.Name).Interface())
+				if x.HasProp(prop.Name) {
+					x.SetProp(x.GetName(prop.Name), vRef.FieldByName(prop.Name).Interface())
 				}
 			} else if vRef.Kind() == reflect.Map {
 
 				if idx := vRef.MapIndex(reflect.ValueOf(prop.Name)); idx.IsValid() {
-					x.SetProp(strcase.ToCamel(prop.Name), idx.Interface())
+					x.SetProp(x.GetName(prop.Name), idx.Interface())
 					continue
 				}
 				if idx := vRef.MapIndex(reflect.ValueOf(strcase.ToSnake(prop.Name))); idx.IsValid() {
-					x.SetProp(strcase.ToCamel(prop.Name), idx.Interface())
+					x.SetProp(x.GetName(prop.Name), idx.Interface())
 				}
 
 			} else {
@@ -492,6 +493,7 @@ func (v Value) Cast(dst any) error {
 			x.SetProp(prop.Name, v.Prop(prop.Name).Input)
 		}
 	}
+
 	var x any
 	switch kind {
 	case reflect.Int:
@@ -575,7 +577,7 @@ func (v Value) Cast(dst any) error {
 	case reflect.Func, reflect.Struct, reflect.Interface:
 		return nil
 	default:
-		return fmt.Errorf("couldnt convert to %s", ref.String())
+		return fmt.Errorf("couldnt convert to %s %s", ref.String(), v.String())
 	}
 	ref.Set(reflect.ValueOf(x).Convert(ref.Type()))
 	return nil
@@ -614,6 +616,20 @@ func (v Value) HasProp(name string) bool {
 		}
 	}
 	return false
+}
+
+func (v Value) GetName(name string) string {
+	var typ = v.IndirectType()
+
+	toMatch := strings.ReplaceAll(strings.ToLower(name), "_", "")
+
+	for i := 0; i < typ.NumField(); i++ {
+		var field = typ.Field(i)
+		if strings.ReplaceAll(strings.ToLower(field.Name), "_", "") == toMatch {
+			return field.Name
+		}
+	}
+	return ""
 }
 
 func (v Value) Indirect() reflect.Value {

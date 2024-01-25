@@ -2,8 +2,9 @@ package async
 
 import (
 	"context"
-	"github.com/getevo/evo/v2/lib/async/multierror"
 	"sync"
+
+	"github.com/getevo/evo/v2/lib/async/multierror"
 )
 
 // ErrorPool is a pool that runs tasks that may return an error.

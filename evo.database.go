@@ -2,6 +2,11 @@ package evo
 
 import (
 	"fmt"
+	"log"
+	"os"
+	"strings"
+	"time"
+
 	"github.com/getevo/evo/v2/lib/db/schema"
 	"github.com/getevo/evo/v2/lib/settings"
 	"gorm.io/driver/mysql"
@@ -9,10 +14,6 @@ import (
 	"gorm.io/driver/sqlserver"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	"log"
-	"os"
-	"strings"
-	"time"
 )
 
 var db *gorm.DB
@@ -26,7 +27,7 @@ func setupDatabase() {
 	if !config.Enabled {
 		return
 	}
-	var logLevel = logger.Silent
+	var logLevel logger.LogLevel
 
 	switch config.Debug {
 	case 4:
