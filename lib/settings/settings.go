@@ -20,25 +20,25 @@ type Interface interface {
 	Init(params ...string) error          // Init will be called at the initialization of application
 }
 
-type Setting struct {
-	Domain      string `gorm:"column:domain;primaryKey" json:"domain"`
-	Name        string `gorm:"column:name;primaryKey" json:"name"`
-	Title       string `gorm:"column:title" json:"title"`
-	Description string `gorm:"column:description" json:"description"`
-	Value       string `gorm:"column:value" json:"value"`
-	Type        string `gorm:"column:type" json:"type"`
-	Params      string `gorm:"column:params" json:"params"`
-	ReadOnly    bool   `gorm:"column:read_only" json:"read_only"`
-	Visible     bool   `gorm:"column:visible" json:"visible"`
+type SettingDomain struct {
+	DomainID    uint   `json:"domain_id"`
+	Domain      string `json:"domain"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	ReadOnly    bool   `json:"read_only"`
+	Visible     bool   `json:"visible"`
 }
 
-type SettingDomain struct {
-	DomainID    int    `gorm:"column:domain_id;primaryKey" json:"domain_id"`
-	Title       string `gorm:"column:title" json:"title"`
-	Description string `gorm:"column:description" json:"description"`
-	Domain      string `gorm:"column:domain" json:"domain"`
-	ReadOnly    bool   `gorm:"column:read_only" json:"read_only"`
-	Visible     bool   `gorm:"column:visible" json:"visible"`
+type Setting struct {
+	Domain      string `json:"domain"`
+	Value       string `json:"value"`
+	Description string `json:"description"`
+	Name        string `json:"name"`
+	ReadOnly    bool   `json:"read_only"`
+	Title       string `json:"title"`
+	Visible     bool   `json:"visible"`
+	Type        string `json:"type"`
+	Params      string `json:"params"`
 }
 
 func SetDefaultDriver(driver Interface) {
@@ -110,8 +110,8 @@ func SetMulti(data map[string]any) error {
 	return defaultDriver.SetMulti(data)
 }
 
-func Register(settings ...any) {
-	defaultDriver.Register(settings...)
+func Register(settings ...any) error {
+	return defaultDriver.Register(settings...)
 }
 
 func Init(params ...string) error {
@@ -119,10 +119,11 @@ func Init(params ...string) error {
 	return defaultDriver.Init(params...)
 }
 
-func (SettingDomain) TableName() string {
+/* func (SettingDomain) TableName() string {
 	return "settings_domain"
 }
 
 func (Setting) TableName() string {
 	return "settings"
 }
+*/

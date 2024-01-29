@@ -2,13 +2,14 @@ package nats
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/getevo/evo/v2/lib/log"
 	"github.com/getevo/evo/v2/lib/memo/kv"
 	"github.com/getevo/evo/v2/lib/pubsub"
 	"github.com/getevo/evo/v2/lib/serializer"
 	"github.com/getevo/evo/v2/lib/settings"
 	"github.com/nats-io/nats.go"
-	"time"
 )
 
 var Driver = NATS{}
