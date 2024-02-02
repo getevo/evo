@@ -118,7 +118,7 @@ func FromStatement(stmt *gorm.Statement) Table {
 			Type:          datatype,
 			Scale:         field.Scale,
 			Precision:     field.Precision,
-			Default:       field.DefaultValue,
+			Default:       trimQuotes(field.DefaultValue),
 			AutoIncrement: field.AutoIncrement,
 			Comment:       field.Comment,
 			PrimaryKey:    field.PrimaryKey,
@@ -261,9 +261,11 @@ func getFieldQuery(field *Column) string {
 
 	if field.Default != "" {
 		var v = field.Default
-		/*		if !(v[0] == '\'' || v[0] == '"' || v[0] == '`') {
+		if field.Default != "" {
+			if !strings.HasSuffix(field.Default, "()") {
 				v = strconv.Quote(v)
-			}*/
+			}
+		}
 		query += " DEFAULT " + v
 	}
 
@@ -463,7 +465,7 @@ func getString(v *string) string {
 	if v == nil {
 		return ""
 	} else {
-		return *v
+		return trimQuotes(*v)
 	}
 }
 
@@ -538,4 +540,13 @@ func (local Table) Constrains(constraints []table.Constraint) []string {
 		}
 	}
 	return queries
+}
+
+func trimQuotes(s string) string {
+	if len(s) >= 2 {
+		if c := s[len(s)-1]; s[0] == c && (c == '"' || c == '\'') {
+			return s[1 : len(s)-1]
+		}
+	}
+	return s
 }
