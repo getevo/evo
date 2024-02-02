@@ -96,6 +96,7 @@ func (r *Request) WriteResponse(resp ...any) {
 	for _, item := range resp {
 		ref := reflect.ValueOf(item)
 		switch ref.Kind() {
+
 		case reflect.Slice:
 			if ref.Type() == errorsType {
 				r.Response.Success = false
@@ -117,10 +118,10 @@ func (r *Request) WriteResponse(resp ...any) {
 				return
 			}
 		case reflect.Struct, reflect.Ptr:
-			if ref.Type() == errorType {
+			if v, ok := item.(error); ok {
 				r.Response.Success = false
 				r.Status(StatusBadRequest)
-				r.Response.Error = append(r.Response.Error, item.(error).Error())
+				r.Response.Error = append(r.Response.Error, v.Error())
 				r._writeResponse(r.Response)
 				return
 			}
