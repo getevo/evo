@@ -5,9 +5,14 @@ import (
 	"github.com/getevo/evo/v2/lib/db/schema/table"
 	"gorm.io/gorm"
 	"reflect"
+	"slices"
 	"strconv"
 	"strings"
 )
+
+var InternalFunctions = [][]string{
+	{"CURRENT_TIMESTAMP", "CURRENT_TIMESTAMP()", "current_timestamp()", "current_timestamp", "NOW()", "now()", "CURRENT_DATE", "CURRENT_DATE()", "current_date", "current_date()"},
+}
 
 var (
 	DefaultEngine    = "INNODB"
@@ -16,13 +21,14 @@ var (
 )
 
 type Table struct {
-	Columns    Columns
-	PrimaryKey Columns
-	Index      Indexes
-	Engine     string
-	Name       string
-	Charset    string
-	Collate    string
+	Columns     Columns
+	PrimaryKey  Columns
+	Index       Indexes
+	Constraints []string
+	Engine      string
+	Name        string
+	Charset     string
+	Collate     string
 }
 
 type Column struct {
@@ -40,6 +46,7 @@ type Column struct {
 	Charset       string
 	OnUpdate      string
 	Collate       string
+	ForeignKey    string
 }
 
 type Columns []Column
@@ -122,6 +129,10 @@ func FromStatement(stmt *gorm.Statement) Table {
 			column.Charset = v
 		}
 
+		if v, ok := field.TagSettings["FK"]; ok {
+			column.ForeignKey = v
+		}
+
 		if v, ok := field.TagSettings["COLLATE"]; ok {
 			column.Collate = v
 		}
@@ -184,6 +195,7 @@ func FromStatement(stmt *gorm.Statement) Table {
 
 		table.Index = append(table.Index, idx)
 	}
+
 	return table
 }
 
@@ -280,6 +292,7 @@ func getFieldQuery(field *Column) string {
 
 func (local Table) GetDiff(remote table.Table) []string {
 	var queries []string
+	var afterPK []string
 	var primaryKeys []string
 	if local.Collate != remote.Collation {
 		queries = append(queries, fmt.Sprintf("--  table collation does not match. new:%s old:%s", local.Collate, remote.Collation))
@@ -307,15 +320,15 @@ func (local Table) GetDiff(remote table.Table) []string {
 			queries = append(queries, "ALTER TABLE "+quote(local.Name)+" ADD "+getFieldQuery(&field)+";")
 		} else {
 			var diff = false
-			if field.Type != strings.ToLower(r.ColumnType) {
+			if strings.ToLower(field.Type) != strings.ToLower(strings.ToLower(r.ColumnType)) {
 				queries = append(queries, fmt.Sprintf("--  type does not match. new:%s old:%s", field.Type, strings.ToLower(r.ColumnType)))
 				diff = true
 			}
-			if len(field.Collate) > 0 && field.Collate != r.Collation {
+			if len(field.Collate) > 0 && strings.ToLower(field.Collate) != strings.ToLower(r.Collation) {
 				queries = append(queries, fmt.Sprintf("--  collation does not match. new:%s old:%s", field.Collate, r.Collation))
 				diff = true
 			}
-			if len(field.Charset) > 0 && field.Charset != r.CharacterSet {
+			if len(field.Charset) > 0 && strings.ToLower(field.Charset) != strings.ToLower(r.CharacterSet) {
 				queries = append(queries, fmt.Sprintf("--  charset does not match. new:%s old:%s", field.Charset, r.CharacterSet))
 				diff = true
 			}
@@ -324,7 +337,14 @@ func (local Table) GetDiff(remote table.Table) []string {
 				diff = true
 			}
 			if field.Default != getString(r.ColumnDefault) {
-				if !(field.Default == "NULL" && r.ColumnDefault == nil) {
+				var skip = false
+				for _, row := range InternalFunctions {
+					if slices.Contains(row, field.Default) && slices.Contains(row, getString(r.ColumnDefault)) {
+						skip = true
+					}
+				}
+
+				if !skip && !(field.Default == "NULL" && r.ColumnDefault == nil) {
 					queries = append(queries, fmt.Sprintf("--  default value does not match. new:%s old:%s", field.Default, getString(r.ColumnDefault)))
 					diff = true
 				}
@@ -333,10 +353,22 @@ func (local Table) GetDiff(remote table.Table) []string {
 				queries = append(queries, fmt.Sprintf("--  nullable does not match. new:%t old:%t", field.Nullable, r.Nullable == "YES"))
 				diff = true
 			}
+			var needPK = false
+			if field.AutoIncrement && strings.ToLower(r.Extra) != "auto_increment" {
+				afterPK = append(afterPK, fmt.Sprintf("--  auto_increment does not match. new:%t old:%t", field.AutoIncrement, !field.AutoIncrement))
+				diff = true
+				needPK = true
+			}
 			if diff {
-				queries = append(queries, "ALTER TABLE "+quote(local.Name)+" MODIFY COLUMN "+getFieldQuery(&field)+";")
+				if needPK {
+					afterPK = append(afterPK, "ALTER TABLE "+quote(local.Name)+" MODIFY COLUMN "+getFieldQuery(&field)+";")
+				} else {
+					queries = append(queries, "ALTER TABLE "+quote(local.Name)+" MODIFY COLUMN "+getFieldQuery(&field)+";")
+				}
+
 			}
 		}
+
 	}
 	var pks []string
 	var pksMatch = true
@@ -349,15 +381,18 @@ func (local Table) GetDiff(remote table.Table) []string {
 			}
 		}
 	}
+
 	if pksMatch {
 		pksMatch = len(pks) == len(local.PrimaryKey.Keys())
 	}
 	if !pksMatch {
 		queries = append(queries, fmt.Sprintf("-- primary key does not match. new:%s old:%s", strings.Join(local.PrimaryKey.Keys(), ","), strings.Join(pks, ",")))
-		queries = append(queries, "ALTER TABLE "+quote(local.Name)+" DROP PRIMARY KEY;")
+		if len(pks) > 0 {
+			queries = append(queries, "ALTER TABLE "+quote(local.Name)+" DROP PRIMARY KEY;")
+		}
 		queries = append(queries, "ALTER TABLE "+quote(local.Name)+" ADD PRIMARY KEY("+strings.Join(local.PrimaryKey.Keys(), ",")+");")
 	}
-
+	queries = append(queries, afterPK...)
 	for _, index := range local.Index {
 		var r = remote.Indexes.Find(index.Name)
 		if r == nil {
@@ -408,8 +443,10 @@ func (local Table) GetDiff(remote table.Table) []string {
 	}
 	for _, index := range remote.Indexes {
 		if local.Index.Find(index.Name) == nil {
-			queries = append(queries, "-- drop unnecessary index")
-			queries = append(queries, "DROP INDEX "+quote(index.Name)+" ON "+quote(local.Name)+";")
+			if !strings.HasPrefix(index.Name, "fk_") {
+				queries = append(queries, "-- drop unnecessary index")
+				queries = append(queries, "DROP INDEX "+quote(index.Name)+" ON "+quote(local.Name)+";")
+			}
 		}
 	}
 	return queries
@@ -453,4 +490,52 @@ func GetCollate(statement *gorm.Statement) string {
 		return v.TableCollation()
 	}
 	return DefaultCollation
+}
+
+func (local Table) Constrains(constraints []table.Constraint) []string {
+	var queries []string
+	for idx, _ := range local.Columns {
+		var field = local.Columns[idx]
+		//Foreign Keys
+		if field.ForeignKey != "" {
+			var referencedTable = ""
+			var referencedCol = ""
+			var chunks = strings.Split(field.ForeignKey, ".")
+			/*			if len(chunks) == 1 {
+						if tb := schema.Find(chunks[0]); tb != nil {
+							referencedTable = tb.Table
+							referencedCol = tb.PrimaryKey[0]
+						}
+					}*/
+			if len(chunks) == 2 {
+				referencedTable = chunks[0]
+				referencedCol = chunks[1]
+				/*		if tb := schema.Find(chunks[0]); tb != nil {
+						referencedTable = tb.Table
+						referencedCol = tb.PrimaryKey[0]
+					}*/
+			}
+			if referencedTable != "" && referencedCol != "" {
+
+				var name = "fk_" + referencedTable + "_" + field.Name + "_" + referencedTable + "_" + referencedCol
+
+				var skip = false
+				for _, constraint := range constraints {
+					//fmt.Println(constraint.Table, "==", local.Name, constraint.Column, "==", field.Name, constraint.ReferencedTable, "==", dstTable, constraint.ReferencedColumn, "==", dstCol)
+					if constraint.Table == local.Name && constraint.Column == field.Name && constraint.ReferencedTable == referencedTable && constraint.ReferencedColumn == referencedCol {
+						skip = true
+					}
+				}
+
+				if !skip {
+					queries = append(queries, "-- create foreign key")
+					queries = append(queries, "ALTER TABLE "+quote(local.Name)+" ADD CONSTRAINT "+quote(name)+" FOREIGN KEY ("+quote(field.Name)+") REFERENCES  "+quote(referencedTable)+"("+quote(referencedCol)+") ON DELETE SET NULL ON UPDATE RESTRICT")
+				}
+				/*		ALTER TABLE `rabbits`
+						ADD CONSTRAINT `fk_rabbits_main_page` FOREIGN KEY IF NOT EXISTS
+						(`main_page_id`) REFERENCES `rabbit_pages` (`id`);*/
+			}
+		}
+	}
+	return queries
 }

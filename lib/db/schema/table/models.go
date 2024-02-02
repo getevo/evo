@@ -49,6 +49,7 @@ type Table struct {
 	Charset       string        `json:"charset" gorm:"column:TABLE_CHARSET"`
 	Columns       Columns       `json:"columns" gorm:"-"`
 	Indexes       Indexes       `json:"indexes" gorm:"-"`
+	Constraints   []Constraint  `json:"constraints" gorm:"-"`
 	Model         any           `json:"-" gorm:"-"`
 	Reflect       reflect.Value `json:"-" gorm:"-"`
 }
@@ -83,6 +84,7 @@ func (Column) TableName() string {
 }
 
 type Tables []Table
+type Constraints []Constraint
 
 func (t Tables) GetTable(table string) *Table {
 	for idx, _ := range t {
@@ -124,4 +126,17 @@ type TableVersion struct {
 
 func (TableVersion) TableName() string {
 	return "table_version"
+}
+
+type Constraint struct {
+	Name             string `gorm:"column:CONSTRAINT_NAME" json:"name"`
+	Table            string `gorm:"column:TABLE_NAME" json:"table"`
+	Column           string `gorm:"column:COLUMN_NAME" json:"column"`
+	ReferencedTable  string `gorm:"column:REFERENCED_TABLE_NAME" json:"referenced_table"`
+	ReferencedColumn string `gorm:"column:REFERENCED_COLUMN_NAME" json:"referenced_column"`
+	Database         string `gorm:"column:REFERENCED_TABLE_SCHEMA" json:"database"`
+}
+
+func (Constraint) TableName() string {
+	return "INFORMATION_SCHEMA.KEY_COLUMN_USAGE"
 }

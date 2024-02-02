@@ -27,6 +27,9 @@ func GetMigrationScript(db *gorm.DB) []string {
 	var columns table.Columns
 	db.Where(table.Table{Database: database}).Order("TABLE_NAME ASC,ORDINAL_POSITION ASC").Find(&columns)
 
+	var constraints []table.Constraint
+	db.Where(table.Constraint{Database: database}).Find(&constraints)
+
 	var tb *table.Table
 	for idx, _ := range columns {
 		if tb == nil || columns[idx].Table != tb.Table {
@@ -103,6 +106,8 @@ func GetMigrationScript(db *gorm.DB) []string {
 		} else {
 			q = ddl.FromStatement(stmt).GetCreateQuery()
 		}
+
+		q = append(q, ddl.FromStatement(stmt).Constrains(constraints)...)
 		if len(q) > 0 {
 			queries = append(queries, "\r\n\r\n-- Migrate Table:"+stmt.Schema.Table)
 			queries = append(queries, q...)
@@ -142,30 +147,16 @@ func GetMigrationScript(db *gorm.DB) []string {
 }
 
 func DoMigration(db *gorm.DB) error {
-	//check if tidb
-	var t []map[string]any
-	db.Debug().Raw("SHOW VARIABLES LIKE 'tidb_multi_statement_mode'").Scan(&t)
-	if len(t) > 0 {
-		if tidbMultiStatementMode, ok := t[0]["Value"]; ok {
-			// enable possibility to run multiple queries at once. BEWARE: DONT LEAVE IT ON FOR SECURITY MEASUREMENTS
-			db.Debug().Exec("SET tidb_multi_statement_mode='ON';")
-			if fmt.Sprint(tidbMultiStatementMode) == "ON" {
-				log.Warning("BEWARE: tidb_multi_statement_mode has set to ON which cause security issues. it is recommended to set to OFF. SET tidb_multi_statement_mode='OFF';")
-			}
-			defer func() {
-				// back to original value
-				db.Debug().Exec("SET tidb_multi_statement_mode='" + fmt.Sprint(tidbMultiStatementMode) + "';")
-			}()
-		}
-	}
 	var err error
 	err = db.Transaction(func(tx *gorm.DB) error {
 		for _, query := range GetMigrationScript(db) {
 			if !strings.HasPrefix(query, "--") {
 				err = tx.Debug().Exec(query).Error
 				if err != nil {
-					return err
+					log.Error(err)
 				}
+			} else {
+				fmt.Println(query)
 			}
 		}
 

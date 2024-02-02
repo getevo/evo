@@ -37,7 +37,7 @@ func Set(key string, value any) *gorm.DB {
 	return db.Set(key, value)
 }
 
-// Get get value with key from current db instance's context
+// Get value with key from current db instance's context
 func Get(key string) (any, bool) {
 	return db.Get(key)
 }
@@ -67,7 +67,7 @@ func SetupJoinTable(model any, field string, joinTable any) error {
 	return db.SetupJoinTable(model, field, joinTable)
 }
 
-// Use use plugin
+// Use plugin
 func Use(plugin gorm.Plugin) error {
 	return db.Use(plugin)
 }
@@ -255,7 +255,7 @@ func Exec(sql string, values ...any) (tx *gorm.DB) {
 
 // Model specify the model you would like to run db operations
 //
-//	// update all users's name to `hello`
+//	// update all user's name to `hello`
 //	db.Model(&User{}).Update("name", "hello")
 //	// if user's primary key is non-blank, will use it as condition, then will only update that user's name to `hello`
 //	db.Model(&user).Update("name", "hello")
