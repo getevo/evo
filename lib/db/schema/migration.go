@@ -2,12 +2,12 @@ package schema
 
 import (
 	"fmt"
+	"github.com/getevo/evo/v2/lib/version"
 	"gorm.io/gorm"
 
 	"github.com/getevo/evo/v2/lib/db/schema/ddl"
 	"github.com/getevo/evo/v2/lib/db/schema/table"
 	"github.com/getevo/evo/v2/lib/log"
-	"github.com/getevo/evo/v2/lib/version"
 	"reflect"
 	"strings"
 )
@@ -20,7 +20,17 @@ func GetMigrationScript(db *gorm.DB) []string {
 	var queries []string
 
 	var database = ""
+	var engine string
 	db.Raw("SELECT DATABASE();").Scan(&database)
+	db.Raw("SELECT VERSION();").Scan(&engine)
+	engine = strings.ToLower(engine)
+	switch {
+	case strings.Contains(engine, "mariadb"):
+		ddl.Engine = "mariadb"
+	case strings.Contains(engine, "mysql"):
+		ddl.Engine = "mysql"
+	}
+
 	var is table.Tables
 	db.Raw(`SELECT CCSA.character_set_name  AS 'TABLE_CHARSET',T.* FROM information_schema.TABLES T, information_schema.COLLATION_CHARACTER_SET_APPLICABILITY CCSA WHERE CCSA.collation_name = T.table_collation AND T.table_schema = ?`, database).Scan(&is)
 
@@ -38,12 +48,15 @@ func GetMigrationScript(db *gorm.DB) []string {
 				continue
 			}
 		}
+		if columns[idx].ColumnKey == "PRI" {
+			tb.PrimaryKey = append(tb.Columns, columns[idx])
+		}
 		tb.Columns = append(tb.Columns, columns[idx])
 	}
 
 	var istats []table.IndexStat
 	db.Where(table.IndexStat{Database: database}).Order("TABLE_NAME ASC, SEQ_IN_INDEX ASC").Find(&istats)
-
+	var tail []string
 	var indexMap = map[string]table.Index{}
 	for _, item := range istats {
 		if item.Name == "PRIMARY" {
@@ -107,7 +120,8 @@ func GetMigrationScript(db *gorm.DB) []string {
 			q = ddl.FromStatement(stmt).GetCreateQuery()
 		}
 
-		q = append(q, ddl.FromStatement(stmt).Constrains(constraints)...)
+		//q = append(q, ddl.FromStatement(stmt).Constrains(constraints, is)...)
+		tail = append(tail, ddl.FromStatement(stmt).Constrains(constraints, is)...)
 		if len(q) > 0 {
 			queries = append(queries, "\r\n\r\n-- Migrate Table:"+stmt.Schema.Table)
 			queries = append(queries, q...)
@@ -122,8 +136,10 @@ func GetMigrationScript(db *gorm.DB) []string {
 			var buff []string
 			var ptr = "0.0.0"
 			for _, item := range caller.Migration(currentVersion) {
-				if version.Compare(currentVersion, item.Version, "<") {
-					if version.Compare(ptr, item.Version, "<=") {
+				if item.Version == "*" || version.Compare(currentVersion, item.Version, "<") {
+					if item.Version == "*" {
+						ptr = currentVersion
+					} else if version.Compare(ptr, item.Version, "<=") {
 						ptr = item.Version
 					}
 					item.Query = strings.TrimSpace(item.Query)
@@ -142,7 +158,7 @@ func GetMigrationScript(db *gorm.DB) []string {
 		}
 
 	}
-
+	queries = append(queries, tail...)
 	return queries
 }
 

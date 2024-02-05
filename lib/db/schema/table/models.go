@@ -52,6 +52,7 @@ type Table struct {
 	Constraints   []Constraint  `json:"constraints" gorm:"-"`
 	Model         any           `json:"-" gorm:"-"`
 	Reflect       reflect.Value `json:"-" gorm:"-"`
+	PrimaryKey    []Column      `json:"primary_key" gorm:"-"`
 }
 
 func (Table) TableName() string {
