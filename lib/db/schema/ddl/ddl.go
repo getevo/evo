@@ -565,7 +565,9 @@ func (local Table) Constrains(constraints []table.Constraint, is table.Tables) [
 			if referencedTable != "" && referencedCol != "" {
 
 				var name = "fk_" + local.Name + "." + field.Name + "_" + referencedTable + "." + referencedCol
-
+				if len(name) > 64 {
+					name = "fk_" + field.Name + "_" + referencedTable + "." + referencedCol
+				}
 				var skip = false
 				for _, constraint := range constraints {
 					//fmt.Println(constraint.Table, "==", local.Name, constraint.Column, "==", field.Name, constraint.ReferencedTable, "==", dstTable, constraint.ReferencedColumn, "==", dstCol)
