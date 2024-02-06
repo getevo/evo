@@ -155,7 +155,7 @@ type JSON json.RawMessage
 // Value return json value, implement driver.Valuer interface
 func (j JSON) Value() (driver.Value, error) {
 	if len(j) == 0 {
-		return nil, nil
+		return "[]", nil
 	}
 	return string(j), nil
 }
