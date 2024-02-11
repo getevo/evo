@@ -62,7 +62,7 @@ func Json(input any) *Response {
 		ContentType: fiber.MIMEApplicationJSONCharsetUTF8,
 		StatusCode:  200,
 	}
-	response.Data = input
+	response.Data, _ = json.Marshal(input)
 	return &response
 }
 
