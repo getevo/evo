@@ -417,15 +417,27 @@ func (v Value) PropByTag(tag string) Value {
 
 func (v Value) SetProp(property string, value any) error {
 	ref := v.Indirect()
+
 	if ref.Kind() == reflect.Struct {
+		if ref.Type() == reflect.TypeOf(time.Time{}) {
+			t, err := Parse(value).Time()
+			if err != nil {
+				return err
+			}
+			ref.Set(reflect.ValueOf(t))
+			return nil
+		}
 		//var x = ref.FieldByName(property).Interface()
 		var field = ref.FieldByName(property)
-
+		if field.Kind() == reflect.Struct {
+			return Value{Input: field.Addr().Interface()}.SetProp(property, value)
+		}
+		if field.Kind() == reflect.Ptr {
+			return Value{Input: field.Interface()}.SetProp(property, value)
+		}
 		var err = Parse(value).Cast(field)
-
 		if err != nil {
-			fmt.Println(property, "value=>", value)
-			log.Error(err)
+			return err
 		}
 		//ref.FieldByName(property).Set(reflect.ValueOf(x).Convert(field.Type()))
 
@@ -456,7 +468,6 @@ func (v Value) Cast(dst any) error {
 	}
 
 	var kind = ref.Kind()
-
 	if kind == reflect.Struct {
 		x := Parse(dst)
 		var vRef = v.Indirect()
@@ -465,16 +476,25 @@ func (v Value) Cast(dst any) error {
 
 			if vRef.Kind() == reflect.Struct {
 				if x.HasProp(prop.Name) {
-					x.SetProp(x.GetName(prop.Name), vRef.FieldByName(prop.Name).Interface())
+					err := x.SetProp(x.GetName(prop.Name), vRef.FieldByName(prop.Name).Interface())
+					if err != nil {
+						return err
+					}
 				}
 			} else if vRef.Kind() == reflect.Map {
 
 				if idx := vRef.MapIndex(reflect.ValueOf(prop.Name)); idx.IsValid() {
-					x.SetProp(x.GetName(prop.Name), idx.Interface())
+					err := x.SetProp(x.GetName(prop.Name), idx.Interface())
+					if err != nil {
+						return err
+					}
 					continue
 				}
 				if idx := vRef.MapIndex(reflect.ValueOf(strcase.ToSnake(prop.Name))); idx.IsValid() {
-					x.SetProp(x.GetName(prop.Name), idx.Interface())
+					err := x.SetProp(x.GetName(prop.Name), idx.Interface())
+					if err != nil {
+						return err
+					}
 				}
 
 			} else {
@@ -490,7 +510,10 @@ func (v Value) Cast(dst any) error {
 		x := Parse(dst)
 
 		for _, prop := range v.Props() {
-			x.SetProp(prop.Name, v.Prop(prop.Name).Input)
+			err := x.SetProp(prop.Name, v.Prop(prop.Name).Input)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -680,4 +703,8 @@ func (v Value) IsAny(s ...any) bool {
 		}
 	}
 	return false
+}
+
+func (v Value) New() Value {
+	return Value{Input: reflect.New(v.IndirectType()).Interface()}
 }

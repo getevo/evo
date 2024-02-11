@@ -211,7 +211,7 @@ func (r *Request) BodyValue(key string) generic.Value {
 			var t = gjson.Parse(string(r.Context.Body()))
 			r.jsonParsedBody = &t
 		}
-		generic.Parse(r.jsonParsedBody.Get(key).Raw)
+		return generic.Parse(r.jsonParsedBody.Get(key).String())
 	} else if strings.HasPrefix(ctype, MIMEApplicationForm) || strings.HasPrefix(ctype, MIMEMultipartForm) {
 		return r.FormValue(key)
 	}

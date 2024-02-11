@@ -149,13 +149,7 @@ func (r *Request) WriteResponse(resp ...any) {
 
 				if v.RedirectURL != "" {
 					r.Location(v.RedirectURL)
-					r._writeResponse(r.Response)
 					return
-				}
-
-				if v.Data != nil {
-					r.Response.Success = true
-					r.Response.Data = v.Data
 				}
 
 				if v.ContentType != "" {
@@ -175,6 +169,8 @@ func (r *Request) WriteResponse(resp ...any) {
 					r.Status(StatusBadRequest)
 					r.Response.Error = append(r.Response.Error, v.Errors...)
 				}
+				r.Write(v.Data)
+				return
 			} else {
 				r.Response.Data = item
 			}
