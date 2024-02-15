@@ -1,7 +1,7 @@
 package async
 
 import (
-	"github.com/getevo/evo/v2/lib/async/multierror"
+	"fmt"
 	"sync"
 )
 
@@ -55,7 +55,7 @@ func (m Mapper[T, R]) MapErr(input []T, f func(*T) (R, error)) ([]R, error) {
 		res[i], err = f(t)
 		if err != nil {
 			errMux.Lock()
-			errs = multierror.Join(errs, err)
+			errs = fmt.Errorf("%s, %s", errs, err)
 			errMux.Unlock()
 		}
 	})

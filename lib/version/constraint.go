@@ -18,7 +18,7 @@ func NewConstrain(operator, version string) *Constraint {
 	return constraint
 }
 
-// Sets operator to compare
+// SetOperator Sets operator to compare
 func (self *Constraint) SetOperator(operator string) {
 	self.operator = operator
 }
@@ -28,7 +28,7 @@ func (self *Constraint) GetOperator() string {
 	return self.operator
 }
 
-// Sets version to compare
+// SetVersion Sets version to compare
 func (self *Constraint) SetVersion(version string) {
 	self.version = version
 }
@@ -38,7 +38,7 @@ func (self *Constraint) GetVersion() string {
 	return self.version
 }
 
-// Match a given version againts the constraint
+// Match a given version against the constraint
 func (self *Constraint) Match(version string) bool {
 	return Compare(version, self.version, self.operator)
 }

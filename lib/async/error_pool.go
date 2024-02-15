@@ -2,9 +2,8 @@ package async
 
 import (
 	"context"
+	"fmt"
 	"sync"
-
-	"github.com/getevo/evo/v2/lib/async/multierror"
 )
 
 // ErrorPool is a pool that runs tasks that may return an error.
@@ -90,7 +89,7 @@ func (p *ErrorPool) addErr(err error) {
 				p.errs = err
 			}
 		} else {
-			p.errs = multierror.Join(p.errs, err)
+			p.errs = fmt.Errorf("%s, %s", p.errs, err)
 		}
 		p.mu.Unlock()
 	}
