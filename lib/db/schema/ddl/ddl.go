@@ -149,7 +149,11 @@ func FromStatement(stmt *gorm.Statement) Table {
 			column.Type = "TIMESTAMP"
 		}
 
-		if field.FieldType.Kind() == reflect.Ptr {
+		var nullable = false
+		if _, ok := field.TagSettings["NULLABLE"]; ok {
+			nullable = true
+		}
+		if field.FieldType.Kind() == reflect.Ptr || nullable {
 			if _, ok := field.TagSettings["NOT NULL"]; !ok {
 				column.Nullable = true
 				if column.Type == "TIMESTAMP" && column.Default == "0000-00-00 00:00:00" {
