@@ -3,11 +3,14 @@ package evo
 import "github.com/getevo/evo/v2/lib/generic"
 
 func (r *Request) User() UserInterface {
-	if r.user == nil {
+	if r.UserInterface == nil {
 		var user = (UserInterfaceInstance).FromRequest(r)
-		r.user = &user
+		if user == nil {
+			user = DefaultUserInterface{}
+		}
+		r.UserInterface = &user
 	}
-	return *r.user
+	return *r.UserInterface
 }
 
 type DefaultUserInterface struct{}
@@ -25,15 +28,16 @@ func SetUserInterface(v UserInterface) {
 }
 
 type UserInterface interface {
-	Name() string
-	LastName() string
-	FullName() string
-	Email() string
+	GetFirstName() string
+	GetLastName() string
+	GetFullName() string
+	GetEmail() string
 	UUID() string
 	ID() uint64
 	Anonymous() bool
 	HasPermission(permission string) bool
 	Attributes() Attributes
+	Interface() interface{}
 	FromRequest(request *Request) UserInterface
 }
 
@@ -41,19 +45,19 @@ func (d DefaultUserInterface) HasPermission(permission string) bool {
 	return true
 }
 
-func (d DefaultUserInterface) Name() string {
+func (d DefaultUserInterface) GetFirstName() string {
 	return ""
 }
 
-func (d DefaultUserInterface) LastName() string {
+func (d DefaultUserInterface) GetLastName() string {
 	return ""
 }
 
-func (d DefaultUserInterface) FullName() string {
+func (d DefaultUserInterface) GetFullName() string {
 	return ""
 }
 
-func (d DefaultUserInterface) Email() string {
+func (d DefaultUserInterface) GetEmail() string {
 	return ""
 }
 
@@ -67,6 +71,10 @@ func (d DefaultUserInterface) ID() uint64 {
 
 func (d DefaultUserInterface) Anonymous() bool {
 	return true
+}
+
+func (d DefaultUserInterface) Interface() interface{} {
+	return d
 }
 
 func (d DefaultUserInterface) FromRequest(request *Request) UserInterface {
