@@ -430,6 +430,8 @@ func (local Table) GetDiff(remote table.Table) []string {
 				}
 			}
 			if !found {
+				// todo: drop constraints
+
 				queries = append(queries, fmt.Sprintf("--  column %s does not exists on schema", column.Name))
 				queries = append(queries, "ALTER TABLE "+quote(local.Name)+" DROP COLUMN "+quote(column.Name)+";")
 			}
