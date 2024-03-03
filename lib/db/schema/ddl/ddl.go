@@ -2,6 +2,7 @@ package ddl
 
 import (
 	"fmt"
+	"github.com/getevo/evo/v2/lib/args"
 	"github.com/getevo/evo/v2/lib/db/schema/table"
 	"gorm.io/gorm"
 	"reflect"
@@ -417,6 +418,20 @@ func (local Table) GetDiff(remote table.Table) []string {
 			var col = local.PrimaryKey.Find(column.Name)
 			if col == nil || !col.PrimaryKey {
 				pksMatch = false
+			}
+		}
+
+		if args.Exists("--strict") {
+			var found = false
+			for _, lc := range local.Columns {
+				if lc.Name == column.Name {
+					found = true
+					break
+				}
+			}
+			if !found {
+				queries = append(queries, fmt.Sprintf("--  column %s does not exists on schema", column.Name))
+				queries = append(queries, "ALTER TABLE "+quote(local.Name)+" DROP COLUMN "+quote(column.Name)+";")
 			}
 		}
 	}
