@@ -417,6 +417,9 @@ func (v Value) PropByTag(tag string) Value {
 
 func (v Value) SetProp(property string, value any) error {
 	ref := v.Indirect()
+	if ref.Kind() == reflect.Invalid {
+		return nil
+	}
 
 	if ref.Kind() == reflect.Struct {
 		if ref.Type() == reflect.TypeOf(time.Time{}) {
@@ -428,6 +431,7 @@ func (v Value) SetProp(property string, value any) error {
 			return nil
 		}
 		//var x = ref.FieldByName(property).Interface()
+
 		var field = ref.FieldByName(property)
 		if field.Kind() == reflect.Struct {
 			return Value{Input: field.Addr().Interface()}.SetProp(property, value)
@@ -466,7 +470,6 @@ func (v Value) Cast(dst any) error {
 	for ref.Kind() == reflect.Ptr {
 		ref = ref.Elem()
 	}
-
 	var kind = ref.Kind()
 	if kind == reflect.Struct {
 		x := Parse(dst)
