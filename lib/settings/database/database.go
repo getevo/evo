@@ -2,7 +2,6 @@ package database
 
 import (
 	"errors"
-
 	"github.com/getevo/evo/v2/lib/args"
 	"github.com/getevo/evo/v2/lib/db"
 	"github.com/getevo/evo/v2/lib/log"
@@ -170,18 +169,20 @@ func (config *Database) Register(sets ...any) error {
 				var portions = strings.SplitN(domain.Domain, ".", 2)
 				var parentDomain SettingDomain
 				var grandfatherDomainId uint
+				var skip = false
 				switch len(portions) {
 				case 1:
-					err := db.Model(&SettingDomain{}).Where("parent_domain = 0 AND domain = ?", portions[0]).First(&parentDomain).Error
+					err := db.Debug().Model(&SettingDomain{}).Where("(parent_domain = 0 OR parent_domain IS NULL) AND domain = ?", portions[0]).First(&parentDomain).Error
 					if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 						return err
 					}
 					domain.Domain = portions[0]
 					parentDomain = domain
 					grandfatherDomainId = parentDomain.ID
+					skip = true
 					break
 				case 2:
-					err := db.Model(&SettingDomain{}).Preload("ChildrenDomains", "Domain = ?", portions[1]).Preload("ChildrenDomains.Parameters").Where("parent_domain = 0 AND domain = ?", portions[0]).First(&parentDomain).Error
+					err := db.Debug().Model(&SettingDomain{}).Preload("ChildrenDomains", "Domain = ?", portions[1]).Preload("ChildrenDomains.Parameters").Where("(parent_domain = 0 or parent_domain IS NULL) AND domain = ?", portions[0]).First(&parentDomain).Error
 					if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 						return err
 					}
@@ -189,11 +190,17 @@ func (config *Database) Register(sets ...any) error {
 					parentDomain.ChildrenDomains = append(parentDomain.ChildrenDomains, domain)
 					parentDomain.Domain = portions[0]
 					grandfatherDomainId = 0
+					skip = true
 					break
 				}
-				err = db.Clauses(clause.Insert{Modifier: "IGNORE"}).Where("domain = ? AND parent_domain = ?", parentDomain.Domain, grandfatherDomainId).Save(&parentDomain).Error
-				if err != nil {
-					return err
+				if parentDomain.ParentDomain != nil && *parentDomain.ParentDomain == 0 {
+					parentDomain.ParentDomain = nil
+				}
+				if !skip {
+					err = db.Debug().Clauses(clause.Insert{Modifier: "IGNORE"}).Where("domain = ? AND parent_domain = ?", parentDomain.Domain, grandfatherDomainId).Save(&parentDomain).Error
+					if err != nil {
+						return err
+					}
 				}
 
 			}
@@ -228,7 +235,7 @@ func (config *Database) Register(sets ...any) error {
 
 				switch len(portions) {
 				case 1:
-					err := db.Model(&SettingDomain{}).Where("parent_domain = 0 AND domain = ?", portions[0]).First(&parentDomain).Error
+					err := db.Model(&SettingDomain{}).Where("(parent_domain = 0 OR parent_domain IS NULL) AND domain = ?", portions[0]).First(&parentDomain).Error
 					if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 						return err
 					}
@@ -258,7 +265,9 @@ func (config *Database) Register(sets ...any) error {
 					}
 					break
 				}
-
+				if parentDomain.ParentDomain != nil && *parentDomain.ParentDomain != 0 {
+					parentDomain.ParentDomain = nil
+				}
 				// Now we can finally create the setting parameter, subdomain and domain in one go
 				err = db.Clauses(clause.Insert{Modifier: "IGNORE"}).Where("parent_domain = 0 AND domain = ?", parentDomain.Domain).Save(&parentDomain).Error
 				if err != nil {
@@ -274,7 +283,7 @@ func (config *Database) Register(sets ...any) error {
 }
 func (config *Database) Init(params ...string) error {
 	// Check if the database structure is the old one or the new one
-	if err := db.Model(&SettingDomain{}).Where("parent_domain = 0").First(&SettingDomain{}).Error; err == nil {
+	if err := db.Model(&SettingDomain{}).Where("parent_domain = 0 OR parent_domain IS NULL").First(&SettingDomain{}).Error; err == nil {
 		log.Info("new db version detected")
 		dbVersion = 1
 	} else {
@@ -312,7 +321,7 @@ func (config *Database) Init(params ...string) error {
 		config.data1 = make(map[string]generic.Value)
 		var items []SettingDomain
 		// This preload limits the depth of children domains to 2 level, domain, subdomain and parameter
-		err := db.Model(&SettingDomain{}).Preload("Parameters").Preload("ChildrenDomains").Preload("ChildrenDomains.Parameters").Where("parent_domain = 0").Find(&items).Error
+		err := db.Model(&SettingDomain{}).Preload("Parameters").Preload("ChildrenDomains").Preload("ChildrenDomains.Parameters").Where("parent_domain = 0 OR parent_domain IS NULL").Find(&items).Error
 		if err != nil {
 			log.Error("Error while loading settings from db", err)
 		}

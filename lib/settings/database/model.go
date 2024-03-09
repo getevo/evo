@@ -11,7 +11,7 @@ type SettingDomain struct {
 	Description     string          `gorm:"column:description" json:"description"`
 	ReadOnly        bool            `gorm:"column:read_only" json:"read_only"`
 	Visible         bool            `gorm:"column:visible" json:"visible"`
-	ParentDomain    *uint           `gorm:"column:parent_domain;index:key,unique;default:0" json:"parent_domain"`
+	ParentDomain    *uint           `gorm:"column:parent_domain;index:key,unique;default:NULL" json:"parent_domain"`
 	ChildrenDomains []SettingDomain `gorm:"foreignkey:ParentDomain;references:ID" json:"children_domains"`
 	Parameters      []Setting       `gorm:"foreignkey:DomainID;references:ID" json:"parameters"`
 	CreatedAt       time.Time       `json:"-"`
