@@ -76,10 +76,10 @@ func (v Value) IsNil() bool {
 }
 
 func (v Value) direct() any {
-	ref := reflect.ValueOf(v.Input)
 	if v.Input == nil {
-		return ""
+		return nil
 	}
+	ref := reflect.ValueOf(v.Input)
 	if !ref.IsValid() {
 		return nil
 	}
