@@ -76,6 +76,7 @@ func (v Value) IsNil() bool {
 }
 
 func (v Value) direct() any {
+	fmt.Println("v.Input:", v.Input)
 	if v.Input == nil {
 		return nil
 	}
