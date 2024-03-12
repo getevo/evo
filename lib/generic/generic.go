@@ -85,10 +85,11 @@ func (v Value) direct() any {
 		return nil
 	}
 	if ref.Type().Kind() == reflect.Ptr {
-		ref = ref.Elem()
 		if ref.IsZero() {
 			return nil
 		}
+		ref = ref.Elem()
+
 		return ref.Interface()
 	}
 	return v.Input
