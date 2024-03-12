@@ -437,7 +437,7 @@ func (v Value) SetProp(property string, value any) error {
 			return Value{Input: field.Addr().Interface()}.SetProp(property, value)
 		}
 		if field.Kind() == reflect.Ptr {
-			return Value{Input: field.Interface()}.SetProp(property, value)
+			field = field.Elem()
 		}
 		var err = Parse(value).Cast(field)
 		if err != nil {
