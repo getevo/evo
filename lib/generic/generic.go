@@ -77,6 +77,9 @@ func (v Value) IsNil() bool {
 
 func (v Value) direct() any {
 	ref := reflect.ValueOf(v.Input)
+	if v.Input == nil {
+		return ""
+	}
 	if !ref.IsValid() {
 		return nil
 	}
@@ -101,7 +104,6 @@ func (v Value) ParseJSON(in any) error {
 //	@receiver v
 //	@return string
 func (v Value) String() string {
-	fmt.Println("======>", v)
 	var value = v.direct()
 	return fmt.Sprint(value)
 }
