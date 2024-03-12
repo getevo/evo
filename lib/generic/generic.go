@@ -611,6 +611,7 @@ func (v Value) Cast(dst any) error {
 
 func (v Value) Props() []reflect.StructField {
 	var typ = v.IndirectType()
+	var val = v.Indirect()
 	if typ.Kind() == reflect.Map {
 		var ref = v.Indirect()
 
@@ -625,7 +626,12 @@ func (v Value) Props() []reflect.StructField {
 	}
 	var fields []reflect.StructField
 	for i := 0; i < typ.NumField(); i++ {
-		fields = append(fields, typ.Field(i))
+		if typ.Field(i).Type.Kind() == reflect.Struct {
+			fields = append(fields, Parse(val.Field(i).Interface()).Props()...)
+		} else {
+			fields = append(fields, typ.Field(i))
+		}
+
 	}
 	return fields
 }
@@ -710,4 +716,19 @@ func (v Value) IsAny(s ...any) bool {
 
 func (v Value) New() Value {
 	return Value{Input: reflect.New(v.IndirectType()).Interface()}
+}
+
+func (v Value) FieldNames() []string {
+	var typ = v.IndirectType()
+	var val = v.Indirect()
+	var fields []string
+	for i := 0; i < typ.NumField(); i++ {
+		if typ.Field(i).Type.Kind() == reflect.Struct {
+			fields = append(fields, Parse(val.Field(i).Interface()).FieldNames()...)
+		} else {
+			fields = append(fields, typ.Field(i).Name)
+		}
+
+	}
+	return fields
 }
