@@ -101,6 +101,7 @@ func (v Value) ParseJSON(in any) error {
 //	@receiver v
 //	@return string
 func (v Value) String() string {
+	fmt.Println("======>", v)
 	var value = v.direct()
 	return fmt.Sprint(value)
 }
