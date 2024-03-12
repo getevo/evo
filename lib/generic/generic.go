@@ -76,7 +76,7 @@ func (v Value) IsNil() bool {
 }
 
 func (v Value) direct() any {
-	fmt.Println("v.Input:", v.Input)
+
 	if v.Input == nil {
 		return nil
 	}
@@ -85,7 +85,11 @@ func (v Value) direct() any {
 		return nil
 	}
 	if ref.Type().Kind() == reflect.Ptr {
-		return ref.Elem().Interface()
+		ref = ref.Elem()
+		if ref.IsZero() {
+			return nil
+		}
+		return ref.Interface()
 	}
 	return v.Input
 }
