@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-// Date generic date struc
+// Date generic date struct
 type Date struct {
 	Base time.Time
 }
