@@ -3,6 +3,7 @@ package validation
 import (
 	"fmt"
 	"github.com/getevo/evo/v2/lib/generic"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -20,6 +21,57 @@ var Validators = map[*regexp.Regexp]func(match []string, value *generic.Value) e
 	regexp.MustCompile(`^([+\-]?)int$`):                    intValidator,
 	regexp.MustCompile(`^([+\-]?)float$`):                  floatValidator,
 	regexp.MustCompile(`^password\((.*)\)$`):               passwordValidator,
+	regexp.MustCompile(`^domain$`):                         domainValidator,
+	regexp.MustCompile(`^url$`):                            urlValidator,
+	regexp.MustCompile(`^ip$`):                             ipValidator,
+}
+
+func ipValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" {
+		return nil
+	}
+	parts := strings.Split(v, ".")
+
+	if len(parts) != 4 {
+		return fmt.Errorf("invalid IP address: %s", v)
+	}
+
+	for _, x := range parts {
+		if i, err := strconv.Atoi(x); err == nil {
+			if i < 0 || i > 255 {
+				return fmt.Errorf("invalid IP address: %s", v)
+			}
+		} else {
+			return fmt.Errorf("invalid IP address: %s", v)
+		}
+
+	}
+	return nil
+}
+
+func urlValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" {
+		return nil
+	}
+	_, err := url.ParseRequestURI(v)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func domainValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" {
+		return nil
+	}
+	var regex = regexp.MustCompile(`(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]`)
+	if !regex.MatchString(v) {
+		return fmt.Errorf("invalid domain: %s", v)
+	}
+	return nil
 }
 
 func passwordValidator(match []string, value *generic.Value) error {
