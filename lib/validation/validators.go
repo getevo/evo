@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode"
 )
 
 var Validators = map[*regexp.Regexp]func(match []string, value *generic.Value) error{
@@ -18,6 +19,62 @@ var Validators = map[*regexp.Regexp]func(match []string, value *generic.Value) e
 	regexp.MustCompile(`^(>|<|<=|>=|==|!=|<>|=)(\d+)$`):    numericalValidator,
 	regexp.MustCompile(`^([+\-]?)int$`):                    intValidator,
 	regexp.MustCompile(`^([+\-]?)float$`):                  floatValidator,
+	regexp.MustCompile(`^password\((.*)\)$`):               passwordValidator,
+}
+
+func passwordValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	var digit = false
+	var letter = false
+	var upper = false
+	var symbol = false
+	for _, c := range v {
+		if unicode.IsDigit(c) {
+			digit = true
+		} else if unicode.IsLower(c) {
+			letter = true
+		} else if unicode.IsUpper(c) {
+			upper = true
+		} else if unicode.IsSymbol(c) {
+			symbol = true
+		}
+	}
+	var complexity = 0
+	if digit {
+		complexity += 1
+	}
+	if upper {
+		complexity += 1
+	}
+	if symbol {
+		complexity += 1
+	}
+	if letter {
+		complexity += 1
+	}
+	switch match[1] {
+	case "none", "":
+		return nil
+	case "easy":
+		if len(v) < 6 {
+			return fmt.Errorf("password must be at least 8 characters long")
+		}
+	case "medium":
+		if len(v) < 6 {
+			return fmt.Errorf("password must be at least 6 characters long")
+		}
+		if complexity < 3 {
+			return fmt.Errorf("password is not complex enough")
+		}
+	case "hard":
+		if len(v) < 8 {
+			return fmt.Errorf("password must be at least 8 characters long")
+		}
+		if complexity < 5 {
+			return fmt.Errorf("password is not complex enough")
+		}
+	}
+	return nil
 }
 
 func floatValidator(match []string, value *generic.Value) error {

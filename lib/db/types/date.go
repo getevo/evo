@@ -76,7 +76,7 @@ func (t Date) Value() (driver.Value, error) {
 
 // String implements fmt.Stringer interface.
 func (t Date) String() string {
-	if t.Year() == 1 {
+	if t.Year() < 1000 {
 		return "0000-00-00"
 	}
 	return fmt.Sprintf("%d-%02d-%02d", t.Year(), t.Month(), t.Day())
