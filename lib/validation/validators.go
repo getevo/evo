@@ -12,6 +12,7 @@ import (
 
 var Validators = map[*regexp.Regexp]func(match []string, value *generic.Value) error{
 	regexp.MustCompile("^alpha$"):                          alphaValidator,
+	regexp.MustCompile("^digit$"):                          digitValidator,
 	regexp.MustCompile("^alphanumeric$"):                   alphaNumericValidator,
 	regexp.MustCompile("^required$"):                       requiredValidator,
 	regexp.MustCompile("^email$"):                          emailValidator,
@@ -24,6 +25,20 @@ var Validators = map[*regexp.Regexp]func(match []string, value *generic.Value) e
 	regexp.MustCompile(`^domain$`):                         domainValidator,
 	regexp.MustCompile(`^url$`):                            urlValidator,
 	regexp.MustCompile(`^ip$`):                             ipValidator,
+}
+
+func digitValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" {
+		return nil
+	}
+
+	var r = regexp.MustCompile("^[0-9]+$")
+	if !r.MatchString(v) {
+		return fmt.Errorf("invalid digit value: %s", v)
+	}
+
+	return nil
 }
 
 func ipValidator(match []string, value *generic.Value) error {
