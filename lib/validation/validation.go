@@ -71,7 +71,7 @@ func parseValidators(s string) []string {
 	return result
 }
 
-func Field(input interface{}, field string) error {
+func Value(input interface{}, validation string) error {
 	var g *generic.Value
 	if v, ok := input.(*generic.Value); ok {
 		g = v
@@ -79,8 +79,23 @@ func Field(input interface{}, field string) error {
 		var parsed = generic.Parse(input)
 		g = &parsed
 	}
-	var value = g.Prop(field)
 
-	fmt.Println(field, ":", value)
+	validators := parseValidators(validation)
+	for _, validator := range validators {
+		var found = false
+		for r, fn := range Validators {
+			if match := r.FindStringSubmatch(validator); len(match) > 0 {
+				found = true
+				var err = fn(match, g)
+				if err != nil {
+					return err
+				}
+			}
+		}
+		if !found {
+			return fmt.Errorf("validator %s not found", validator)
+		}
+
+	}
 	return nil
 }

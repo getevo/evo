@@ -170,8 +170,11 @@ func requiredValidator(match []string, value *generic.Value) error {
 
 func regexValidator(match []string, value *generic.Value) error {
 	var v = value.String()
+	if value.Input == nil || v == "" || v == "<nil>" {
+		return nil
+	}
 	if !regexp.MustCompile(match[1]).MatchString(v) {
-		return fmt.Errorf("cant validate %s", v)
+		return fmt.Errorf("is not valid %s", v)
 	}
 	return nil
 }
