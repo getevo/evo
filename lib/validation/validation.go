@@ -40,8 +40,12 @@ func validateField(g *generic.Value, field *reflect.StructField) error {
 			if match := r.FindStringSubmatch(validator); len(match) > 0 {
 				found = true
 				var err = fn(match, &value)
+				tag := field.Tag.Get("json")
+				if tag == "" {
+					tag = field.Name
+				}
 				if err != nil {
-					return fmt.Errorf("%s.%s %s", g.IndirectType().Name(), field.Name, err)
+					return fmt.Errorf("%s %s", tag, err)
 				}
 			}
 		}

@@ -33,6 +33,10 @@ func textValidator(match []string, value *generic.Value) error {
 	if v == "" {
 		return nil
 	}
+	var re = regexp.MustCompile(`(?m)</?(\w).*\\?>`)
+	if re.MatchString(v) {
+		return fmt.Errorf("the text cannot contains html fields")
+	}
 	return nil
 }
 
