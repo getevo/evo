@@ -284,7 +284,7 @@ func alphaNumericValidator(match []string, value *generic.Value) error {
 	return nil
 }
 
-var emailRegex = regexp.MustCompile(`(?i)^[a-z0-9_-]{2,}(\+\d+)?@[a-z0-9_-]{2,}\.[a-z0-9]{2,}$`)
+var emailRegex = regexp.MustCompile(`(?i)^[a-z0-9_\-.]{2,}(\+\d+)?@[a-z0-9_-]{2,}\.[a-z0-9]{2,}$`)
 
 func emailValidator(match []string, value *generic.Value) error {
 	var v = value.String()
