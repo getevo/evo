@@ -3,6 +3,7 @@ package evo
 import (
 	"encoding/base64"
 	"encoding/json"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"github.com/getevo/evo/v2/lib/frm"
@@ -77,7 +78,7 @@ func (r *Request) BodyParser(out any) error {
 	if strings.HasPrefix(ctype, MIMEApplicationJSON) {
 		return json.Unmarshal(r.Context.Context().Request.Body(), out)
 	} else if strings.HasPrefix(ctype, MIMETextXML) || strings.HasPrefix(ctype, MIMEApplicationXML) {
-		return json.Unmarshal(r.Context.Context().Request.Body(), out)
+		return xml.Unmarshal(r.Context.Context().Request.Body(), out)
 	} else if strings.HasPrefix(ctype, MIMEApplicationForm) || strings.HasPrefix(ctype, MIMEMultipartForm) {
 		dec := frm.NewDecoder(&frm.DecoderOptions{
 			TagName:           "json",
