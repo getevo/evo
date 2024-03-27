@@ -13,6 +13,7 @@ import (
 var Validators = map[*regexp.Regexp]func(match []string, value *generic.Value) error{
 	regexp.MustCompile("^text$"):                           textValidator,
 	regexp.MustCompile("^alpha$"):                          alphaValidator,
+	regexp.MustCompile("^name$"):                           nameValidator,
 	regexp.MustCompile("^digit$"):                          digitValidator,
 	regexp.MustCompile("^alphanumeric$"):                   alphaNumericValidator,
 	regexp.MustCompile("^required$"):                       requiredValidator,
@@ -261,6 +262,15 @@ func lenValidator(match []string, value *generic.Value) error {
 			return fmt.Errorf("is  equal to %d", size)
 		}
 	}
+	return nil
+}
+
+func nameValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if !regexp.MustCompile(`^[a-zA-Z]+(?:[\s-][a-zA-Z]+)*$`).MatchString(v) {
+		return fmt.Errorf("is not valid name")
+	}
+
 	return nil
 }
 
