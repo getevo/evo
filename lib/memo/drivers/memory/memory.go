@@ -54,7 +54,7 @@ func (driver) Register() error {
 			time.Sleep(sleep)
 			var now = time.Now().Unix()
 			items.Range(func(key, value any) bool {
-				if key.(item).expires < now {
+				if value.(item).expires < now {
 					items.Delete(key)
 				}
 				return true
