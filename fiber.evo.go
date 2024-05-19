@@ -255,3 +255,13 @@ func RedirectPermanent(path, to string) {
 func RedirectTemporary(path, to string) {
 	Redirect(path, to, 302)
 }
+
+// Static serves files from the file system
+func Static(path string, dir string, config ...fiber.Static) fiber.Router {
+	if app == nil {
+		panic("Access object before call Setup()")
+	}
+	var route fiber.Router
+	route = app.Static(path, dir, config...)
+	return route
+}

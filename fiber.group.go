@@ -115,3 +115,16 @@ func (grp *group) Group(prefix string, handlers ...Handler) group {
 	}
 	return gp
 }
+
+// Static serves files from the file system
+func (grp *group) Static(path string, dir string, config ...fiber.Static) group {
+	if app == nil {
+		panic("Access object before call Setup()")
+	}
+	var route fiber.Router
+	route = app.Static(path, dir, config...)
+	gp := group{
+		app: &route,
+	}
+	return gp
+}
