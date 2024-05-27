@@ -2,6 +2,7 @@ package evo
 
 import (
 	"fmt"
+	"github.com/getevo/evo/v2/lib/errors"
 	"net/url"
 	"reflect"
 	"strings"
@@ -135,7 +136,29 @@ func (r *Request) WriteResponse(resp ...any) {
 				r._writeResponse(r.Response)
 				return
 			}
+			if v, ok := instance.(errors.HTTPError); ok {
+				if v.StatusCode > 0 {
+					r.Status(v.StatusCode)
+				}
+				if len(v.Cookies) > 0 {
+					for idx := range v.Cookies {
+						r.SetRawCookie(v.Cookies[idx])
+					}
+				}
+				if v.ContentType != "" {
+					r.SetHeader("Content-Type", v.ContentType)
+				} else {
+					r.SetHeader("Content-Type", fiber.MIMEApplicationJSONCharsetUTF8)
+				}
 
+				if len(v.Headers) > 0 {
+					for header, value := range v.Headers {
+						r.SetHeader(header, value)
+					}
+				}
+				r.Write(v.Data)
+				return
+			}
 			if v, ok := instance.(outcome.Response); ok {
 
 				if v.StatusCode > 0 {
