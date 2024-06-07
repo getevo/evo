@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 )
 
@@ -38,6 +39,7 @@ var Validators = map[*regexp.Regexp]func(match []string, value *generic.Value) e
 	regexp.MustCompile(`^domain$`):                         domainValidator,
 	regexp.MustCompile(`^url$`):                            urlValidator,
 	regexp.MustCompile(`^ip$`):                             ipValidator,
+	regexp.MustCompile(`^date$`):                           dateValidator,
 }
 
 var enumRegex = regexp.MustCompile(`(?m)enum\(([^)]+)\)`)
@@ -387,6 +389,14 @@ func regexValidator(match []string, value *generic.Value) error {
 	}
 	if !regexp.MustCompile(match[1]).MatchString(v) {
 		return fmt.Errorf("is not valid %s", v)
+	}
+	return nil
+}
+
+func dateValidator(match []string, value *generic.Value) error {
+	_, err := time.Parse(time.RFC3339, value.String())
+	if err != nil {
+		return fmt.Errorf("invalid date, date expected be in RFC3339 format")
 	}
 	return nil
 }
