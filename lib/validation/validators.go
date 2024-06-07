@@ -2,13 +2,21 @@ package validation
 
 import (
 	"fmt"
+	"github.com/getevo/evo/v2/lib/db"
 	"github.com/getevo/evo/v2/lib/generic"
+	"gorm.io/gorm"
+	"gorm.io/gorm/schema"
 	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
 	"unicode"
 )
+
+var DBValidators = map[*regexp.Regexp]func(match []string, value *generic.Value, stmt *gorm.Statement, field *schema.Field) error{
+	regexp.MustCompile("^unique$"): uniqueValidator,
+	regexp.MustCompile("^fk$"):     foreignKeyValidator,
+}
 
 var Validators = map[*regexp.Regexp]func(match []string, value *generic.Value) error{
 	regexp.MustCompile("^text$"):                           textValidator,
@@ -27,6 +35,26 @@ var Validators = map[*regexp.Regexp]func(match []string, value *generic.Value) e
 	regexp.MustCompile(`^domain$`):                         domainValidator,
 	regexp.MustCompile(`^url$`):                            urlValidator,
 	regexp.MustCompile(`^ip$`):                             ipValidator,
+}
+
+func uniqueValidator(match []string, value *generic.Value, stmt *gorm.Statement, field *schema.Field) error {
+	var c int64
+	db.Where(field.DBName+" = ?", value.Input).Table(stmt.Table).Count(&c)
+	if c > 0 {
+		return fmt.Errorf("duplicate entry")
+	}
+	return nil
+}
+
+func foreignKeyValidator(match []string, value *generic.Value, stmt *gorm.Statement, field *schema.Field) error {
+	var c int64
+	//field.Tag.Get("")
+	//scm.Find()
+	db.Where(field.DBName+" = ?", value.Input).Table(stmt.Table).Count(&c)
+	if c > 0 {
+		return fmt.Errorf("duplicate entry")
+	}
+	return nil
 }
 
 func textValidator(match []string, value *generic.Value) error {

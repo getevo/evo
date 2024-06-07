@@ -2,6 +2,7 @@ package validation
 
 import (
 	"fmt"
+	"github.com/getevo/evo/v2/lib/db"
 	"github.com/getevo/evo/v2/lib/generic"
 	"reflect"
 )
@@ -36,6 +37,25 @@ func validateField(g *generic.Value, field *reflect.StructField) error {
 	validators := parseValidators(field.Tag.Get("validation"))
 	for _, validator := range validators {
 		var found = false
+		for r, fn := range DBValidators {
+			if match := r.FindStringSubmatch(validator); len(match) > 0 {
+				found = true
+				var stmt = db.Model(g.Input).Statement
+				var err = stmt.Parse(g.Input)
+				if err != nil {
+					return err
+				}
+
+				err = fn(match, &value, stmt, stmt.Schema.FieldsByName[field.Name])
+				tag := field.Tag.Get("json")
+				if tag == "" {
+					tag = field.Name
+				}
+				if err != nil {
+					return fmt.Errorf("%s %s", tag, err)
+				}
+			}
+		}
 		for r, fn := range Validators {
 			if match := r.FindStringSubmatch(validator); len(match) > 0 {
 				found = true
