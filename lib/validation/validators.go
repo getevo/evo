@@ -3,10 +3,12 @@ package validation
 import (
 	"fmt"
 	"github.com/getevo/evo/v2/lib/db"
+	scm "github.com/getevo/evo/v2/lib/db/schema"
 	"github.com/getevo/evo/v2/lib/generic"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 	"net/url"
+	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -16,6 +18,7 @@ import (
 var DBValidators = map[*regexp.Regexp]func(match []string, value *generic.Value, stmt *gorm.Statement, field *schema.Field) error{
 	regexp.MustCompile("^unique$"): uniqueValidator,
 	regexp.MustCompile("^fk$"):     foreignKeyValidator,
+	regexp.MustCompile("^enum$"):   enumValidator,
 }
 
 var Validators = map[*regexp.Regexp]func(match []string, value *generic.Value) error{
@@ -37,7 +40,36 @@ var Validators = map[*regexp.Regexp]func(match []string, value *generic.Value) e
 	regexp.MustCompile(`^ip$`):                             ipValidator,
 }
 
+var enumRegex = regexp.MustCompile(`(?m)enum\(([^)]+)\)`)
+var enumBodyRegex = regexp.MustCompile(`(?m)'([^']*)'`)
+
+func enumValidator(match []string, value *generic.Value, stmt *gorm.Statement, field *schema.Field) error {
+	var v = value.String()
+	if field.StructField.Type.Kind() == reflect.Ptr && v == "<nil>" {
+		return nil
+	}
+	var tag = field.Tag.Get("gorm")
+	var expected = ""
+	if tag != "" {
+		var enumMatch = enumRegex.FindAllStringSubmatch(tag, 1)
+		if len(enumMatch) == 1 {
+			var values = enumBodyRegex.FindAllStringSubmatch(enumMatch[0][1], -1)
+			for _, item := range values {
+				expected += "," + item[1]
+				if item[1] == v {
+					return nil
+				}
+			}
+		}
+	}
+	return fmt.Errorf("invalid value, expected values are: %s", strings.TrimLeft(expected, ","))
+}
+
 func uniqueValidator(match []string, value *generic.Value, stmt *gorm.Statement, field *schema.Field) error {
+	if field.StructField.Type.Kind() == reflect.Ptr && value.String() == "<nil>" {
+		return nil
+	}
+
 	var c int64
 	db.Where(field.DBName+" = ?", value.Input).Table(stmt.Table).Count(&c)
 	if c > 0 {
@@ -47,12 +79,17 @@ func uniqueValidator(match []string, value *generic.Value, stmt *gorm.Statement,
 }
 
 func foreignKeyValidator(match []string, value *generic.Value, stmt *gorm.Statement, field *schema.Field) error {
+	if field.StructField.Type.Kind() == reflect.Ptr && value.String() == "<nil>" {
+		return nil
+	}
 	var c int64
-	//field.Tag.Get("")
-	//scm.Find()
-	db.Where(field.DBName+" = ?", value.Input).Table(stmt.Table).Count(&c)
-	if c > 0 {
-		return fmt.Errorf("duplicate entry")
+	if foreignTable, ok := field.TagSettings["FK"]; ok {
+		if foreignModel := scm.Find(foreignTable); foreignModel != nil {
+			db.Where(foreignModel.PrimaryKey[0]+" = ?", value.Input).Table(foreignTable).Count(&c)
+			if c == 0 {
+				return fmt.Errorf("value does not match foreign key")
+			}
+		}
 	}
 	return nil
 }
