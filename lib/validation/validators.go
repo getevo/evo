@@ -78,7 +78,7 @@ func uniqueValidator(match []string, value *generic.Value, stmt *gorm.Statement,
 	var c int64
 	var model = db.Table(stmt.Table).Where(field.DBName+" = ?", value.Input)
 	if !zero {
-		model = model.Where(stmt.Schema.PrioritizedPrimaryField.DBName+" = ?", of)
+		model = model.Where(stmt.Schema.PrioritizedPrimaryField.DBName+" != ?", of)
 	}
 	model.Count(&c)
 	if c > 0 {
