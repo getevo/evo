@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"context"
 	"fmt"
 	"github.com/getevo/evo/v2/lib/db"
 	scm "github.com/getevo/evo/v2/lib/db/schema"
@@ -72,8 +73,14 @@ func uniqueValidator(match []string, value *generic.Value, stmt *gorm.Statement,
 		return nil
 	}
 
+	of, zero := stmt.Schema.PrioritizedPrimaryField.ValueOf(context.Background(), reflect.ValueOf(stmt.Model))
+
 	var c int64
-	db.Where(field.DBName+" = ?", value.Input).Table(stmt.Table).Count(&c)
+	var model = db.Table(stmt.Table).Where(field.DBName+" = ?", value.Input)
+	if !zero {
+		model = model.Where(stmt.Schema.PrioritizedPrimaryField.DBName+" = ?", of)
+	}
+	model.Count(&c)
 	if c > 0 {
 		return fmt.Errorf("duplicate entry")
 	}
