@@ -80,7 +80,7 @@ func uniqueValidator(match []string, value *generic.Value, stmt *gorm.Statement,
 	if !zero {
 		model = model.Where(stmt.Schema.PrioritizedPrimaryField.DBName+" != ?", of)
 	}
-	model.Count(&c)
+	model.Debug().Count(&c)
 	if c > 0 {
 		return fmt.Errorf("duplicate entry")
 	}
