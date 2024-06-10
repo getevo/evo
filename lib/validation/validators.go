@@ -74,7 +74,7 @@ func uniqueValidator(match []string, value *generic.Value, stmt *gorm.Statement,
 	}
 
 	of, zero := stmt.Schema.PrioritizedPrimaryField.ValueOf(context.Background(), reflect.ValueOf(stmt.Model))
-
+	fmt.Println("unique validator is called")
 	var c int64
 	var model = db.Debug().Table(stmt.Table).Where(field.DBName+" = ?", value.Input)
 	if !zero {
