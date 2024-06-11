@@ -72,7 +72,9 @@ func uniqueValidator(match []string, value *generic.Value, stmt *gorm.Statement,
 	if field.StructField.Type.Kind() == reflect.Ptr && value.String() == "<nil>" {
 		return nil
 	}
-
+	if !field.Unique && value.String() == "" {
+		return nil
+	}
 	of, zero := stmt.Schema.PrioritizedPrimaryField.ValueOf(context.Background(), reflect.ValueOf(stmt.Model))
 	var c int64
 	var model = db.Table(stmt.Table).Where(field.DBName+" = ?", value.Input)
