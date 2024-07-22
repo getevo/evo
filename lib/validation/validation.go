@@ -4,35 +4,31 @@ import (
 	"fmt"
 	"github.com/getevo/evo/v2/lib/db"
 	"github.com/getevo/evo/v2/lib/generic"
-	"reflect"
+	"gorm.io/gorm/schema"
 )
 
 func Struct(input interface{}, fields ...string) []error {
 	var errors []error
 	var g = generic.Parse(input)
-	if len(fields) == 0 {
-		fields = g.FieldNames()
-	}
 
-	for _, field := range g.Props() {
-		for _, f := range fields {
-			if field.Name == f {
-				if field.Tag.Get("validation") != "" {
+	var stmt = db.Model(input).Statement
+	_ = stmt.Parse(input)
 
-					var err = validateField(&g, &field)
-					if err != nil {
-						errors = append(errors, err)
-					}
-				}
-				break
+	for idx, _ := range stmt.Schema.Fields {
+		field := stmt.Schema.Fields[idx]
+		if field.Tag.Get("validation") != "" {
+			var err = validateField(&g, field)
+			if err != nil {
+				errors = append(errors, err)
 			}
 		}
+
 	}
 
 	return errors
 }
 
-func validateField(g *generic.Value, field *reflect.StructField) error {
+func validateField(g *generic.Value, field *schema.Field) error {
 	var value = g.Prop(field.Name)
 	validators := parseValidators(field.Tag.Get("validation"))
 	for _, validator := range validators {
