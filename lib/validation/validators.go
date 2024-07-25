@@ -71,6 +71,9 @@ func enumValidator(match []string, value *generic.Value, stmt *gorm.Statement, f
 }
 
 func afterValidator(match []string, value *generic.Value, stmt *gorm.Statement, field *schema.Field) error {
+	if value.String() == "" {
+		return nil
+	}
 	var srcVal, err = value.Time()
 	if err != nil {
 		return fmt.Errorf("invalid date, date expected be in RFC3339 format")
@@ -95,6 +98,9 @@ func afterValidator(match []string, value *generic.Value, stmt *gorm.Statement, 
 }
 
 func beforeValidator(match []string, value *generic.Value, stmt *gorm.Statement, field *schema.Field) error {
+	if value.String() == "" {
+		return nil
+	}
 	var srcVal, err = value.Time()
 	if err != nil {
 		return fmt.Errorf("invalid date, date expected be in RFC3339 format")
@@ -454,6 +460,10 @@ func regexValidator(match []string, value *generic.Value) error {
 }
 
 func dateValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" {
+		return nil
+	}
 	_, err := value.Time()
 	if err != nil {
 		return fmt.Errorf("invalid date, date expected be in RFC3339 format")
