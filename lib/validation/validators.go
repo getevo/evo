@@ -461,6 +461,7 @@ func regexValidator(match []string, value *generic.Value) error {
 
 func dateValidator(match []string, value *generic.Value) error {
 	var v = value.String()
+	fmt.Println(v)
 	if v == "" {
 		return nil
 	}
