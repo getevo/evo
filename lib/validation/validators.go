@@ -71,7 +71,8 @@ func enumValidator(match []string, value *generic.Value, stmt *gorm.Statement, f
 }
 
 func afterValidator(match []string, value *generic.Value, stmt *gorm.Statement, field *schema.Field) error {
-	if value.String() == "" {
+	var t = value.String()
+	if t == "" || strings.HasPrefix("0000-00-00", t) {
 		return nil
 	}
 	var srcVal, err = value.Time()
@@ -98,7 +99,8 @@ func afterValidator(match []string, value *generic.Value, stmt *gorm.Statement, 
 }
 
 func beforeValidator(match []string, value *generic.Value, stmt *gorm.Statement, field *schema.Field) error {
-	if value.String() == "" {
+	var t = value.String()
+	if t == "" || strings.HasPrefix("0000-00-00", t) {
 		return nil
 	}
 	var srcVal, err = value.Time()
@@ -460,9 +462,8 @@ func regexValidator(match []string, value *generic.Value) error {
 }
 
 func dateValidator(match []string, value *generic.Value) error {
-	var v = value.String()
-	fmt.Println(v)
-	if v == "" {
+	var t = value.String()
+	if t == "" || strings.HasPrefix("0000-00-00", t) {
 		return nil
 	}
 	_, err := value.Time()
