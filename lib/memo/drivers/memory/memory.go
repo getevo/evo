@@ -2,13 +2,13 @@ package memory
 
 import (
 	"fmt"
+	"github.com/getevo/evo/v2/lib/settings"
 	"sync"
 	"time"
 
 	"github.com/getevo/evo/v2/lib/log"
 	"github.com/getevo/evo/v2/lib/memo/kv"
 	"github.com/getevo/evo/v2/lib/serializer"
-	"github.com/getevo/evo/v2/lib/settings"
 )
 
 var Driver = driver{}

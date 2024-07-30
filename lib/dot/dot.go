@@ -5,6 +5,8 @@ import (
 	"github.com/getevo/evo/v2/lib/generic"
 	"github.com/getevo/evo/v2/lib/reflections"
 	"github.com/getevo/evo/v2/lib/text"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"reflect"
 	"regexp"
 	"strings"
@@ -91,8 +93,6 @@ func Set(input any, prop string, value any) error {
 	} else {
 		obj = val
 	}
-	// fmt.Println(arr)
-
 	last, arr := arr[len(arr)-1], arr[:len(arr)-1]
 
 	for _, key := range arr {
@@ -131,7 +131,7 @@ func setProperty(obj any, prop string, val any) error {
 	if reflect.TypeOf(obj).Kind() != reflect.Ptr {
 		return errors.New("object must be a pointer to a struct")
 	}
-	prop = strings.Title(prop)
+	prop = cases.Title(language.English, cases.NoLower).String(prop)
 
 	return reflections.SetField(obj, prop, val)
 }

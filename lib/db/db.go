@@ -9,11 +9,16 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+var Enabled = false
+
 var (
 	db *gorm.DB
 )
 
 func Register(obj *gorm.DB) {
+	if obj != nil {
+		Enabled = true
+	}
 	db = obj
 }
 
@@ -516,4 +521,8 @@ func SetDefaultCharset(charset string) {
 
 func SetDefaultEngine(engine string) {
 	ddl.DefaultEngine = engine
+}
+
+func IsEnabled() bool {
+	return Enabled
 }

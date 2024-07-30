@@ -2,13 +2,13 @@ package evo
 
 import (
 	"fmt"
+	"github.com/getevo/evo/v2/lib/settings"
 	"log"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/getevo/evo/v2/lib/db/schema"
-	"github.com/getevo/evo/v2/lib/settings"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/sqlite"
 	"gorm.io/driver/sqlserver"

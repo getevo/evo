@@ -1,4 +1,4 @@
-package settings
+package settings_old
 
 import (
 	"github.com/gofiber/fiber/v2"

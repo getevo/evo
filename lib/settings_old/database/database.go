@@ -5,8 +5,6 @@ import (
 	"github.com/getevo/evo/v2/lib/args"
 	"github.com/getevo/evo/v2/lib/db"
 	"github.com/getevo/evo/v2/lib/log"
-	"github.com/getevo/evo/v2/lib/settings"
-
 	"strings"
 	"sync"
 
