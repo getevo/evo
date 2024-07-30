@@ -1,14 +1,29 @@
 package validation
 
 import (
+	"context"
 	"fmt"
+	"github.com/getevo/evo/v2/lib/db"
+	scm "github.com/getevo/evo/v2/lib/db/schema"
 	"github.com/getevo/evo/v2/lib/generic"
+	"gorm.io/gorm"
+	"gorm.io/gorm/schema"
 	"net/url"
+	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 )
+
+var DBValidators = map[*regexp.Regexp]func(match []string, value *generic.Value, stmt *gorm.Statement, field *schema.Field) error{
+	regexp.MustCompile("^unique$"):          uniqueValidator,
+	regexp.MustCompile("^fk$"):              foreignKeyValidator,
+	regexp.MustCompile("^enum$"):            enumValidator,
+	regexp.MustCompile(`^before\((\w+)\)$`): beforeValidator,
+	regexp.MustCompile(`^after\((\w+)\)$`):  afterValidator,
+}
 
 var Validators = map[*regexp.Regexp]func(match []string, value *generic.Value) error{
 	regexp.MustCompile("^text$"):                           textValidator,
@@ -27,6 +42,126 @@ var Validators = map[*regexp.Regexp]func(match []string, value *generic.Value) e
 	regexp.MustCompile(`^domain$`):                         domainValidator,
 	regexp.MustCompile(`^url$`):                            urlValidator,
 	regexp.MustCompile(`^ip$`):                             ipValidator,
+	regexp.MustCompile(`^date$`):                           dateValidator,
+}
+
+var enumRegex = regexp.MustCompile(`(?m)enum\(([^)]+)\)`)
+var enumBodyRegex = regexp.MustCompile(`(?m)'([^']*)'`)
+
+func enumValidator(match []string, value *generic.Value, stmt *gorm.Statement, field *schema.Field) error {
+	var v = value.String()
+	if field.StructField.Type.Kind() == reflect.Ptr && v == "<nil>" {
+		return nil
+	}
+	var tag = field.Tag.Get("gorm")
+	var expected = ""
+	if tag != "" {
+		var enumMatch = enumRegex.FindAllStringSubmatch(tag, 1)
+		if len(enumMatch) == 1 {
+			var values = enumBodyRegex.FindAllStringSubmatch(enumMatch[0][1], -1)
+			for _, item := range values {
+				expected += "," + item[1]
+				if item[1] == v {
+					return nil
+				}
+			}
+		}
+	}
+	return fmt.Errorf("invalid value, expected values are: %s", strings.TrimLeft(expected, ","))
+}
+
+func afterValidator(match []string, value *generic.Value, stmt *gorm.Statement, field *schema.Field) error {
+	var t = value.String()
+	if t == "" || strings.HasPrefix("0000-00-00", t) {
+		return nil
+	}
+	var srcVal, err = value.Time()
+	if err != nil {
+		return fmt.Errorf("invalid date, date expected be in RFC3339 format")
+	}
+	var f, ok = stmt.Schema.FieldsByName[match[1]]
+	if !ok {
+		return fmt.Errorf("field %s not found", match[1])
+	}
+	dst, zero := f.ValueOf(context.Background(), reflect.ValueOf(stmt.Model))
+	v := reflect.ValueOf(dst)
+	for v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+	if !zero {
+		if dstVal, ok := v.Interface().(time.Time); ok {
+			if !srcVal.After(dstVal) {
+				return fmt.Errorf("%s must be before %s", field.Name, match[1])
+			}
+		}
+	}
+	return nil
+}
+
+func beforeValidator(match []string, value *generic.Value, stmt *gorm.Statement, field *schema.Field) error {
+	var t = value.String()
+	if t == "" || strings.HasPrefix("0000-00-00", t) {
+		return nil
+	}
+	var srcVal, err = value.Time()
+	if err != nil {
+		return fmt.Errorf("invalid date, date expected be in RFC3339 format")
+	}
+	var f, ok = stmt.Schema.FieldsByName[match[1]]
+	if !ok {
+		return fmt.Errorf("field %s not found", match[1])
+	}
+	dst, zero := f.ValueOf(context.Background(), reflect.ValueOf(stmt.Model))
+	v := reflect.ValueOf(dst)
+	for v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+	if !zero {
+		if dstVal, ok := v.Interface().(time.Time); ok {
+			if !srcVal.Before(dstVal) {
+				return fmt.Errorf("%s must be before %s", field.Name, match[1])
+			}
+		}
+	}
+
+	return nil
+}
+
+func uniqueValidator(match []string, value *generic.Value, stmt *gorm.Statement, field *schema.Field) error {
+	if field.StructField.Type.Kind() == reflect.Ptr && value.String() == "<nil>" {
+		return nil
+	}
+	if !field.Unique && value.String() == "" {
+		return nil
+	}
+	of, zero := stmt.Schema.PrioritizedPrimaryField.ValueOf(context.Background(), reflect.ValueOf(stmt.Model))
+	var c int64
+	//TODO: check for unique index
+	var model = db.Table(stmt.Table).Where(field.DBName+" = ?", value.Input)
+	if !zero {
+		model = model.Where(stmt.Schema.PrioritizedPrimaryField.DBName+" != ?", of)
+	}
+	model.Count(&c)
+	if c > 0 {
+		return fmt.Errorf("duplicate entry")
+	}
+	return nil
+}
+
+func foreignKeyValidator(match []string, value *generic.Value, stmt *gorm.Statement, field *schema.Field) error {
+	if field.StructField.Type.Kind() == reflect.Ptr && value.String() == "<nil>" {
+		return nil
+	}
+	var c int64
+	if foreignTable, ok := field.TagSettings["FK"]; ok {
+		if foreignModel := scm.Find(foreignTable); foreignModel != nil {
+			db.Where(foreignModel.PrimaryKey[0]+" = ?", value.Input).Table(foreignTable).Count(&c)
+			if c == 0 {
+				return fmt.Errorf("value does not match foreign key")
+			}
+		}
+	}
+	return nil
 }
 
 func textValidator(match []string, value *generic.Value) error {
@@ -322,6 +457,18 @@ func regexValidator(match []string, value *generic.Value) error {
 	}
 	if !regexp.MustCompile(match[1]).MatchString(v) {
 		return fmt.Errorf("is not valid %s", v)
+	}
+	return nil
+}
+
+func dateValidator(match []string, value *generic.Value) error {
+	var t = value.String()
+	if t == "" || strings.HasPrefix("0000-00-00", t) {
+		return nil
+	}
+	_, err := value.Time()
+	if err != nil {
+		return fmt.Errorf("invalid date, date expected be in RFC3339 format")
 	}
 	return nil
 }
