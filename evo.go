@@ -1,6 +1,7 @@
 package evo
 
 import (
+	"github.com/getevo/evo/v2/lib/application"
 	"github.com/getevo/evo/v2/lib/settings"
 	"log"
 
@@ -16,9 +17,11 @@ var (
 )
 var http = HTTPConfig{}
 var fiberConfig = fiber.Config{}
+var Application *application.App
 
 // Setup set up the EVO app
 func Setup() {
+	Application = application.GetInstance()
 	var err = settings.Init()
 	if err != nil {
 		log.Fatal(err)
@@ -44,6 +47,7 @@ func Setup() {
 
 // Run start EVO Server
 func Run() {
+	Application.Run()
 	if Any != nil {
 		app.Use(func(ctx *fiber.Ctx) error {
 			r := Upgrade(ctx)
@@ -69,4 +73,8 @@ func Run() {
 // GetFiber return fiber instance
 func GetFiber() *fiber.App {
 	return app
+}
+
+func Register(applications ...application.Application) *application.App {
+	return Application.Register(applications...)
 }
