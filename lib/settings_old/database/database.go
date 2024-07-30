@@ -5,6 +5,7 @@ import (
 	"github.com/getevo/evo/v2/lib/args"
 	"github.com/getevo/evo/v2/lib/db"
 	"github.com/getevo/evo/v2/lib/log"
+	"github.com/getevo/evo/v2/lib/settings_old"
 	"strings"
 	"sync"
 
@@ -206,7 +207,7 @@ func (config *Database) Register(sets ...any) error {
 		for _, s := range sets {
 			var v = generic.Parse(s)
 			if v.Is("settings.Setting") {
-				var setting = settings.Setting{}
+				var setting = settings_old.Setting{}
 				var err = v.Cast(&setting)
 				if err != nil {
 					return err

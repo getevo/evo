@@ -2,6 +2,7 @@ package nats
 
 import (
 	"fmt"
+	"github.com/getevo/evo/v2/lib/settings"
 	"time"
 
 	"github.com/getevo/evo/v2/lib/log"
@@ -60,7 +61,7 @@ func (NATS) Register() error {
 	if nc != nil {
 		return nil
 	}
-	settings.Register(
+	_ = settings.Register(
 		settings.SettingDomain{
 			Title:       "NATS",
 			Domain:      "NATS",

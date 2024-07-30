@@ -6,6 +6,7 @@ import (
 	"github.com/getevo/evo/v2/lib/memo/kv"
 	"github.com/getevo/evo/v2/lib/pubsub"
 	"github.com/getevo/evo/v2/lib/serializer"
+	"github.com/getevo/evo/v2/lib/settings"
 	"github.com/go-redis/redis/v8"
 	"strings"
 	"time"
@@ -58,7 +59,7 @@ func (driver) Register() error {
 	if Client != nil {
 		return nil
 	}
-	settings.Register(settings.Setting{
+	_ = settings.Register(settings.Setting{
 		Domain:      "CACHE",
 		Name:        "REDIS_ADDRESS",
 		Title:       "Redis server(s) address",
