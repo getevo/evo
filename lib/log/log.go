@@ -1,8 +1,8 @@
 package log
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/getevo/json"
 	"os"
 	"reflect"
 	"runtime"

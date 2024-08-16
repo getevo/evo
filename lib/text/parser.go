@@ -1,7 +1,7 @@
 package text
 
 import (
-	"encoding/json"
+	"github.com/getevo/json"
 	"regexp"
 	"strings"
 )

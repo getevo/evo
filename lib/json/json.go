@@ -3,9 +3,9 @@ package json
 import (
 	"context"
 	"database/sql/driver"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/getevo/json"
 	"github.com/tidwall/gjson"
 	"io"
 	"reflect"

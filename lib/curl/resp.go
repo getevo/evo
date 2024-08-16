@@ -1,9 +1,9 @@
 package curl
 
 import (
-	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"github.com/getevo/json"
 	"io"
 	"net/http"
 	"os"

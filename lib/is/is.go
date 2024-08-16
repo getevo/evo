@@ -2,7 +2,7 @@ package is
 
 import (
 	"encoding/base64"
-	"encoding/json"
+	"github.com/getevo/json"
 	"math"
 	"net"
 	"net/url"
@@ -83,8 +83,8 @@ func Alpha(s string) bool {
 	return true
 }
 
-//UTFLetter check if the string contains only unicode letter characters.
-//Similar to IsAlpha but for all languages. Empty string is valid.
+// UTFLetter check if the string contains only unicode letter characters.
+// Similar to IsAlpha but for all languages. Empty string is valid.
 func UTFLetter(str string) bool {
 	for _, v := range str {
 		if !unicode.IsLetter(v) {
@@ -614,7 +614,7 @@ func StringLength(str string, min int, max int) bool {
 	return slen >= min && slen <= max
 }
 
-//Exists returns whether the given file or directory exists or not
+// Exists returns whether the given file or directory exists or not
 func Exists(path string) (bool, error) {
 	_, err := os.Stat(path)
 	if err == nil {

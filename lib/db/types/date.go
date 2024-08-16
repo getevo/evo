@@ -2,10 +2,10 @@ package types
 
 import (
 	"database/sql/driver"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/getevo/evo/v2/lib/date"
+	"github.com/getevo/json"
 	"strings"
 	"time"
 

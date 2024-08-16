@@ -3,9 +3,9 @@ package types
 import (
 	"context"
 	"database/sql/driver"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/getevo/json"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"

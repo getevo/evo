@@ -1,7 +1,7 @@
 package serializer
 
 import (
-	"encoding/json"
+	"github.com/getevo/json"
 	"github.com/kelindar/binary"
 )
 

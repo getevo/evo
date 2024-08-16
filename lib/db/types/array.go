@@ -2,8 +2,8 @@ package types
 
 import (
 	"database/sql/driver"
-	"encoding/json"
 	"fmt"
+	"github.com/getevo/json"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 )

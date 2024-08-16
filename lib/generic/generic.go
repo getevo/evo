@@ -2,8 +2,8 @@ package generic
 
 import (
 	"database/sql/driver"
-	"encoding/json"
 	"fmt"
+	"github.com/getevo/json"
 	"reflect"
 	"regexp"
 	"strconv"

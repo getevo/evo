@@ -1,6 +1,6 @@
 package curl
 
-import "encoding/json"
+import "github.com/getevo/json"
 
 type BasicAuth struct {
 	Username string

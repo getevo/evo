@@ -1,10 +1,10 @@
 package filesystem
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/getevo/evo/v2/lib/gpath"
 	"github.com/getevo/evo/v2/lib/storage/lib"
+	"github.com/getevo/json"
 	"io/fs"
 	"os"
 	"path/filepath"

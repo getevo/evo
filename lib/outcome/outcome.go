@@ -2,8 +2,8 @@ package outcome
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
+	"github.com/getevo/json"
 	"reflect"
 	"time"
 

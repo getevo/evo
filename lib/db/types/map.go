@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"context"
 	"database/sql/driver"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/getevo/json"
 	"strings"
 
 	"gorm.io/driver/mysql"

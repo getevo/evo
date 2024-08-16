@@ -2,11 +2,11 @@ package sftp
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	glob "github.com/ganbarodigital/go_glob"
 	"github.com/getevo/evo/v2/lib/storage/lib"
 	"github.com/getevo/evo/v2/lib/storage/sftp/client"
+	"github.com/getevo/json"
 	"sync"
 	"time"
 

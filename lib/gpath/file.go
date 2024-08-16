@@ -1,7 +1,7 @@
 package gpath
 
 import (
-	"encoding/json"
+	"github.com/getevo/json"
 	"os"
 	"time"
 )

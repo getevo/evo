@@ -2,13 +2,13 @@ package evo
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"encoding/xml"
 	"errors"
 	"fmt"
 	"github.com/getevo/evo/v2/lib/frm"
 	"github.com/getevo/evo/v2/lib/generic"
 	"github.com/getevo/evo/v2/lib/outcome"
+	"github.com/getevo/json"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/utils/v2"
 	"github.com/tidwall/gjson"

@@ -2,10 +2,10 @@ package ftp
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	glob "github.com/ganbarodigital/go_glob"
 	"github.com/getevo/evo/v2/lib/storage/lib"
+	"github.com/getevo/json"
 	ftp "github.com/jlaffaye/ftp"
 	"io/fs"
 	"path/filepath"

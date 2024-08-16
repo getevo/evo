@@ -1,8 +1,8 @@
 package frm
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/getevo/json"
 	"strings"
 )
 

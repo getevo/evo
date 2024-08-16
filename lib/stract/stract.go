@@ -1,7 +1,7 @@
 package stract
 
 import (
-	"encoding/json"
+	"github.com/getevo/json"
 	"io/ioutil"
 	"path/filepath"
 	"regexp"
