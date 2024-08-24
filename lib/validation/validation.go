@@ -1,10 +1,12 @@
 package validation
 
 import (
+	"context"
 	"fmt"
 	"github.com/getevo/evo/v2/lib/db"
 	"github.com/getevo/evo/v2/lib/generic"
 	"gorm.io/gorm/schema"
+	"reflect"
 )
 
 func Struct(input interface{}, fields ...string) []error {
@@ -17,6 +19,29 @@ func Struct(input interface{}, fields ...string) []error {
 	for idx, _ := range stmt.Schema.Fields {
 		field := stmt.Schema.Fields[idx]
 		if field.Tag.Get("validation") != "" {
+			var err = validateField(&g, field)
+			if err != nil {
+				errors = append(errors, err)
+			}
+		}
+
+	}
+
+	return errors
+}
+
+func StructNonZeroFields(input interface{}, fields ...string) []error {
+	var errors []error
+	var g = generic.Parse(input)
+
+	var stmt = db.Model(input).Statement
+	_ = stmt.Parse(input)
+	var ref = reflect.ValueOf(input)
+	for idx, _ := range stmt.Schema.Fields {
+		field := stmt.Schema.Fields[idx]
+		_, zero := field.ValueOf(context.Background(), ref)
+
+		if !zero && field.Tag.Get("validation") != "" {
 			var err = validateField(&g, field)
 			if err != nil {
 				errors = append(errors, err)
