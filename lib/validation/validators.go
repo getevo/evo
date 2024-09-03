@@ -27,7 +27,9 @@ var DBValidators = map[*regexp.Regexp]func(match []string, value *generic.Value,
 
 var Validators = map[*regexp.Regexp]func(match []string, value *generic.Value) error{
 	regexp.MustCompile("^text$"):                           textValidator,
+	regexp.MustCompile("^name$"):                           nameValidator,
 	regexp.MustCompile("^alpha$"):                          alphaValidator,
+	regexp.MustCompile("^latin$"):                          latinValidator,
 	regexp.MustCompile("^name$"):                           nameValidator,
 	regexp.MustCompile("^digit$"):                          digitValidator,
 	regexp.MustCompile("^alphanumeric$"):                   alphaNumericValidator,
@@ -43,6 +45,15 @@ var Validators = map[*regexp.Regexp]func(match []string, value *generic.Value) e
 	regexp.MustCompile(`^url$`):                            urlValidator,
 	regexp.MustCompile(`^ip$`):                             ipValidator,
 	regexp.MustCompile(`^date$`):                           dateValidator,
+}
+
+func latinValidator(match []string, value *generic.Value) error {
+	var v = regexp.MustCompile(`^\p{L}*$`)
+	matchString := v.MatchString(value.String())
+	if !matchString {
+		return fmt.Errorf("is not latin")
+	}
+	return nil
 }
 
 var enumRegex = regexp.MustCompile(`(?m)enum\(([^)]+)\)`)
@@ -402,7 +413,7 @@ func lenValidator(match []string, value *generic.Value) error {
 
 func nameValidator(match []string, value *generic.Value) error {
 	var v = value.String()
-	if !regexp.MustCompile(`^[a-zA-Z]+(?:[\s-][a-zA-Z]+)*$`).MatchString(v) {
+	if !regexp.MustCompile(`^[\p{L} .'\-]+$`).MatchString(v) {
 		return fmt.Errorf("is not valid name")
 	}
 
