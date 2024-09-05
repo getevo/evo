@@ -2,7 +2,7 @@ module github.com/getevo/evo/v2
 
 go 1.22
 
-toolchain go1.22.6
+toolchain go1.22.0
 
 require (
 	github.com/alecthomas/repr v0.2.0
