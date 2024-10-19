@@ -342,7 +342,7 @@ func intValidator(match []string, value *generic.Value) error {
 
 func numericalValidator(match []string, value *generic.Value) error {
 	var s = value.String()
-	if s == "" {
+	if s == "" || s == "<nil>" {
 		return nil
 	}
 	var v = value.Float64()
@@ -379,6 +379,9 @@ func numericalValidator(match []string, value *generic.Value) error {
 
 func lenValidator(match []string, value *generic.Value) error {
 	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
 	var size = len(v)
 	t, _ := strconv.ParseInt(match[2], 10, 6)
 	length := int(t)
@@ -422,6 +425,9 @@ func nameValidator(match []string, value *generic.Value) error {
 
 func alphaValidator(match []string, value *generic.Value) error {
 	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
 	for _, r := range v {
 		if !((r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || r == ' ') {
 			return fmt.Errorf("is not alpha")
@@ -432,6 +438,9 @@ func alphaValidator(match []string, value *generic.Value) error {
 
 func alphaNumericValidator(match []string, value *generic.Value) error {
 	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
 	for _, r := range v {
 		if !((r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == ' ') {
 			return fmt.Errorf("is not alpha")
@@ -444,6 +453,9 @@ var emailRegex = regexp.MustCompile(`(?i)^[a-z0-9_\-.]{2,}(\+\d+)?@[a-z0-9_-]{2,
 
 func emailValidator(match []string, value *generic.Value) error {
 	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
 	if strings.TrimSpace(v) == "" {
 		return nil
 	}
@@ -455,7 +467,7 @@ func emailValidator(match []string, value *generic.Value) error {
 
 func requiredValidator(match []string, value *generic.Value) error {
 	var v = value.String()
-	if strings.TrimSpace(v) == "" {
+	if strings.TrimSpace(v) == "" || v == "<nil>" {
 		return fmt.Errorf("is required")
 	}
 	return nil
