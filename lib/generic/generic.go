@@ -111,6 +111,9 @@ func (v Value) ParseJSON(in any) error {
 //	@return string
 func (v Value) String() string {
 	var value = v.direct()
+	if value == nil {
+		return ""
+	}
 	return fmt.Sprint(value)
 }
 
