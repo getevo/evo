@@ -61,7 +61,7 @@ var enumBodyRegex = regexp.MustCompile(`(?m)'([^']*)'`)
 
 func enumValidator(match []string, value *generic.Value, stmt *gorm.Statement, field *schema.Field) error {
 	var v = value.String()
-	if field.StructField.Type.Kind() == reflect.Ptr && v == "<nil>" {
+	if field.StructField.Type.Kind() == reflect.Ptr && (v == "<nil>" || v == "") {
 		return nil
 	}
 	var tag = field.Tag.Get("gorm")
@@ -139,7 +139,7 @@ func beforeValidator(match []string, value *generic.Value, stmt *gorm.Statement,
 }
 
 func uniqueValidator(match []string, value *generic.Value, stmt *gorm.Statement, field *schema.Field) error {
-	if field.StructField.Type.Kind() == reflect.Ptr && value.String() == "<nil>" && value.String() == "" {
+	if field.StructField.Type.Kind() == reflect.Ptr && (value.String() == "<nil>" || value.String() == "") {
 		return nil
 	}
 	if !field.Unique && value.String() == "" {
@@ -160,7 +160,7 @@ func uniqueValidator(match []string, value *generic.Value, stmt *gorm.Statement,
 }
 
 func foreignKeyValidator(match []string, value *generic.Value, stmt *gorm.Statement, field *schema.Field) error {
-	if field.StructField.Type.Kind() == reflect.Ptr && value.String() == "" && value.String() == "<nil>" {
+	if field.StructField.Type.Kind() == reflect.Ptr && (value.String() == "" || value.String() == "<nil>") {
 		return nil
 	}
 	var c int64
