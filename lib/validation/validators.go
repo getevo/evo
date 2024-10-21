@@ -139,7 +139,7 @@ func beforeValidator(match []string, value *generic.Value, stmt *gorm.Statement,
 }
 
 func uniqueValidator(match []string, value *generic.Value, stmt *gorm.Statement, field *schema.Field) error {
-	if field.StructField.Type.Kind() == reflect.Ptr && value.String() == "<nil>" {
+	if field.StructField.Type.Kind() == reflect.Ptr && value.String() == "<nil>" && value.String() == "" {
 		return nil
 	}
 	if !field.Unique && value.String() == "" {
