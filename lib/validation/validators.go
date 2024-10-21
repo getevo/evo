@@ -160,7 +160,7 @@ func uniqueValidator(match []string, value *generic.Value, stmt *gorm.Statement,
 }
 
 func foreignKeyValidator(match []string, value *generic.Value, stmt *gorm.Statement, field *schema.Field) error {
-	if field.StructField.Type.Kind() == reflect.Ptr && value.String() == "<nil>" {
+	if field.StructField.Type.Kind() == reflect.Ptr && value.String() == "" && value.String() == "<nil>" {
 		return nil
 	}
 	var c int64
