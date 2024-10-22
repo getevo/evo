@@ -195,7 +195,7 @@ func digitValidator(match []string, value *generic.Value) error {
 
 	var r = regexp.MustCompile("^[0-9]+$")
 	if !r.MatchString(v) {
-		return fmt.Errorf("invalid digit value: %s", v)
+		return fmt.Errorf("invalid digit value")
 	}
 
 	return nil
@@ -209,16 +209,16 @@ func ipValidator(match []string, value *generic.Value) error {
 	parts := strings.Split(v, ".")
 
 	if len(parts) != 4 {
-		return fmt.Errorf("invalid IP address: %s", v)
+		return fmt.Errorf("invalid IP address")
 	}
 
 	for _, x := range parts {
 		if i, err := strconv.Atoi(x); err == nil {
 			if i < 0 || i > 255 {
-				return fmt.Errorf("invalid IP address: %s", v)
+				return fmt.Errorf("invalid IP address")
 			}
 		} else {
-			return fmt.Errorf("invalid IP address: %s", v)
+			return fmt.Errorf("invalid IP address")
 		}
 
 	}
@@ -244,7 +244,7 @@ func domainValidator(match []string, value *generic.Value) error {
 	}
 	var regex = regexp.MustCompile(`(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]`)
 	if !regex.MatchString(v) {
-		return fmt.Errorf("invalid domain: %s", v)
+		return fmt.Errorf("invalid domain")
 	}
 	return nil
 }
@@ -463,7 +463,7 @@ func emailValidator(match []string, value *generic.Value) error {
 	if emailRegex.MatchString(v) {
 		return nil
 	}
-	return fmt.Errorf("invalid email %s", v)
+	return fmt.Errorf("invalid email")
 }
 
 func requiredValidator(match []string, value *generic.Value) error {
@@ -480,7 +480,7 @@ func regexValidator(match []string, value *generic.Value) error {
 		return nil
 	}
 	if !regexp.MustCompile(match[1]).MatchString(v) {
-		return fmt.Errorf("is not valid %s", v)
+		return fmt.Errorf("format is not valid")
 	}
 	return nil
 }
