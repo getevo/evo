@@ -3,7 +3,6 @@ package validation
 import (
 	"context"
 	"fmt"
-	"github.com/getevo/evo/v2"
 	"github.com/getevo/evo/v2/lib/db"
 	scm "github.com/getevo/evo/v2/lib/db/schema"
 	"github.com/getevo/evo/v2/lib/generic"
@@ -29,9 +28,8 @@ var DBValidators = map[*regexp.Regexp]func(match []string, value *generic.Value,
 
 func uniqueColumnsValidator(match []string, value *generic.Value, stmt *gorm.Statement, field *schema.Field) error {
 	var columns = strings.Split(match[1], "|")
-	evo.Dump(columns)
-	evo.Dump(match)
-	var model = db.Debug().Table(stmt.Table)
+	var model = db.Table(stmt.Table)
+	var columnDbName []string
 	for _, item := range stmt.Schema.Fields {
 		for _, column := range columns {
 			if item.DBName == column || item.Name == column {
@@ -40,6 +38,7 @@ func uniqueColumnsValidator(match []string, value *generic.Value, stmt *gorm.Sta
 					return nil
 				}
 				model = model.Where("`"+item.DBName+"` = ?", dst)
+				columnDbName = append(columnDbName, item.DBName)
 			}
 		}
 	}
@@ -50,7 +49,7 @@ func uniqueColumnsValidator(match []string, value *generic.Value, stmt *gorm.Sta
 	var c int64
 	model.Count(&c)
 	if c > 0 {
-		return fmt.Errorf("duplicate value for %s", strings.Join(columns, ", "))
+		return fmt.Errorf("duplicate value for %s", strings.Join(columnDbName, ","))
 	}
 	return nil
 }
