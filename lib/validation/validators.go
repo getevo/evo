@@ -39,7 +39,7 @@ func uniqueColumnsValidator(match []string, value *generic.Value, stmt *gorm.Sta
 				if zero {
 					return nil
 				}
-				model = model.Where("`"+item.DataType+"` = ?", dst)
+				model = model.Where("`"+item.DBName+"` = ?", dst)
 			}
 		}
 	}
