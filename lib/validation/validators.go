@@ -28,7 +28,7 @@ var DBValidators = map[*regexp.Regexp]func(match []string, value *generic.Value,
 }
 
 func uniqueColumnsValidator(match []string, value *generic.Value, stmt *gorm.Statement, field *schema.Field) error {
-	var columns = strings.Split(match[1], ",")
+	var columns = strings.Split(match[1], "|")
 	evo.Dump(columns)
 	evo.Dump(match)
 	var model = db.Debug().Table(stmt.Table)
