@@ -30,7 +30,7 @@ var DBValidators = map[*regexp.Regexp]func(match []string, value *generic.Value,
 func uniqueColumnsValidator(match []string, value *generic.Value, stmt *gorm.Statement, field *schema.Field) error {
 	var columns = strings.Split(match[1], ",")
 	evo.Dump(columns)
-
+	evo.Dump(match)
 	var model = db.Debug().Table(stmt.Table)
 	for _, item := range stmt.Schema.Fields {
 		for _, column := range columns {
@@ -39,7 +39,7 @@ func uniqueColumnsValidator(match []string, value *generic.Value, stmt *gorm.Sta
 				if zero {
 					return nil
 				}
-				model = model.Where(column+" =?", dst)
+				model = model.Where("`"+item.DataType+"` = ?", dst)
 			}
 		}
 	}
