@@ -43,6 +43,10 @@ func uniqueColumnsValidator(match []string, value *generic.Value, stmt *gorm.Sta
 			}
 		}
 	}
+	of, zero := stmt.Schema.PrioritizedPrimaryField.ValueOf(context.Background(), reflect.ValueOf(stmt.Model))
+	if !zero {
+		model = model.Where(stmt.Schema.PrioritizedPrimaryField.DBName+" != ?", of)
+	}
 	var c int64
 	model.Count(&c)
 	if c > 0 {
