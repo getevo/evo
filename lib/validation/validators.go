@@ -3,6 +3,7 @@ package validation
 import (
 	"context"
 	"fmt"
+	"github.com/getevo/evo/v2"
 	"github.com/getevo/evo/v2/lib/db"
 	scm "github.com/getevo/evo/v2/lib/db/schema"
 	"github.com/getevo/evo/v2/lib/generic"
@@ -19,10 +20,35 @@ import (
 
 var DBValidators = map[*regexp.Regexp]func(match []string, value *generic.Value, stmt *gorm.Statement, field *schema.Field) error{
 	regexp.MustCompile("^unique$"):          uniqueValidator,
+	regexp.MustCompile("^unique:(.+)$"):     uniqueColumnsValidator,
 	regexp.MustCompile("^fk$"):              foreignKeyValidator,
 	regexp.MustCompile("^enum$"):            enumValidator,
 	regexp.MustCompile(`^before\((\w+)\)$`): beforeValidator,
 	regexp.MustCompile(`^after\((\w+)\)$`):  afterValidator,
+}
+
+func uniqueColumnsValidator(match []string, value *generic.Value, stmt *gorm.Statement, field *schema.Field) error {
+	var columns = strings.Split(match[1], ",")
+	evo.Dump(columns)
+
+	var model = db.Debug().Table(stmt.Table)
+	for _, item := range stmt.Schema.Fields {
+		for _, column := range columns {
+			if item.DBName == column || item.Name == column {
+				dst, zero := item.ValueOf(context.Background(), reflect.ValueOf(stmt.Model))
+				if zero {
+					return nil
+				}
+				model = model.Where(column+" =?", dst)
+			}
+		}
+	}
+	var c int64
+	model.Count(&c)
+	if c > 0 {
+		return fmt.Errorf("duplicate value for %s", strings.Join(columns, ", "))
+	}
+	return nil
 }
 
 var Validators = map[*regexp.Regexp]func(match []string, value *generic.Value) error{
