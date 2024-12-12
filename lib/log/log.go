@@ -34,7 +34,7 @@ var writers []func(log *Entry) = []func(log *Entry){
 
 // StdWriter is a default writer function that prints the log message to stdout.
 var StdWriter = func(log *Entry) {
-	fmt.Println(log.Date.Format("02 15:04:05"), log.Level, log.File+":"+strconv.Itoa(log.Line), log.Message)
+	fmt.Println(log.Date.Format("15:04:05"), "["+log.Level+"]", log.File+":"+strconv.Itoa(log.Line), log.Message)
 }
 
 // levels maps the Level constants to their string representations.
