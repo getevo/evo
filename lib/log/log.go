@@ -2,7 +2,6 @@ package log
 
 import (
 	"fmt"
-	"github.com/getevo/evo/v2/lib/text"
 	"github.com/getevo/json"
 	"os"
 	"reflect"
@@ -12,24 +11,37 @@ import (
 	"time"
 )
 
-// LogLevel type
+// Level represents the severity level of the log message.
+// It is defined as an integer type and uses constants for named levels.
 type Level int
 
+// wd stores the current working directory path.
+// Used to shorten file paths in log entries.
 var wd, _ = os.Getwd()
+
+// level stores the current global logging level.
+// Only messages at or above this level will be logged.
 var level = WarningLevel
+
+// stackTraceLevel indicates how many additional stack frames to skip when determining the caller location.
 var stackTraceLevel = 0
-var writers []func(log string) = []func(log string){
-	stdWriter,
+
+// writers holds a list of functions that process log entries.
+// Each writer is a function that takes an *Entry and outputs it (e.g., to console, file, etc.).
+var writers []func(log *Entry) = []func(log *Entry){
+	StdWriter,
 }
 
-var Serializer = func(v *Entry) string { return text.ToJSON(v) }
-
-func stdWriter(log string) {
-	fmt.Println(log)
+// StdWriter is a default writer function that prints the log message to stdout.
+var StdWriter = func(log *Entry) {
+	fmt.Println(log.Date.Format("02 15:04:05"), log.Level, log.File+":"+strconv.Itoa(log.Line), log.Message)
 }
 
+// levels maps the Level constants to their string representations.
+// The index corresponds to the Level value (with a placeholder at index 0).
 var levels = []string{"", "Critical", "Error", "Warning", "Notice", "Info", "Debug"}
 
+// Logging levels as constants. Each constant represents a severity level.
 const (
 	CriticalLevel Level = iota + 1
 	ErrorLevel
@@ -39,6 +51,8 @@ const (
 	DebugLevel
 )
 
+// ParseLevel converts a string expression (like "error", "warn") into a corresponding Level constant.
+// If it cannot find a match, it defaults to NoticeLevel.
 func ParseLevel(expr string) Level {
 	expr = strings.TrimSpace(strings.ToLower(expr))
 	switch expr {
@@ -59,46 +73,61 @@ func ParseLevel(expr string) Level {
 	}
 }
 
-func AddWriter(input ...func(message string)) {
+// AddWriter adds one or more writer functions to the global list of writers.
+// These writers are called for each log message.
+func AddWriter(input ...func(message *Entry)) {
 	writers = append(writers, input...)
 }
 
-func SetWriters(input ...func(message string)) {
+// SetWriters replaces the current list of writers with the provided ones.
+// It sets the global writers slice to only the specified functions.
+func SetWriters(input ...func(message *Entry)) {
 	writers = input
 }
 
+// SetLevel updates the global logging level.
+// Messages below this level will not be output.
 func SetLevel(lvl Level) {
 	level = lvl
 }
 
+// SetStackTrace configures how many additional stack frames are skipped
+// when determining the source file and line number for log messages.
 func SetStackTrace(lvl int) {
 	stackTraceLevel = lvl
 }
 
+// Entry represents a single log message, including metadata such as timestamp, file, line number, and severity level.
 type Entry struct {
-	Level   string `json:"level"`
-	Date    string `json:"date"`
-	File    string `json:"file"`
-	Message string `json:"message"`
+	Level   string    `json:"level"`   // The severity level as a string (e.g., "Error", "Info")
+	Date    time.Time `json:"date"`    // The timestamp when this log entry was created
+	File    string    `json:"file"`    // The source file that generated the log entry
+	Line    int       `json:"line"`    // The line number in the source file
+	Message string    `json:"message"` // The formatted log message
 }
 
+// msg is an internal function that creates a log Entry and passes it to all configured writers.
+// It uses runtime.Caller to determine file and line number and applies message formatting.
 func msg(message any, level Level, params ...any) {
 	if message == nil {
 		return
 	}
-	_, file, line, _ := runtime.Caller(2)
+	_, file, line, _ := runtime.Caller(2 + stackTraceLevel)
 	entry := Entry{
 		Level:   levels[level],
-		Date:    time.Now().Format("2006-01-02 15:04:05"),
-		File:    file[len(wd)+1:] + ":" + strconv.Itoa(line),
+		Date:    time.Now(),
+		File:    file[len(wd)+1:],
+		Line:    line,
 		Message: fmt.Sprintf(fmt.Sprint(message), params...),
 	}
 
 	for _, writer := range writers {
-		writer(Serializer(&entry))
+		writer(&entry)
 	}
 }
 
+// toValue converts various parameter types into a string representation.
+// For strings, it wraps the value in quotes, and for complex types, it attempts JSON marshaling.
 func toValue(param any) string {
 	var ref = reflect.ValueOf(param)
 	for ref.Kind() == reflect.Ptr {
@@ -117,187 +146,203 @@ func toValue(param any) string {
 		return fmt.Sprint(ref.Interface())
 	case reflect.Array, reflect.Slice, reflect.Struct, reflect.Map:
 		var b, _ = json.Marshal(ref.Interface())
-
 		return string(b)
 	default:
 		return quote(fmt.Sprint(ref.Interface()))
 	}
 }
 
+// quote wraps a string in double quotes and escapes any existing double quotes within the string.
 func quote(s string) string {
 	return "\"" + strings.ReplaceAll(s, "\"", "\\\"") + "\""
 }
 
-// Fatal is just like func l.Critical logger except that it is followed by exit to program
+// Fatal logs a message at the Critical level and then exits the program.
+// It behaves like Critical but calls os.Exit(1) after logging.
 func Fatal(message any, params ...any) {
 	if level >= CriticalLevel {
 		msg(message, CriticalLevel, params...)
 	}
-	os.Exit(1)
+	os.Exit(128)
 }
 
-// FatalF is just like func l.CriticalF logger except that it is followed by exit to program
+// FatalF logs a formatted message at the Critical level and then exits the program.
+// It uses formatting similar to fmt.Printf before logging.
 func FatalF(message any, params ...any) {
 	if level >= CriticalLevel {
 		msg(message, CriticalLevel, params...)
 	}
-	os.Exit(1)
+	os.Exit(128)
 }
 
-// FatalF is just like func l.CriticalF logger except that it is followed by exit to program
+// Fatalf logs a formatted message at the Critical level and then exits the program.
+// It is similar to FatalF, provided for compatibility.
 func Fatalf(message any, params ...any) {
 	if level >= CriticalLevel {
 		msg(message, CriticalLevel, params...)
 	}
-	os.Exit(1)
+	os.Exit(128)
 }
 
-// Panic is just like func l.Critical except that it is followed by a call to panic
+// Panic logs a message at the Critical level and then calls panic().
+// It behaves like Critical but ends with a panic.
 func Panic(message any, params ...any) {
 	if level >= CriticalLevel {
 		msg(message, CriticalLevel, params...)
 	}
-	panic(msg)
+	os.Exit(128)
 }
 
-// PanicF is just like func l.CriticalF except that it is followed by a call to panic
+// PanicF logs a formatted message at the Critical level and then calls panic().
+// It uses formatting similar to fmt.Printf before logging.
 func PanicF(message any, params ...any) {
 	if level >= CriticalLevel {
 		msg(message, CriticalLevel, params...)
 	}
-	panic(msg)
+	os.Exit(128)
 }
 
-// PanicF is just like func l.CriticalF except that it is followed by a call to panic
+// Panicf logs a formatted message at the Critical level and then calls panic().
+// It behaves like PanicF, provided for compatibility.
 func Panicf(message any, params ...any) {
 	if level >= CriticalLevel {
 		msg(message, CriticalLevel, params...)
 	}
-	panic(msg)
+	os.Exit(128)
 }
 
-// Critical logs a message at a Critical Level
+// Critical logs a message at the Critical level.
+// These messages typically indicate severe errors or conditions.
 func Critical(message any, params ...any) {
 	if level >= CriticalLevel {
 		msg(message, CriticalLevel, params...)
 	}
 }
 
-// CriticalF logs a message at Critical level using the same syntax and options as fmt.Printf
+// CriticalF logs a formatted message at the Critical level using fmt.Printf-style formatting.
 func CriticalF(message any, params ...any) {
 	if level >= CriticalLevel {
 		msg(message, CriticalLevel, params...)
 	}
 }
 
-// CriticalF logs a message at Critical level using the same syntax and options as fmt.Printf
+// Criticalf logs a formatted message at the Critical level using fmt.Printf-style formatting.
+// Provided for compatibility; behaves like CriticalF.
 func Criticalf(message any, params ...any) {
 	if level >= CriticalLevel {
 		msg(message, CriticalLevel, params...)
 	}
-
 }
 
-// Error logs a message at Error level
+// Error logs a message at the Error level.
+// These messages represent errors that may require attention, but are not as severe as Critical.
 func Error(message any, params ...any) {
 	if level >= ErrorLevel {
 		msg(message, ErrorLevel, params...)
 	}
-
 }
 
-// ErrorF logs a message at Error level using the same syntax and options as fmt.Printf
+// ErrorF logs a formatted message at the Error level using fmt.Printf-style formatting.
 func ErrorF(message any, params ...any) {
 	if level >= ErrorLevel {
 		msg(message, ErrorLevel, params...)
 	}
 }
 
-// ErrorF logs a message at Error level using the same syntax and options as fmt.Printf
+// Errorf logs a formatted message at the Error level using fmt.Printf-style formatting.
+// Provided for compatibility; behaves like ErrorF.
 func Errorf(message any, params ...any) {
 	if level >= ErrorLevel {
 		msg(message, ErrorLevel, params...)
 	}
 }
 
-// Warning logs a message at Warning level
+// Warning logs a message at the Warning level.
+// Warnings indicate potentially problematic situations that deserve attention.
 func Warning(message any, params ...any) {
 	if level >= WarningLevel {
 		msg(message, WarningLevel, params...)
 	}
 }
 
-// WarningF logs a message at Warning level using the same syntax and options as fmt.Printf
+// WarningF logs a formatted message at the Warning level using fmt.Printf-style formatting.
 func WarningF(message any, params ...any) {
 	if level >= WarningLevel {
 		msg(message, WarningLevel, params...)
 	}
 }
 
-// WarningF logs a message at Warning level using the same syntax and options as fmt.Printf
+// Warningf logs a formatted message at the Warning level using fmt.Printf-style formatting.
+// Provided for compatibility; behaves like WarningF.
 func Warningf(message any, params ...any) {
 	if level >= WarningLevel {
 		msg(message, WarningLevel, params...)
 	}
 }
 
-// Notice logs a message at Notice level
+// Notice logs a message at the Notice level.
+// Notices provide informational messages that are more important than Info but not as severe as Warnings.
 func Notice(message any, params ...any) {
 	if level >= NoticeLevel {
 		msg(message, NoticeLevel, params...)
 	}
 }
 
-// NoticeF logs a message at Notice level using the same syntax and options as fmt.Printf
+// NoticeF logs a formatted message at the Notice level using fmt.Printf-style formatting.
 func NoticeF(message any, params ...any) {
 	if level >= NoticeLevel {
 		msg(message, NoticeLevel, params...)
 	}
 }
 
-// NoticeF logs a message at Notice level using the same syntax and options as fmt.Printf
+// Noticef logs a formatted message at the Notice level using fmt.Printf-style formatting.
+// Provided for compatibility; behaves like NoticeF.
 func Noticef(message any, params ...any) {
 	if level >= NoticeLevel {
 		msg(message, NoticeLevel, params...)
 	}
 }
 
-// Info logs a message at Info level
+// Info logs a message at the Info level.
+// Info messages provide general operational information.
 func Info(message any, params ...any) {
 	if level >= InfoLevel {
 		msg(message, InfoLevel, params...)
 	}
 }
 
-// InfoF logs a message at Info level using the same syntax and options as fmt.Printf
+// InfoF logs a formatted message at the Info level using fmt.Printf-style formatting.
 func InfoF(message any, params ...any) {
 	if level >= InfoLevel {
 		msg(message, InfoLevel, params...)
 	}
 }
 
-// InfoF logs a message at Info level using the same syntax and options as fmt.Printf
+// Infof logs a formatted message at the Info level using fmt.Printf-style formatting.
+// Provided for compatibility; behaves like InfoF.
 func Infof(message any, params ...any) {
 	if level >= InfoLevel {
 		msg(message, InfoLevel, params...)
 	}
 }
 
-// Debug logs a message at Debug level
+// Debug logs a message at the Debug level.
+// Debug messages are used for internal testing and troubleshooting.
 func Debug(message any, params ...any) {
 	if level >= DebugLevel {
 		msg(message, DebugLevel, params...)
 	}
 }
 
-// DebugF logs a message at Debug level using the same syntax and options as fmt.Printf
+// DebugF logs a formatted message at the Debug level using fmt.Printf-style formatting.
 func DebugF(message any, params ...any) {
 	if level >= DebugLevel {
 		msg(message, DebugLevel, params...)
 	}
 }
 
-// DebugF logs a message at Debug level using the same syntax and options as fmt.Printf
+// Debugf logs a formatted message at the Debug level using fmt.Printf-style formatting.
+// Provided for compatibility; behaves like DebugF.
 func Debugf(message any, params ...any) {
 	if level >= DebugLevel {
 		msg(message, DebugLevel, params...)
