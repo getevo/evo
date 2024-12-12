@@ -2,6 +2,7 @@ package log
 
 import (
 	"fmt"
+	"github.com/getevo/evo/v2/lib/text"
 	"github.com/getevo/json"
 	"os"
 	"reflect"
@@ -20,6 +21,8 @@ var stackTraceLevel = 0
 var writers []func(log string) = []func(log string){
 	stdWriter,
 }
+
+var Serializer = func(v *Entry) string { return text.ToJSON(v) }
 
 func stdWriter(log string) {
 	fmt.Println(log)
@@ -72,36 +75,27 @@ func SetStackTrace(lvl int) {
 	stackTraceLevel = lvl
 }
 
+type Entry struct {
+	Level   string `json:"level"`
+	Date    string `json:"date"`
+	File    string `json:"file"`
+	Message string `json:"message"`
+}
+
 func msg(message any, level Level, params ...any) {
 	if message == nil {
 		return
 	}
 	_, file, line, _ := runtime.Caller(2)
-	var result = "{"
-	result += "\"l\":" + quote(levels[level])
-	result += ",\"d\":" + quote(time.Now().Format("2006-01-02 15:04:05"))
-	result += ",\"f\":" + quote(file[len(wd)+1:]+":"+strconv.Itoa(line))
-	result += ",\"m\":" + quote(fmt.Sprint(message))
-
-	var key = ""
-
-	for idx, param := range params {
-		if key == "" {
-			if v, ok := param.(string); ok {
-				key = v
-			} else {
-				result += ",\"$" + strconv.Itoa(idx) + "\":" + toValue(param)
-			}
-		} else {
-			result += ",\"" + key + "\":" + toValue(param)
-			key = ""
-		}
+	entry := Entry{
+		Level:   levels[level],
+		Date:    time.Now().Format("2006-01-02 15:04:05"),
+		File:    file[len(wd)+1:] + ":" + strconv.Itoa(line),
+		Message: fmt.Sprintf(fmt.Sprint(message), params...),
 	}
 
-	result += "}"
-
 	for _, writer := range writers {
-		writer(result)
+		writer(Serializer(&entry))
 	}
 }
 
@@ -131,7 +125,7 @@ func toValue(param any) string {
 }
 
 func quote(s string) string {
-	return "\"" + s + "\""
+	return "\"" + strings.ReplaceAll(s, "\"", "\\\"") + "\""
 }
 
 // Fatal is just like func l.Critical logger except that it is followed by exit to program
