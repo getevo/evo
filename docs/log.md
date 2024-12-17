@@ -115,6 +115,7 @@ This version ensures:
 1. The log file is opened only once per application lifecycle.
 2. Writes to the file are synchronized, making it thread-safe for concurrent logging.
 
+- Official EVO [File Logger](docs/file_logger.md) documentation
 ---
 
 ## 4. How to Define a New StdLog Function and Set It as Default Logger
