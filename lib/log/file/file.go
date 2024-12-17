@@ -2,6 +2,7 @@ package file
 
 import (
 	"fmt"
+	"github.com/getevo/evo/v2/lib/gpath"
 	"github.com/getevo/evo/v2/lib/log"
 	"os"
 	"path/filepath"
@@ -62,7 +63,10 @@ func NewFileLogger(config ...Config) func(log *log.Entry) {
 func (f *fileLogger) openLogFile() {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
-
+	if !gpath.IsDirExist(f.config.Path) {
+		err := gpath.MakePath(f.config.Path)
+		log.Fatalf("failed to open log dir: %v", err)
+	}
 	f.filePath = f.getFilePath()
 	file, err := os.OpenFile(f.filePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
@@ -108,10 +112,8 @@ func (f *fileLogger) startLogRotation() {
 
 // rotateLog closes the current log file and opens a new one
 func (f *fileLogger) rotateLog() {
-	f.mutex.Lock()
 	f.currentDate = time.Now().Format("2006-01-02")
 	f.openLogFile()
-	f.mutex.Unlock()
 	f.cleanupOldLogs()
 }
 
