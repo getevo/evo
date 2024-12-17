@@ -15,7 +15,7 @@ This library extends your logging capabilities by adding a file-based logger to 
 Import the logger package into your project:
 
 ```go
-import "your_project/file" // Replace with the correct import path
+import "github.com/getevo/evo/v2/lib/log/file" // Replace with the correct import path
 import "github.com/getevo/evo/v2/lib/log"
 ```
 
