@@ -27,7 +27,7 @@ With EVO Framework, you can focus on your programming logic and rapidly develop 
 - [CURL](docs/curl.md)
 - [Build](docs/build.md)
 - [Args](docs/args.md)
-- [Logging](storage_interface.md)
+- [Logging](docs/log.md)
 - [Concurrency Patterns](storage_interface.md)
 - [STract configuration language](storage_interface.md)
 - [Local Files](storage_interface.md)
