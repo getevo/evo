@@ -107,7 +107,7 @@ func (f *fileLogger) writeLog(entry *log.Entry) {
 // startLogRotation rotates the log at midnight
 func (f *fileLogger) startLogRotation() {
 	for {
-		nextMidnight := time.Now().Truncate(60 * time.Second).Add(60 * time.Second)
+		nextMidnight := time.Now().Truncate(24 * time.Hour).Add(24 * time.Hour)
 		time.Sleep(time.Until(nextMidnight))
 		f.rotateLog()
 	}
