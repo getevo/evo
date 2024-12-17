@@ -33,6 +33,7 @@ package main
 import (
 	"github.com/getevo/evo/v2/lib/log"
 	"github.com/getevo/evo/v2/lib/log/file" // Replace with the correct import path
+	"time"
 )
 
 func main() {
@@ -40,7 +41,7 @@ func main() {
 	log.AddWriter(file.NewFileLogger(file.Config{
 		Path:       "./logs",              // Directory to store logs
 		FileName:   "app_%y-%m-%d.log",    // Filename template with wildcards
-		Expiration: 7,                      // Keep logs for 7 days
+		Expiration: 7*time.Day,            // Keep logs for 7 days
 		LogFormat:  nil,                    // Use default log format
 	}))
 
