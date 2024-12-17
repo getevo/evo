@@ -15,7 +15,7 @@ This library provides a flexible and extensible validation framework for Go stru
     - [Validating Single Values](#validating-single-values)
 4. [Extending Validators](#extending-validators)
     - [Adding a Simple Validator](#adding-a-simple-validator)
-
+5. [Possible Error Messages](#possible-error-messages)
 ---
 
 ## Defining Validation Tags
@@ -247,3 +247,51 @@ type User struct {
 ```
 
 In this example, the `RoleID` field must reference an existing ID in the `roles` table.
+
+--- 
+
+
+## Possible Error Messages
+
+Below is a list of possible error messages returned by validators:
+
+### Non-Database Validators (Validators)
+
+| Validator         | Possible Error Message                     |
+|-------------------|--------------------------------------------|
+| `text`            | `the text cannot contains html fields`     |
+| `name`            | `is not valid name`                       |
+| `alpha`           | `is not alpha`                            |
+| `latin`           | `is not latin`                            |
+| `digit`           | `invalid digit value`                     |
+| `alphanumeric`    | `is not alpha`                            |
+| `required`        | `is required`                             |
+| `email`           | `invalid email`                           |
+| `regex(...)`      | `format is not valid`                     |
+| `len<, len>, ...` | `is too long` / `is too short`            |
+| Numeric comparisons | `is bigger than` / `is smaller than`     |
+| `int`, `+int`     | `invalid integer`                         |
+| `float`, `+float` | `invalid integer`                         |
+| `password`        | `password is not complex enough`          |
+| `domain`          | `invalid domain`                          |
+| `url`             | `invalid URL`                             |
+| `ip`, `ip4`, `ip6`| `value must be valid IPv4/IPv6 address`    |
+| `cidr`            | `value must be valid CIDR notation`       |
+| `mac`             | `value must be valid MAC address`         |
+| `date`            | `invalid date, date expected be in RFC3339 format` |
+| `longitude`       | `value must be valid longitude`           |
+| `latitude`        | `value must be valid latitude`            |
+| `port`            | `value must be valid port number`         |
+| `json`            | `value must be valid JSON format`         |
+| `uuid`            | `value must be valid uuid`                |
+
+### Database Validators (DBValidators)
+
+| Validator           | Possible Error Message                          |
+|---------------------|-------------------------------------------------|
+| `unique`            | `duplicate entry`                              |
+| `unique:col1\|col2` | `duplicate value for <columns>`                |
+| `fk`                | `value does not match foreign key`             |
+| `enum`              | `invalid value, expected values are: <values>` |
+| `before(field)`     | `<field> must be before <other field>`         |
+| `after(field)`      | `<field> must be after <other field>`          |
