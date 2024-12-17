@@ -14,7 +14,7 @@ import (
 type Config struct {
 	Path       string                        // Directory for log files
 	FileName   string                        // Filename template with wildcards (e.g., log_%y-%m-%d.log)
-	Expiration int                           // Expiration in days, if <=0 no cleanup
+	Expiration time.Duration                 // Expiration in days, if <=0 no cleanup
 	LogFormat  func(entry *log.Entry) string // Function to format log entry
 }
 
@@ -73,9 +73,9 @@ func (f *fileLogger) openLogFile() {
 		log.Fatalf("failed to open log file: %v", err)
 	}
 
-	if f.file != nil {
+	/*if f.file != nil {
 		_ = f.file.Close()
-	}
+	}*/
 	f.file = file
 }
 
@@ -84,8 +84,11 @@ func (f *fileLogger) getFilePath() string {
 	template := f.config.FileName
 	now := time.Now()
 	fileName := strings.ReplaceAll(template, "%y", now.Format("2006"))
+	fileName = strings.ReplaceAll(fileName, "%mm", now.Format("04"))
 	fileName = strings.ReplaceAll(fileName, "%m", now.Format("01"))
 	fileName = strings.ReplaceAll(fileName, "%d", now.Format("02"))
+	fileName = strings.ReplaceAll(fileName, "%hh", now.Format("15"))
+
 	return filepath.Join(f.config.Path, fileName)
 }
 
@@ -104,7 +107,7 @@ func (f *fileLogger) writeLog(entry *log.Entry) {
 // startLogRotation rotates the log at midnight
 func (f *fileLogger) startLogRotation() {
 	for {
-		nextMidnight := time.Now().Truncate(24 * time.Hour).Add(24 * time.Hour)
+		nextMidnight := time.Now().Truncate(60 * time.Second).Add(60 * time.Second)
 		time.Sleep(time.Until(nextMidnight))
 		f.rotateLog()
 	}
@@ -113,17 +116,23 @@ func (f *fileLogger) startLogRotation() {
 // rotateLog closes the current log file and opens a new one
 func (f *fileLogger) rotateLog() {
 	f.currentDate = time.Now().Format("2006-01-02")
-	f.openLogFile()
+	if f.getFilePath() != f.filePath {
+		// release the old file
+		_ = f.file.Close()
+
+		// open new file
+		f.openLogFile()
+	}
 	f.cleanupOldLogs()
 }
 
 // cleanupOldLogs removes expired log files if expiration is set
 func (f *fileLogger) cleanupOldLogs() {
-	if f.config.Expiration <= 0 {
+	if f.config.Expiration <= 1 {
 		return
 	}
 
-	expirationDate := time.Now().AddDate(0, 0, -f.config.Expiration)
+	expirationDate := time.Now().Add(-f.config.Expiration)
 	files, _ := filepath.Glob(filepath.Join(f.config.Path, "*.log"))
 	for _, file := range files {
 		if file == f.filePath {
