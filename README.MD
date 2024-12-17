@@ -33,6 +33,7 @@ With EVO Framework, you can focus on your programming logic and rapidly develop 
 - [Local Files](storage_interface.md)
 - [Dot Notation](docs/dot.md)
 - [Reflections](docs/reflections.md)
+- [Validations](docs/validation.md)
 
 ## Getting Started
 
