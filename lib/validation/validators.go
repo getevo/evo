@@ -9,6 +9,7 @@ import (
 	"github.com/getevo/evo/v2/lib/is"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
+	"net"
 	"net/url"
 	"reflect"
 	"regexp"
@@ -74,7 +75,10 @@ var Validators = map[*regexp.Regexp]func(match []string, value *generic.Value) e
 	regexp.MustCompile(`(?i)^password\((.*)\)$`):                  passwordValidator,
 	regexp.MustCompile(`(?i)^domain$`):                            domainValidator,
 	regexp.MustCompile(`(?i)^url$`):                               urlValidator,
-	regexp.MustCompile(`(?i)^ip$`):                                ipValidator,
+	regexp.MustCompile(`(?i)^ip(v?4)?$`):                          ip4Validator,
+	regexp.MustCompile(`(?i)^ipv?6$`):                             ip6Validator,
+	regexp.MustCompile(`(?i)^cidr$`):                              cidrValidator,
+	regexp.MustCompile(`(?i)^mac$`):                               macValidator,
 	regexp.MustCompile(`(?i)^date$`):                              dateValidator,
 	regexp.MustCompile(`(?i)^longitude`):                          longitudeValidator,
 	regexp.MustCompile(`(?i)^latitude`):                           latitudeValidator,
@@ -104,6 +108,62 @@ var Validators = map[*regexp.Regexp]func(match []string, value *generic.Value) e
 	regexp.MustCompile(`(?i)^safe[-_]?html`):                      safeHTMLValidator,
 	regexp.MustCompile(`(?i)^no[-_]?html$`):                       noHTMLValidator,
 	regexp.MustCompile(`(?i)^phone$`):                             phoneValidator,
+}
+
+func macValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	macRegex := regexp.MustCompile(`(?i)^([0-9A-F]{2}:){5}[0-9A-F]{2}$`)
+	if !macRegex.MatchString(v) {
+		return fmt.Errorf("value must be valid MAC address")
+	}
+	return nil
+}
+
+func cidrValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	_, _, err := net.ParseCIDR(v)
+	if err != nil {
+		return fmt.Errorf("value must be valid CIDR notation")
+	}
+	return nil
+}
+
+func ip6Validator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	ip := net.ParseIP(v)
+	if ip == nil {
+		return fmt.Errorf("value must be valid IPv6 address")
+	}
+	// net.IP is either 4 or 16 bytes. 16 bytes means it's IPv6.
+	if ip.To16() == nil && ip.To4() != nil {
+		return fmt.Errorf("value must be valid IPv6 address")
+	}
+	return nil
+}
+
+func ip4Validator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	ip := net.ParseIP(v)
+	if ip == nil {
+		return fmt.Errorf("value must be valid IPv4 address")
+	}
+	// net.IP is either 4 or 16 bytes. 16 bytes means it's IPv6.
+	if ip.To16() != nil && ip.To4() == nil {
+		return fmt.Errorf("value must be valid IPv4 address")
+	}
+	return nil
 }
 
 func phoneValidator(match []string, value *generic.Value) error {
@@ -573,30 +633,6 @@ func digitValidator(match []string, value *generic.Value) error {
 		return fmt.Errorf("invalid digit value")
 	}
 
-	return nil
-}
-
-func ipValidator(match []string, value *generic.Value) error {
-	var v = value.String()
-	if v == "" {
-		return nil
-	}
-	parts := strings.Split(v, ".")
-
-	if len(parts) != 4 {
-		return fmt.Errorf("invalid IP address")
-	}
-
-	for _, x := range parts {
-		if i, err := strconv.Atoi(x); err == nil {
-			if i < 0 || i > 255 {
-				return fmt.Errorf("invalid IP address")
-			}
-		} else {
-			return fmt.Errorf("invalid IP address")
-		}
-
-	}
 	return nil
 }
 
