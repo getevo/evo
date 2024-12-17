@@ -758,3 +758,32 @@ func NoHTMLTags(input string) bool {
 	// If we find a match, it means there's at least one HTML tag
 	return !tagPattern.MatchString(decoded)
 }
+
+// PhoneNumber checks if the given string is a valid phone number
+func PhoneNumber(input string) bool {
+
+	// Remove hyphens
+	input = strings.ReplaceAll(input, "-", "")
+
+	// Handle international prefixes
+	if strings.HasPrefix(input, "+") {
+		input = input[1:]
+	} else if strings.HasPrefix(input, "00") {
+		input = input[2:]
+	}
+
+	// Check that the remaining string is all digits
+	for _, r := range input {
+		if !unicode.IsDigit(r) {
+			return false
+		}
+	}
+
+	// Check length (E.164 allows up to 15 digits. We'll allow from 6 to 15 as a heuristic.)
+	length := len(input)
+	if length < 6 || length > 15 {
+		return false
+	}
+
+	return true
+}

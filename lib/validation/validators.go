@@ -103,6 +103,18 @@ var Validators = map[*regexp.Regexp]func(match []string, value *generic.Value) e
 	regexp.MustCompile(`(?i)^e164$`):                              e164Validator,
 	regexp.MustCompile(`(?i)^safe-html`):                          safeHTMLValidator,
 	regexp.MustCompile(`(?i)^no-html$`):                           noHTMLValidator,
+	regexp.MustCompile(`(?i)^phone$`):                             phoneValidator,
+}
+
+func phoneValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	if is.PhoneNumber(v) {
+		return fmt.Errorf("value must be valid phone number")
+	}
+	return nil
 }
 
 func noHTMLValidator(match []string, value *generic.Value) error {
