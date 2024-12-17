@@ -3,6 +3,7 @@ package is
 import (
 	"encoding/base64"
 	"github.com/getevo/json"
+	"html"
 	"math"
 	"net"
 	"net/url"
@@ -162,8 +163,8 @@ func Hexadecimal(str string) bool {
 	return err == nil
 }
 
-// Hexcolor check if the string is a hexadecimal color.
-func Hexcolor(str string) bool {
+// HexColor check if the string is a hexadecimal color.
+func HexColor(str string) bool {
 	if str == "" {
 		return false
 	}
@@ -185,8 +186,8 @@ func Hexcolor(str string) bool {
 	return true
 }
 
-// RGBcolor check if the string is a valid RGB color in form rgb(RRR, GGG, BBB).
-func RGBcolor(str string) bool {
+// RGBColor check if the string is a valid RGB color in form rgb(RRR, GGG, BBB).
+func RGBColor(str string) bool {
 	if str == "" || len(str) < 10 {
 		return false
 	}
@@ -196,6 +197,33 @@ func RGBcolor(str string) bool {
 	}
 
 	str = str[4 : len(str)-1]
+	str = strings.TrimSpace(str)
+
+	for _, p := range strings.Split(str, ",") {
+		if len(p) > 1 && p[0] == '0' {
+			return false
+		}
+
+		p = strings.TrimSpace(p)
+		if i, e := strconv.Atoi(p); (255 < i || i < 0) || e != nil {
+			return false
+		}
+	}
+
+	return true
+}
+
+// RGBAColor check if the string is a valid RGBA color in form rgb(RRR, GGG, BBB,ALPHA).
+func RGBAColor(str string) bool {
+	if str == "" || len(str) < 10 {
+		return false
+	}
+
+	if str[0:5] != "rgba(" || str[len(str)-1] != ')' {
+		return false
+	}
+
+	str = str[5 : len(str)-1]
 	str = strings.TrimSpace(str)
 
 	for _, p := range strings.Split(str, ",") {
@@ -642,4 +670,91 @@ func toInt(str string) (int64, error) {
 		res = 0
 	}
 	return res, err
+}
+
+func Cron(str string) bool {
+	parts := strings.Fields(str)
+	if len(parts) != 5 {
+		return false
+	}
+
+	// Define validation rules for each field:
+	// position: range or '*' allowed
+	ranges := []struct {
+		min, max int
+	}{
+		{0, 59}, // minute
+		{0, 23}, // hour
+		{1, 31}, // day-of-month
+		{1, 12}, // month
+		{0, 6},  // day-of-week
+	}
+
+	for i, field := range parts {
+		if field == "*" {
+			continue // wildcard is allowed in any field
+		}
+
+		val, err := strconv.Atoi(field)
+		if err != nil {
+			// Not an integer
+			return false
+		}
+
+		// Check range
+		if val < ranges[i].min || val > ranges[i].max {
+			return false
+		}
+	}
+
+	return true
+}
+
+// SafeHTML checks if the given HTML is "safe" by ensuring that it doesn't contain
+// known dangerous tags or attributes commonly used for XSS or malicious content.
+// It first decodes any HTML entities, then checks for dangerous patterns.
+func SafeHTML(input string) bool {
+	// Decode HTML entities first
+	decoded := html.UnescapeString(input)
+
+	// Convert to lowercase for case-insensitive matching
+	content := strings.ToLower(decoded)
+
+	// A list of patterns that, if found, indicate potentially unsafe HTML
+	dangerousPatterns := []string{
+		"<script",     // Script tags
+		"javascript:", // JS protocol
+		"vbscript:",   // VBScript protocol
+		"<iframe",     // Iframe tags
+		"<object",     // Object tags
+	}
+
+	for _, pattern := range dangerousPatterns {
+		if strings.Contains(content, pattern) {
+			return false
+		}
+	}
+
+	// Check for event handler attributes like onload, onclick, etc.
+	// This regex looks for on* attributes (e.g. onerror=, onclick=) followed by '='.
+	eventHandlerPattern := regexp.MustCompile(`on\w+=`)
+
+	if eventHandlerPattern.MatchString(content) {
+		return false
+	}
+
+	return true
+}
+
+// NoHTMLTags first decodes HTML entities, then checks if the resulting string contains any HTML tags.
+// Returns true if no HTML tags are found, otherwise false.
+func NoHTMLTags(input string) bool {
+	// Decode HTML entities
+	decoded := html.UnescapeString(input)
+
+	// Regex to detect HTML tags
+	tagPattern := regexp.MustCompile(`<[^>]+>`)
+
+	// If we find a match, it means there's at least one HTML tag
+	return !tagPattern.MatchString(decoded)
 }

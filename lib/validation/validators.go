@@ -6,6 +6,7 @@ import (
 	"github.com/getevo/evo/v2/lib/db"
 	scm "github.com/getevo/evo/v2/lib/db/schema"
 	"github.com/getevo/evo/v2/lib/generic"
+	"github.com/getevo/evo/v2/lib/is"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 	"net/url"
@@ -15,6 +16,7 @@ import (
 	"strings"
 	"time"
 	"unicode"
+	"unicode/utf8"
 )
 
 var DBValidators = map[*regexp.Regexp]func(match []string, value *generic.Value, stmt *gorm.Statement, field *schema.Field) error{
@@ -55,25 +57,357 @@ func uniqueColumnsValidator(match []string, value *generic.Value, stmt *gorm.Sta
 }
 
 var Validators = map[*regexp.Regexp]func(match []string, value *generic.Value) error{
-	regexp.MustCompile("^text$"):                           textValidator,
-	regexp.MustCompile("^name$"):                           nameValidator,
-	regexp.MustCompile("^alpha$"):                          alphaValidator,
-	regexp.MustCompile("^latin$"):                          latinValidator,
-	regexp.MustCompile("^name$"):                           nameValidator,
-	regexp.MustCompile("^digit$"):                          digitValidator,
-	regexp.MustCompile("^alphanumeric$"):                   alphaNumericValidator,
-	regexp.MustCompile("^required$"):                       requiredValidator,
-	regexp.MustCompile("^email$"):                          emailValidator,
-	regexp.MustCompile(`^regex\((.*)\)$`):                  regexValidator,
-	regexp.MustCompile(`^len(>|<|<=|>=|==|!=|<>|=)(\d+)$`): lenValidator,
-	regexp.MustCompile(`^(>|<|<=|>=|==|!=|<>|=)(\d+)$`):    numericalValidator,
-	regexp.MustCompile(`^([+\-]?)int$`):                    intValidator,
-	regexp.MustCompile(`^([+\-]?)float$`):                  floatValidator,
-	regexp.MustCompile(`^password\((.*)\)$`):               passwordValidator,
-	regexp.MustCompile(`^domain$`):                         domainValidator,
-	regexp.MustCompile(`^url$`):                            urlValidator,
-	regexp.MustCompile(`^ip$`):                             ipValidator,
-	regexp.MustCompile(`^date$`):                           dateValidator,
+	regexp.MustCompile("(?i)^text$"):                              textValidator,
+	regexp.MustCompile("(?i)^name$"):                              nameValidator,
+	regexp.MustCompile("(?i)^alpha$"):                             alphaValidator,
+	regexp.MustCompile("(?i)^latin$"):                             latinValidator,
+	regexp.MustCompile("(?i)^name$"):                              nameValidator,
+	regexp.MustCompile("(?i)^digit$"):                             digitValidator,
+	regexp.MustCompile("(?i)^alphanumeric$"):                      alphaNumericValidator,
+	regexp.MustCompile("(?i)^required$"):                          requiredValidator,
+	regexp.MustCompile("(?i)^email$"):                             emailValidator,
+	regexp.MustCompile(`(?i)^regex\((.*)\)$`):                     regexValidator,
+	regexp.MustCompile(`(?i)^len(>|<|<=|>=|==|!=|<>|=)(\d+)$`):    lenValidator,
+	regexp.MustCompile(`(?i)^(>|<|<=|>=|==|!=|<>|=)([+\-]?\d+)$`): numericalValidator,
+	regexp.MustCompile(`(?i)^([+\-]?)int$`):                       intValidator,
+	regexp.MustCompile(`(?i)^([+\-]?)float$`):                     floatValidator,
+	regexp.MustCompile(`(?i)^password\((.*)\)$`):                  passwordValidator,
+	regexp.MustCompile(`(?i)^domain$`):                            domainValidator,
+	regexp.MustCompile(`(?i)^url$`):                               urlValidator,
+	regexp.MustCompile(`(?i)^ip$`):                                ipValidator,
+	regexp.MustCompile(`(?i)^date$`):                              dateValidator,
+	regexp.MustCompile(`(?i)^longitude`):                          longitudeValidator,
+	regexp.MustCompile(`(?i)^latitude`):                           latitudeValidator,
+	regexp.MustCompile(`(?i)^port$`):                              portValidator,
+	regexp.MustCompile(`(?i)^json$`):                              jsonValidator,
+	regexp.MustCompile(`(?i)^ISBN$`):                              isbnValidator,
+	regexp.MustCompile(`(?i)^ISBN10$`):                            isbn10Validator,
+	regexp.MustCompile(`(?i)^ISBN13$`):                            isbn13Validator,
+	regexp.MustCompile(`(?i)^[credit[-]?card$`):                   creditCardValidator,
+	regexp.MustCompile(`(?i)^uuid$`):                              uuidValidator,
+	regexp.MustCompile(`(?i)^upperCase$`):                         upperCaseValidator,
+	regexp.MustCompile(`(?i)^lowerCase$`):                         lowerCaseValidator,
+	regexp.MustCompile(`(?i)^rgb-color$`):                         _RGBColorValidator,
+	regexp.MustCompile(`(?i)^rgba-color$`):                        _RGBAColorValidator,
+	regexp.MustCompile(`(?i)^hex-color$`):                         _HEXColorValidator,
+	regexp.MustCompile(`(?i)^hex$`):                               _HEXValidator,
+	regexp.MustCompile(`(?i)^country-alpha-2$`):                   _CountryAlpha2Validator,
+	regexp.MustCompile(`(?i)^country-alpha-3`):                    _CountryAlpha3Validator,
+	regexp.MustCompile(`(?i)^btc_address`):                        _BTCAddressValidator,
+	regexp.MustCompile(`(?i)^eth_address`):                        _ETHAddressValidator,
+	regexp.MustCompile(`(?i)^cron`):                               cronValidator,
+	regexp.MustCompile(`(?i)^duration`):                           durationValidator,
+	regexp.MustCompile(`(?i)^time$`):                              timestampValidator,
+	regexp.MustCompile(`(?i)^(unix-timestamp|unix-ts)$`):          unixTimestampValidator,
+	regexp.MustCompile(`(?i)^timezone$`):                          timezoneValidator,
+	regexp.MustCompile(`(?i)^e164$`):                              e164Validator,
+	regexp.MustCompile(`(?i)^safe-html`):                          safeHTMLValidator,
+	regexp.MustCompile(`(?i)^no-html$`):                           noHTMLValidator,
+}
+
+func noHTMLValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	if is.NoHTMLTags(v) {
+		return fmt.Errorf("value must not contain any html tags")
+	}
+	return nil
+}
+
+func safeHTMLValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	if is.SafeHTML(v) {
+		return fmt.Errorf("value must not contain any possible XSS tokens")
+	}
+	return nil
+}
+
+func e164Validator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	var e164Regex = regexp.MustCompile(`^\+[1-9]\d{1,14}$`)
+	if !e164Regex.MatchString(v) {
+		return fmt.Errorf("value must be a valid E164 phone number")
+	}
+	return nil
+}
+
+func timezoneValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	_, err := time.LoadLocation(v)
+	if err != nil {
+		return fmt.Errorf("value must be a valid timezone")
+	}
+	return nil
+}
+
+func unixTimestampValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	_, err := strconv.ParseInt(v, 10, 64)
+	if err != nil {
+		return fmt.Errorf("value must be a valid unix timestamp")
+	}
+
+	return nil
+}
+
+func timestampValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	_, err := time.Parse(time.RFC3339, v)
+	if err != nil {
+		return fmt.Errorf("value must be a valid RFC3339 timestamp")
+	}
+	return nil
+}
+
+func durationValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	_, err := time.ParseDuration(v)
+	if err != nil {
+		return fmt.Errorf("value must be a valid duration format")
+	}
+	return nil
+}
+
+func cronValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	if !is.Cron(v) {
+		return fmt.Errorf("value must be a valid CRON format")
+	}
+	return nil
+}
+
+func _BTCAddressValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	var re = regexp.MustCompile(`^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,39}$`)
+	if !re.MatchString(v) {
+		return fmt.Errorf("value must be a valid Bitcoin address")
+	}
+	return nil
+}
+
+func _ETHAddressValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	var re = regexp.MustCompile(`^(0x)[a-zA-Z0-9]{40}$`)
+	if !re.MatchString(v) {
+		return fmt.Errorf("value must be a valid ETH address")
+	}
+	return nil
+}
+
+func _CountryAlpha3Validator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	if !is.ISO3166Alpha3(v) {
+		return fmt.Errorf("value must be a valid ISO3166 Alpha 3 Format")
+	}
+	return nil
+}
+
+func _CountryAlpha2Validator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	if !is.ISO3166Alpha3(v) {
+		return fmt.Errorf("value must be a valid ISO3166 Alpha 2 Format")
+	}
+	return nil
+}
+
+func _HEXValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	if !is.Hexadecimal(v) {
+		return fmt.Errorf("value must be a valid HEX string")
+	}
+	return nil
+}
+
+func _HEXColorValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	if !is.HexColor(v) {
+		return fmt.Errorf("value must be HEX color")
+	}
+	return nil
+}
+
+func _RGBColorValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	if !is.RGBColor(v) {
+		return fmt.Errorf("value must be RGB color")
+	}
+	return nil
+}
+
+func _RGBAColorValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	if !is.RGBAColor(v) {
+		return fmt.Errorf("value must be RGBA color")
+	}
+	return nil
+}
+
+func lowerCaseValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	if !is.LowerCase(v) {
+		return fmt.Errorf("value must be in lower case")
+	}
+	return nil
+}
+
+func upperCaseValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	if !is.UpperCase(v) {
+		return fmt.Errorf("value must be in upper case")
+	}
+	return nil
+}
+
+func uuidValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	if !is.UUID(v) {
+		return fmt.Errorf("value must be valid uuid")
+	}
+	return nil
+}
+
+func creditCardValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	if !is.CreditCard(v) {
+		return fmt.Errorf("value must be credit card number")
+	}
+	return nil
+}
+
+func isbn13Validator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	if !is.ISBN13(v) {
+		return fmt.Errorf("value must be ISBN-13 format")
+	}
+	return nil
+}
+
+func isbn10Validator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	if !is.ISBN10(v) {
+		return fmt.Errorf("value must be ISBN-10 format")
+	}
+	return nil
+}
+
+func isbnValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	if !is.ISBN10(v) {
+		return fmt.Errorf("value must be ISBN-10 format")
+	}
+	return nil
+}
+
+func jsonValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	if !is.JSON(v) {
+		return fmt.Errorf("value must be valid JSON format")
+	}
+	return nil
+}
+
+func portValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	if !is.ISBN13(v) {
+		return fmt.Errorf("value must be valid port number")
+	}
+	return nil
+}
+
+func latitudeValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	if !is.ISBN13(v) {
+		return fmt.Errorf("value must be valid latitude")
+	}
+	return nil
+}
+
+func longitudeValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	if !is.ISBN13(v) {
+		return fmt.Errorf("value must be valid longitude")
+	}
+	return nil
 }
 
 func latinValidator(match []string, value *generic.Value) error {
@@ -206,7 +540,7 @@ func foreignKeyValidator(match []string, value *generic.Value, stmt *gorm.Statem
 
 func textValidator(match []string, value *generic.Value) error {
 	var v = value.String()
-	if v == "" {
+	if v == "" || v == "<nil>" {
 		return nil
 	}
 	var re = regexp.MustCompile(`(?m)</?(\w).*\\?>`)
@@ -218,7 +552,7 @@ func textValidator(match []string, value *generic.Value) error {
 
 func digitValidator(match []string, value *generic.Value) error {
 	var v = value.String()
-	if v == "" {
+	if v == "" || v == "<nil>" {
 		return nil
 	}
 
@@ -411,7 +745,7 @@ func lenValidator(match []string, value *generic.Value) error {
 	if v == "" || v == "<nil>" {
 		return nil
 	}
-	var size = len(v)
+	var size = utf8.RuneCountInString(v)
 	t, _ := strconv.ParseInt(match[2], 10, 6)
 	length := int(t)
 	switch match[1] {
