@@ -257,41 +257,62 @@ Below is a list of possible error messages returned by validators:
 
 ### Non-Database Validators (Validators)
 
-| Validator         | Possible Error Message                     |
-|-------------------|--------------------------------------------|
-| `text`            | `the text cannot contains html fields`     |
-| `name`            | `is not valid name`                       |
-| `alpha`           | `is not alpha`                            |
-| `latin`           | `is not latin`                            |
-| `digit`           | `invalid digit value`                     |
-| `alphanumeric`    | `is not alpha`                            |
-| `required`        | `is required`                             |
-| `email`           | `invalid email`                           |
-| `regex(...)`      | `format is not valid`                     |
-| `len<, len>, ...` | `is too long` / `is too short`            |
-| Numeric comparisons | `is bigger than` / `is smaller than`     |
-| `int`, `+int`     | `invalid integer`                         |
-| `float`, `+float` | `invalid integer`                         |
-| `password`        | `password is not complex enough`          |
-| `domain`          | `invalid domain`                          |
-| `url`             | `invalid URL`                             |
-| `ip`, `ip4`, `ip6`| `value must be valid IPv4/IPv6 address`    |
-| `cidr`            | `value must be valid CIDR notation`       |
-| `mac`             | `value must be valid MAC address`         |
-| `date`            | `invalid date, date expected be in RFC3339 format` |
-| `longitude`       | `value must be valid longitude`           |
-| `latitude`        | `value must be valid latitude`            |
-| `port`            | `value must be valid port number`         |
-| `json`            | `value must be valid JSON format`         |
-| `uuid`            | `value must be valid uuid`                |
+| Validator            | Description                                    | Error Message                                         |
+|----------------------|------------------------------------------------|---------------------------------------------------------------|
+| `text`               | Ensures string contains no HTML tags.          | `the text cannot contains html fields`                       |
+| `name`               | Checks if the value is a valid name.           | `is not valid name`                                          |
+| `alpha`              | Only alphabetical characters allowed.          | `is not alpha`                                               |
+| `latin`              | Only Unicode letters allowed.                  | `is not latin`                                               |
+| `digit`              | Only digits [0-9] allowed.                     | `invalid digit value`                                        |
+| `alphanumeric`       | Letters, digits, and spaces allowed.           | `is not alpha`                                               |
+| `required`           | Value cannot be empty.                         | `is required`                                                |
+| `email`              | Checks for valid email format.                 | `invalid email`                                              |
+| `regex(...)`         | Matches value against a regex pattern.         | `format is not valid`                                        |
+| `len<, len>, ...`    | Ensures string length within constraints.      | `is too short` / `is too long` / `is not equal to <length>`  |
+| Numeric comparisons  | Compares numeric values (`>`, `<`, etc.).      | `is bigger than ...` / `is smaller than ...`                 |
+| `int`, `+int`, `-int`| Checks if the value is integer.                | `invalid integer`                                            |
+| `float`, `+float`, `-float` | Checks if the value is float.          | `invalid integer`                                            |
+| `password(...)`      | Checks password complexity.                    | `password is not complex enough`                             |
+| `domain`             | Valid domain format.                           | `invalid domain`                                             |
+| `url`                | Valid URL format.                              | `invalid URL`                                                |
+| `ip`, `ip4`, `ip6`   | Valid IP address (IPv4 or IPv6).               | `value must be valid IPv4/IPv6 address`                      |
+| `cidr`               | Valid CIDR notation.                           | `value must be valid CIDR notation`                          |
+| `mac`                | Valid MAC address.                             | `value must be valid MAC address`                            |
+| `date`               | Valid RFC3339 date.                            | `invalid date, date expected be in RFC3339 format`           |
+| `longitude`          | Valid longitude.                               | `value must be valid longitude`                              |
+| `latitude`           | Valid latitude.                                | `value must be valid latitude`                               |
+| `port`               | Valid port number.                             | `value must be valid port number`                            |
+| `json`               | Valid JSON format.                             | `value must be valid JSON format`                            |
+| `ISBN`, `ISBN10`, `ISBN13` | Valid ISBN format.                      | `value must be ISBN-10 format` / `value must be ISBN-13 format` |
+| `creditcard`         | Valid credit card number.                      | `value must be credit card number`                           |
+| `uuid`               | Valid UUID.                                    | `value must be valid uuid`                                   |
+| `uppercase`          | Ensures string is uppercase.                   | `value must be in upper case`                                |
+| `lowercase`          | Ensures string is lowercase.                   | `value must be in lower case`                                |
+| `rgbcolor`, `rgba`, `hexcolor`, `hex` | Validates color formats.      | `value must be HEX color` / `value must be RGB color`        |
+| `countryalpha2`, `countryalpha3` | Valid ISO country codes.           | `value must be a valid ISO3166 Alpha 2/3 Format`             |
+| `btcaddress`         | Valid Bitcoin address.                         | `value must be a valid Bitcoin address`                      |
+| `ethaddress`         | Valid Ethereum address.                        | `value must be a valid ETH address`                          |
+| `cron`               | Valid CRON expression.                         | `value must be a valid CRON format`                          |
+| `duration`           | Valid Go duration format.                      | `value must be a valid duration format`                      |
+| `time`               | Valid RFC3339 timestamp.                       | `value must be a valid RFC3339 timestamp`                    |
+| `unixTimestamp`      | Valid Unix timestamp.                          | `value must be a valid unix timestamp`                       |
+| `timezone`           | Valid timezone string.                         | `value must be a valid timezone`                             |
+| `e164`               | Valid E164 phone number.                       | `value must be a valid E164 phone number`                    |
+| `safeHTML`           | Ensures string does not contain XSS tokens.    | `value must not contain any possible XSS tokens`             |
+| `noHTML`             | Ensures string does not contain HTML tags.     | `value must not contain any html tags`                       |
+| `phone`              | Valid phone number format.                     | `value must be valid phone number`                           |
 
-### Database Validators (DBValidators)
+---
 
-| Validator           | Possible Error Message                          |
-|---------------------|-------------------------------------------------|
-| `unique`            | `duplicate entry`                              |
-| `unique:col1\|col2` | `duplicate value for <columns>`                |
-| `fk`                | `value does not match foreign key`             |
-| `enum`              | `invalid value, expected values are: <values>` |
-| `before(field)`     | `<field> must be before <other field>`         |
-| `after(field)`      | `<field> must be after <other field>`          |
+## Database-Related Validators
+
+These validators validate input against database constraints.
+
+| Validator           | Description                                           | Possible Error Message                                    |
+|---------------------|-------------------------------------------------------|----------------------------------------------------------|
+| `unique`            | Ensures the field value is unique in the table.       | `duplicate entry`                                       |
+| `unique:col1\|col2` | Ensures a combination of columns is unique.           | `duplicate value for <columns>`                         |
+| `fk`                | Validates foreign key references another table.       | `value does not match foreign key`                      |
+| `enum`              | Ensures value matches an allowed ENUM value.          | `invalid value, expected values are: ...`               |
+| `before(field)`     | Ensures timestamp is before another field’s value.    | `<field> must be before <other field>`                  |
+| `after(field)`      | Ensures timestamp is after another field’s value.     | `<field> must be after <other field>`                   |
