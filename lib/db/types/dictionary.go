@@ -18,8 +18,8 @@ import (
 
 // KeyValue represents a key-value pair with generic types
 type KeyValue[K comparable, V any] struct {
-	Key   K
-	Value V
+	Key   K `json:"key"`
+	Value V `json:"value"`
 }
 
 // Dictionary represents an array of KeyValue pairs with thread-safety
