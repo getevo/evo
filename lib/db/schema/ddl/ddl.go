@@ -50,10 +50,10 @@ type Table struct {
 }
 
 type Column struct {
-	Name       string
-	Nullable   bool
-	PrimaryKey bool
-	//Size          int
+	Name          string
+	Nullable      bool
+	PrimaryKey    bool
+	Size          int
 	Scale         int
 	Precision     int
 	Type          string
@@ -120,6 +120,7 @@ func FromStatement(stmt *gorm.Statement) Table {
 		}
 
 		var datatype = stmt.Dialector.DataTypeOf(field)
+
 		if strings.Contains(datatype, "enum") {
 			datatype = cleanEnum(datatype)
 		} else {
@@ -138,6 +139,7 @@ func FromStatement(stmt *gorm.Statement) Table {
 		var column = Column{
 			Name:          field.DBName,
 			Type:          datatype,
+			Size:          field.Size,
 			Scale:         field.Scale,
 			Precision:     field.Precision,
 			Default:       field.DefaultValue,
@@ -145,6 +147,24 @@ func FromStatement(stmt *gorm.Statement) Table {
 			Comment:       field.Comment,
 			PrimaryKey:    field.PrimaryKey,
 			Unique:        field.Unique,
+		}
+
+		// fix gorm problem with primaryKey
+		if (column.Type == "bigint(20)" || column.Type == "bigint" || column.Type == "int") && field.FieldType.Kind() == reflect.String {
+			column.Type = "varchar"
+		}
+		if column.Type == "varchar" {
+			if column.Size == 0 {
+				column.Size = 255 // default size for VARCHAR is 255, but GORM requires a size > 0 for string fields.
+			}
+			column.Type = "varchar(" + strconv.Itoa(column.Size) + ")"
+		}
+
+		if column.Type == "char" {
+			if column.Size == 0 {
+				column.Size = 255 // default size for VARCHAR is 255, but GORM requires a size > 0 for string fields.
+			}
+			column.Type = "char(" + strconv.Itoa(column.Size) + ")"
 		}
 
 		if v, ok := field.TagSettings["CHARSET"]; ok {
