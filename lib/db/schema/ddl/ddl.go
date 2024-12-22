@@ -14,7 +14,15 @@ import (
 var Engine = "mysql"
 
 var EngineDataTypes = map[string]map[string]string{
-	"mariadb": {"json": "longtext"},
+	"mariadb": {
+		"json":                 "longtext",
+		"current_timestamp(3)": "CURRENT_TIMESTAMP()",
+		"datetime(3)":          "timestamp",
+	},
+}
+
+var DefaultValues = map[string]string{
+	"current_timestamp(3)": "CURRENT_TIMESTAMP()",
 }
 
 var InternalFunctions = [][]string{
@@ -29,14 +37,16 @@ var (
 )
 
 type Table struct {
-	Columns     Columns
-	PrimaryKey  Columns
-	Index       Indexes
-	Constraints []string
-	Engine      string
-	Name        string
-	Charset     string
-	Collate     string
+	Columns         Columns
+	PrimaryKey      Columns
+	Index           Indexes
+	Constraints     []string
+	Engine          string
+	Name            string
+	Charset         string
+	Collate         string
+	FullTextColumns string
+	HasFullText     bool
 }
 
 type Column struct {
@@ -56,6 +66,7 @@ type Column struct {
 	Collate       string
 	ForeignKey    string
 	After         string
+	FullText      bool
 }
 
 type Columns []Column
@@ -78,9 +89,10 @@ func (list Columns) Keys() []string {
 }
 
 type Index struct {
-	Name    string
-	Unique  bool
-	Columns Columns
+	Name     string
+	Unique   bool
+	FullText bool
+	Columns  Columns
 }
 
 type Indexes []Index
@@ -113,6 +125,7 @@ func FromStatement(stmt *gorm.Statement) Table {
 		} else {
 			datatype = strings.Split(datatype, " ")[0]
 		}
+
 		switch datatype {
 		case "boolean":
 			datatype = "tinyint(1)"
@@ -127,7 +140,7 @@ func FromStatement(stmt *gorm.Statement) Table {
 			Type:          datatype,
 			Scale:         field.Scale,
 			Precision:     field.Precision,
-			Default:       trimQuotes(field.DefaultValue),
+			Default:       field.DefaultValue,
 			AutoIncrement: field.AutoIncrement,
 			Comment:       field.Comment,
 			PrimaryKey:    field.PrimaryKey,
@@ -144,6 +157,10 @@ func FromStatement(stmt *gorm.Statement) Table {
 
 		if v, ok := field.TagSettings["COLLATE"]; ok {
 			column.Collate = v
+		}
+
+		if _, ok := field.TagSettings["FULLTEXT"]; ok {
+			column.FullText = true
 		}
 
 		if strings.ToLower(column.Type) == "datetime(3)" {
@@ -170,20 +187,6 @@ func FromStatement(stmt *gorm.Statement) Table {
 			column.Default = "0000-00-00 00:00:00"
 		}
 
-		if column.Name == "deleted_at" {
-			column.Nullable = true
-			column.Default = "NULL"
-		}
-		if column.Name == "created_at" {
-			column.Nullable = false
-			column.Default = "CURRENT_TIMESTAMP()"
-		}
-		if column.Name == "updated_at" {
-			column.Nullable = false
-			column.Default = "CURRENT_TIMESTAMP()"
-			column.OnUpdate = "CURRENT_TIMESTAMP()"
-		}
-
 		if column.Unique {
 			table.Index = append(table.Index, Index{
 				Name:    "idx_unique_" + column.Name,
@@ -191,16 +194,33 @@ func FromStatement(stmt *gorm.Statement) Table {
 				Columns: Columns{column},
 			})
 		}
+
+		var r = field.IndirectFieldType
+		for r.Kind() == reflect.Ptr {
+			r = r.Elem()
+		}
+		var ref = reflect.New(r)
+
+		if obj, ok := ref.Interface().(interface{ ColumnDefinition(column *Column) }); ok {
+			obj.ColumnDefinition(&column)
+		} else if obj, ok := ref.Elem().Interface().(interface{ ColumnDefinition(column *Column) }); ok {
+			obj.ColumnDefinition(&column)
+		}
+
+		column.Default = trimQuotes(column.Default)
 		table.Columns = append(table.Columns, column)
 		if field.PrimaryKey {
 			table.PrimaryKey = append(table.PrimaryKey, column)
 		}
+
 	}
 
 	for _, index := range stmt.Schema.ParseIndexes() {
+
 		var idx = Index{
-			Name:   index.Name,
-			Unique: index.Class == "UNIQUE",
+			Name:     index.Name,
+			Unique:   index.Class == "UNIQUE",
+			FullText: index.Class == "FULLTEXT",
 		}
 		for _, opt := range index.Fields {
 			idx.Columns = append(idx.Columns, *table.Columns.Find(opt.DBName))
@@ -231,6 +251,7 @@ func (table Table) GetCreateQuery() []string {
 	var queries []string
 	var query = "CREATE TABLE IF NOT EXISTS " + quote(table.Name) + "("
 	var primaryKeys []string
+	var fullTextIndexes []string
 	for idx, _ := range table.Columns {
 		var field = table.Columns[idx]
 		query += "\r\n\t"
@@ -242,11 +263,19 @@ func (table Table) GetCreateQuery() []string {
 		if idx < len(table.Columns)-1 {
 			query += ","
 		}
+		if table.Columns[idx].FullText {
+			fullTextIndexes = append(fullTextIndexes, quote(field.Name))
+		}
 	}
 	if len(primaryKeys) > 0 {
 		query += ","
 		query += "\r\n\t" + "PRIMARY KEY (" + strings.Join(primaryKeys, ",") + ")"
 	}
+	if len(fullTextIndexes) > 0 {
+		query += ","
+		query += "\r\n\t" + "FULLTEXT (" + strings.Join(fullTextIndexes, ",") + ")"
+	}
+
 	query += "\r\n) DEFAULT CHARSET=" + table.Charset + " COLLATE=" + table.Collate + " ENGINE=" + table.Engine + " COMMENT '0.0.0';"
 	queries = append(queries, query)
 
@@ -254,6 +283,9 @@ func (table Table) GetCreateQuery() []string {
 		query = "CREATE "
 		if index.Unique {
 			query += "UNIQUE "
+		}
+		if index.FullText {
+			query += "FULLTEXT "
 		}
 		var keys = index.Columns.Keys()
 		for idx, _ := range keys {
@@ -320,18 +352,21 @@ func (local Table) GetDiff(remote table.Table) []string {
 	var queries []string
 	var afterPK []string
 	var primaryKeys []string
-	if local.Collate != remote.Collation {
+	/*	if local.Collate != remote.Collation  {
 		queries = append(queries, fmt.Sprintf("--  table collation does not match. new:%s old:%s", local.Collate, remote.Collation))
 		queries = append(queries, fmt.Sprintf("ALTER TABLE %s CONVERT TO COLLATE %s;", quote(local.Name), local.Collate))
-	}
-	if local.Charset != remote.Charset {
+
+	}*/
+	if local.Charset != remote.Charset || local.Collate != remote.Collation {
 		queries = append(queries, fmt.Sprintf("--  table charset does not match. new:%s old:%s", local.Charset, remote.Charset))
-		queries = append(queries, fmt.Sprintf("ALTER TABLE %s CONVERT TO CHARACTER SET %s;", local.Name, local.Charset))
+		queries = append(queries, fmt.Sprintf("--  table collate does not match. new:%s old:%s", local.Collate, remote.Collation))
+		//queries = append(queries, fmt.Sprintf("ALTER TABLE %s CONVERT TO CHARACTER SET %s;", local.Name, local.Charset))
+		queries = append(queries, fmt.Sprintf("ALTER TABLE `%s` DEFAULT CHARACTER SET %s COLLATE %s", local.Name, local.Charset, local.Collate))
 	}
 
 	if strings.ToLower(local.Engine) != strings.ToLower(remote.Engine) {
 		queries = append(queries, fmt.Sprintf("--  table engine does not match. new:%s old:%s", local.Engine, remote.Engine))
-		queries = append(queries, fmt.Sprintf("ALTER TABLE %s ENGINE=%s;", quote(local.Name), local.Engine))
+		queries = append(queries, fmt.Sprintf("ALTER TABLE `%s` ENGINE=%s;", quote(local.Name), local.Engine))
 	}
 
 	for idx, _ := range local.Columns {
@@ -353,6 +388,7 @@ func (local Table) GetDiff(remote table.Table) []string {
 			if idx > 0 && idx < len(remote.Columns) && remote.Columns[idx].Name != field.Name {
 				diff = true
 			}
+
 			if fieldType(strings.ToLower(field.Type)) != fieldType(strings.ToLower(r.ColumnType)) {
 				queries = append(queries, fmt.Sprintf("--  type does not match. new:%s old:%s", fieldType(field.Type), strings.ToLower(r.ColumnType)))
 				diff = true
@@ -369,7 +405,7 @@ func (local Table) GetDiff(remote table.Table) []string {
 				queries = append(queries, fmt.Sprintf("--  comment does not match. new:%s old:%s", field.Comment, r.Comment))
 				diff = true
 			}
-			if field.Default != getString(r.ColumnDefault) {
+			if field.Default != fieldType(getString(r.ColumnDefault)) {
 				var skip = false
 				for _, row := range InternalFunctions {
 					if slices.Contains(row, field.Default) && slices.Contains(row, getString(r.ColumnDefault)) {
@@ -509,9 +545,9 @@ func (local Table) GetDiff(remote table.Table) []string {
 }
 
 func fieldType(t string) string {
-	if v, ok := EngineDataTypes[Engine]; ok {
-		if v, ok := v[t]; ok {
-			return v
+	if _, ok := EngineDataTypes[Engine]; ok {
+		if vi, ok := EngineDataTypes[Engine][t]; ok {
+			return vi
 		}
 	}
 	return t
@@ -566,12 +602,7 @@ func (local Table) Constrains(constraints []table.Constraint, is table.Tables) [
 			var referencedTable = ""
 			var referencedCol = ""
 			var chunks = strings.Split(field.ForeignKey, ".")
-			/*			if len(chunks) == 1 {
-						if tb := schema.Find(chunks[0]); tb != nil {
-							referencedTable = tb.Table
-							referencedCol = tb.PrimaryKey[0]
-						}
-					}*/
+
 			if len(chunks) == 1 {
 				var tb = is.GetTable(chunks[0])
 				if tb != nil && len(tb.PrimaryKey) > 0 {
@@ -599,12 +630,10 @@ func (local Table) Constrains(constraints []table.Constraint, is table.Tables) [
 
 				if !skip {
 					queries = append(queries, "-- create foreign key")
-					var onDelete = "RESTRICT"
-					queries = append(queries, "ALTER TABLE "+quote(local.Name)+" ADD CONSTRAINT "+quote(name)+" FOREIGN KEY ("+quote(field.Name)+") REFERENCES  "+quote(referencedTable)+"("+quote(referencedCol)+") ON DELETE "+onDelete+" ON UPDATE RESTRICT")
+					var onDelete = "CASCADE"
+					queries = append(queries, "ALTER TABLE "+quote(local.Name)+" ADD CONSTRAINT "+quote(name)+" FOREIGN KEY ("+quote(field.Name)+") REFERENCES  "+quote(referencedTable)+"("+quote(referencedCol)+") ON DELETE "+onDelete+" ON UPDATE CASCADE")
 				}
-				/*		ALTER TABLE `rabbits`
-						ADD CONSTRAINT `fk_rabbits_main_page` FOREIGN KEY IF NOT EXISTS
-						(`main_page_id`) REFERENCES `rabbit_pages` (`id`);*/
+
 			}
 		}
 	}

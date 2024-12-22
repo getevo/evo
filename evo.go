@@ -2,8 +2,9 @@ package evo
 
 import (
 	"github.com/getevo/evo/v2/lib/application"
+	"github.com/getevo/evo/v2/lib/args"
+	"github.com/getevo/evo/v2/lib/log"
 	"github.com/getevo/evo/v2/lib/settings"
-	"log"
 
 	dbo "github.com/getevo/evo/v2/lib/db"
 	"github.com/getevo/evo/v2/lib/generic"
@@ -48,6 +49,17 @@ func Setup() {
 // Run start EVO Server
 func Run() {
 	Application.Run()
+
+	//do database migrations
+	if args.Exists("--migration-do") {
+		err := dbo.DoMigration()
+		if err != nil {
+			log.Fatal("unable to perform database migrations: ", err)
+		} else {
+			log.Info("database migrations performed successfully")
+		}
+	}
+
 	if Any != nil {
 		app.Use(func(ctx *fiber.Ctx) error {
 			r := Upgrade(ctx)

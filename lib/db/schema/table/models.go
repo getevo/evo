@@ -80,6 +80,14 @@ type Column struct {
 	Comment         string  `json:"comment" gorm:"column:COLUMN_COMMENT"`
 }
 
+func (c *Column) ReplaceDefault(from, to string) {
+	if c.ColumnDefault == nil {
+	}
+	if *c.ColumnDefault == from {
+		*c.ColumnDefault = to
+	}
+}
+
 func (Column) TableName() string {
 	return "information_schema.COLUMNS"
 }
