@@ -134,10 +134,10 @@ func (a App) WhenReady() error {
 		entity.PrimaryKey = pk
 		entities = append(entities, entity)
 	}
+	db.Save(&entities)
 	db.Clauses(clause.OnConflict{
 		DoUpdates: clause.AssignmentColumns([]string{"field_name", "primary_key", "db_field", "json_tag", "type", "db_type"}),
 	}).Create(&fields)
-	db.Save(&entities)
 
 	return nil
 }
