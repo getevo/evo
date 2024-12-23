@@ -58,6 +58,7 @@ type FieldOption struct {
 	Image       string `gorm:"column:image;size:255" json:"image"`
 	FieldSlug   string `gorm:"column:field_slug;size:128;fk:entity_field" json:"field_slug"`
 	EntityField *Field `gorm:"foreignKey:FieldSlug" json:"entity_field,omitempty"`
+	ClassName   string `gorm:"column:class_name;size:255" json:"class_name"`
 	VisualOrder int    `gorm:"column:visual_order" json:"visual_order"`
 	restify.API
 }
@@ -69,6 +70,7 @@ func (FieldOption) TableName() string {
 type DataSource struct {
 	Type       Type                        `json:"type"`
 	URL        *string                     `json:"url,omitempty"`
+	Preload    bool                        `json:"preload"`
 	Dictionary *types.Dictionary[any, any] `json:"dictionary,omitempty"`
 	Mapper     *Mapper                     `json:"mapper,omitempty"`
 }
