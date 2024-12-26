@@ -151,6 +151,7 @@ func FromStatement(stmt *gorm.Statement) Table {
 
 		// fix gorm problem with primaryKey
 		if (column.Type == "bigint(20)" || column.Type == "bigint" || column.Type == "int") && field.FieldType.Kind() == reflect.String {
+			fmt.Println("===>", column.Name, field.FieldType.Kind())
 			column.Type = "varchar"
 		}
 		if column.Type == "varchar" {
@@ -203,7 +204,7 @@ func FromStatement(stmt *gorm.Statement) Table {
 			}
 		}
 
-		if column.Type == "TIMESTAMP" && column.Default == "" && !column.Nullable {
+		if (column.Type == "TIMESTAMP" || column.Type == "timestamp") && column.Default == "" && !column.Nullable {
 			column.Default = "0000-00-00 00:00:00"
 		}
 
@@ -410,22 +411,22 @@ func (local Table) GetDiff(remote table.Table) []string {
 			}
 
 			if fieldType(strings.ToLower(field.Type)) != fieldType(strings.ToLower(r.ColumnType)) {
-				queries = append(queries, fmt.Sprintf("--  type does not match. new:%s old:%s", fieldType(field.Type), strings.ToLower(r.ColumnType)))
+				queries = append(queries, fmt.Sprintf("-- column %s type does not match. new:%s old:%s", field.Name, fieldType(field.Type), strings.ToLower(r.ColumnType)))
 				diff = true
 			}
 			if len(field.Collate) > 0 && strings.ToLower(field.Collate) != strings.ToLower(r.Collation) {
-				queries = append(queries, fmt.Sprintf("--  collation does not match. new:%s old:%s", field.Collate, r.Collation))
+				queries = append(queries, fmt.Sprintf("-- column %s collation does not match. new:%s old:%s", field.Name, field.Collate, r.Collation))
 				diff = true
 			}
 			if len(field.Charset) > 0 && strings.ToLower(field.Charset) != strings.ToLower(r.CharacterSet) {
-				queries = append(queries, fmt.Sprintf("--  charset does not match. new:%s old:%s", field.Charset, r.CharacterSet))
+				queries = append(queries, fmt.Sprintf("-- column %s charset does not match. new:%s old:%s", field.Name, field.Charset, r.CharacterSet))
 				diff = true
 			}
 			if field.Comment != r.Comment {
-				queries = append(queries, fmt.Sprintf("--  comment does not match. new:%s old:%s", field.Comment, r.Comment))
+				queries = append(queries, fmt.Sprintf("-- column %s comment does not match. new:%s old:%s", field.Name, field.Comment, r.Comment))
 				diff = true
 			}
-			if field.Default != fieldType(getString(r.ColumnDefault)) {
+			if field.Default != getString(r.ColumnDefault) {
 				var skip = false
 				for _, row := range InternalFunctions {
 					if slices.Contains(row, field.Default) && slices.Contains(row, getString(r.ColumnDefault)) {
@@ -437,17 +438,17 @@ func (local Table) GetDiff(remote table.Table) []string {
 				}
 
 				if !skip && !(field.Default == "NULL" && r.ColumnDefault == nil) {
-					queries = append(queries, fmt.Sprintf("--  default value does not match. new:%s old:%s", field.Default, getString(r.ColumnDefault)))
+					queries = append(queries, fmt.Sprintf("-- field %s default value does not match. new:%s old:%s", field.Name, field.Default, getString(r.ColumnDefault)))
 					diff = true
 				}
 			}
 			if field.Nullable != (r.Nullable == "YES") {
-				queries = append(queries, fmt.Sprintf("--  nullable does not match. new:%t old:%t", field.Nullable, r.Nullable == "YES"))
+				queries = append(queries, fmt.Sprintf("-- column %s nullable does not match. new:%t old:%t", field.Name, field.Nullable, r.Nullable == "YES"))
 				diff = true
 			}
 			var needPK = false
 			if field.AutoIncrement && strings.ToLower(r.Extra) != "auto_increment" {
-				afterPK = append(afterPK, fmt.Sprintf("--  auto_increment does not match. new:%t old:%t", field.AutoIncrement, !field.AutoIncrement))
+				afterPK = append(afterPK, fmt.Sprintf("--  field %s auto_increment does not match. new:%t old:%t", field.Name, field.AutoIncrement, !field.AutoIncrement))
 				diff = true
 				needPK = true
 			}

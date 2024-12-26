@@ -113,10 +113,11 @@ func msg(message any, level Level, params ...any) {
 		return
 	}
 	_, file, line, _ := runtime.Caller(2 + stackTraceLevel)
+
 	entry := Entry{
 		Level:   levels[level],
 		Date:    time.Now(),
-		File:    file[len(wd)+1:],
+		File:    file,
 		Line:    line,
 		Message: fmt.Sprintf(fmt.Sprint(message), params...),
 	}
