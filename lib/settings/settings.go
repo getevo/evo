@@ -10,12 +10,14 @@ import (
 var data = map[string]any{}
 var ConfigPath = "./config.yml"
 
-func Get(key string) generic.Value {
+func Get(key string, defaultValue ...any) generic.Value {
 	key = strings.ToUpper(key)
 	if v, ok := data[key]; ok {
 		return generic.Parse(v)
 	}
-
+	if len(defaultValue) > 0 {
+		return generic.Parse(defaultValue[0])
+	}
 	return generic.Parse("")
 }
 
