@@ -839,7 +839,6 @@ func alphaValidator(match []string, value *generic.Value) error {
 	if v == "" || v == "<nil>" {
 		return nil
 	}
-	fmt.Println("alpha:", v)
 	for _, r := range v {
 		if !((r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || r == ' ') {
 			return fmt.Errorf("is not alpha")

@@ -170,3 +170,42 @@ func (m *Map[K, V]) GormDBDataType(db *gorm.DB, field *schema.Field) string {
 	}
 	return "TEXT"
 }
+
+// Iterate returns a channel to iterate over all key-value pairs in the map.
+func (m Map[K, V]) Iterate() <-chan struct {
+	Key   K
+	Value V
+} {
+	out := make(chan struct {
+		Key   K
+		Value V
+	})
+
+	// Iterate synchronously over shards and keys
+	go func() {
+		defer close(out)
+		for _, shard := range m.shards {
+			shard.RLock()
+			for key, value := range shard.items {
+				out <- struct {
+					Key   K
+					Value V
+				}{Key: key, Value: value}
+			}
+			shard.RUnlock()
+		}
+	}()
+
+	return out
+}
+
+// Range iterates over all key-value pairs and applies the callback function to each pair.
+func (m Map[K, V]) Range(f func(key K, value V)) {
+	for _, shard := range m.shards {
+		shard.RLock()
+		for key, value := range shard.items {
+			f(key, value)
+		}
+		shard.RUnlock()
+	}
+}
