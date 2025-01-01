@@ -26,13 +26,14 @@ type Setting struct {
 	SettingsID     uint          `gorm:"primaryKey" json:"-"`
 	DomainID       uint          `gorm:"column:domain_id;fk:settings_domain" json:"domain"`
 	Domain         string        `gorm:"-" json:"-"`
+	Name           string        `gorm:"column:name;size:128" json:"name"`
+	Title          string        `gorm:"column:title" json:"title"`
+	Description    string        `gorm:"column:description" json:"description"`
 	Value          string        `gorm:"column:value" json:"value"`
 	DefaultValue   string        `gorm:"column:default_value" json:"default_value"`
-	Description    string        `gorm:"column:description" json:"description"`
-	Name           string        `gorm:"column:name;size:128" json:"name"`
 	ReadOnly       bool          `gorm:"column:read_only" json:"read_only"`
-	Title          string        `gorm:"column:title" json:"title"`
 	Visible        bool          `gorm:"column:visible" json:"visible"`
+	Protected      bool          `gorm:"column:protected" json:"protected"`
 	Type           string        `gorm:"column:type" json:"type"`
 	Params         string        `gorm:"column:params" json:"params"`
 	SettingsDomain SettingDomain `gorm:"-" json:"-"`
