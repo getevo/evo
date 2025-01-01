@@ -116,6 +116,15 @@ func (m Map[K, V]) Get(key K) (V, bool) {
 	return val, ok
 }
 
+// Exists checks if a key exists in the map
+func (m Map[K, V]) Exists(key K) bool {
+	shard := m.GetShard(key)
+	shard.RLock()
+	_, ok := shard.items[key]
+	shard.RUnlock()
+	return ok
+}
+
 // Remove deletes a key-value pair from the map.
 func (m Map[K, V]) Remove(key K) {
 	shard := m.GetShard(key)
