@@ -10,6 +10,10 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+type HTTPSerializer interface {
+	GetResponse() Response
+}
+
 type Response struct {
 	ContentType string
 	Data        any

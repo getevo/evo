@@ -159,6 +159,18 @@ func (r *Request) WriteResponse(resp ...any) {
 				r.Write(v.Data)
 				return
 			}
+			if v, ok := instance.(outcome.HTTPSerializer); ok {
+				response := v.GetResponse()
+				r.WriteResponse(response)
+				return
+			}
+			if v, ok := instance.(*outcome.HTTPSerializer); ok {
+				if v != nil {
+					response := (*v).GetResponse()
+					r.WriteResponse(response)
+					return
+				}
+			}
 			if v, ok := instance.(outcome.Response); ok {
 
 				if v.StatusCode > 0 {
