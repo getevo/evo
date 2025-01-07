@@ -35,6 +35,7 @@ With EVO Framework, you can focus on your programming logic and rapidly develop 
 - [Dot Notation](docs/dot.md)
 - [Reflections](docs/reflections.md)
 - [Validations](docs/validation.md)
+- [GORM based pagination](https://github.com/getevo/pagination)
 
 ## Getting Started
 
