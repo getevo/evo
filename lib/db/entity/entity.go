@@ -73,6 +73,7 @@ type DataSource struct {
 	Preload    bool                        `json:"preload"`
 	Dictionary *types.Dictionary[any, any] `json:"dictionary,omitempty"`
 	Mapper     *Mapper                     `json:"mapper,omitempty"`
+	Entry      *string                     `json:"entry,omitempty"`
 }
 
 type Mapper struct {
