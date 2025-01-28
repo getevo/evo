@@ -171,7 +171,7 @@ func phoneValidator(match []string, value *generic.Value) error {
 	if v == "" || v == "<nil>" {
 		return nil
 	}
-	if is.PhoneNumber(v) {
+	if !is.PhoneNumber(v) {
 		return fmt.Errorf("value must be valid phone number")
 	}
 	return nil
