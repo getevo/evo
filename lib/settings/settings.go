@@ -4,15 +4,23 @@ import (
 	"github.com/getevo/evo/v2/lib/args"
 	"github.com/getevo/evo/v2/lib/db"
 	"github.com/getevo/evo/v2/lib/generic"
+	"github.com/getevo/evo/v2/lib/gpath"
+	"regexp"
 	"strings"
 )
 
 var data = map[string]any{}
+var normalizedData = map[string]any{}
 var ConfigPath = "./config.yml"
 
 func Get(key string, defaultValue ...any) generic.Value {
 	key = strings.ToUpper(key)
+	normalizedKey := normalizeKey(key)
+
 	if v, ok := data[key]; ok {
+		return generic.Parse(v)
+	}
+	if v, ok := normalizedData[normalizedKey]; ok {
 		return generic.Parse(v)
 	}
 	if len(defaultValue) > 0 {
@@ -36,11 +44,13 @@ func Register(settings ...any) error {
 
 func Set(key string, value any) error {
 	data[key] = generic.Parse(value)
+	normalizedData[normalizeKey(key)] = value
 	return nil
 }
 func SetMulti(in map[string]any) error {
 	for key, value := range in {
 		data[key] = generic.Parse(value)
+		normalizedData[normalizeKey(key)] = value
 	}
 	return nil
 }
@@ -62,6 +72,7 @@ func Init(params ...string) error {
 
 func Reload() error {
 	data = map[string]any{}
+	normalizedData = map[string]any{}
 	// 1-load environment variables
 	LoadEnvVars()
 
@@ -74,13 +85,28 @@ func Reload() error {
 	}
 
 	// 3- load yml
-	err := LoadYAMLSettings(ConfigPath)
-	if err != nil {
-		return err
+	if gpath.IsFileExist(ConfigPath) {
+		err := LoadYAMLSettings(ConfigPath)
+		if err != nil {
+			return err
+		}
 	}
 
 	// 4- override args
 	LoadOSArgs()
 
 	return nil
+}
+
+func setData(key string, v any) {
+	data[strings.ToUpper(key)] = v
+	normalizedData[normalizeKey(key)] = v
+}
+
+var normalizeKeyRegex = regexp.MustCompile(`[^a-zA-Z0-9]`)
+
+func normalizeKey(arg string) string {
+	arg = strings.ToUpper(arg)
+	arg = normalizeKeyRegex.ReplaceAllString(arg, "_")
+	return arg
 }

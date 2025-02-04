@@ -36,7 +36,8 @@ func LoadOSArgs() {
 
 				v = unquote(v)
 				arg = strings.TrimPrefix(arg, "--")
-				data[strings.ToUpper(arg)] = v
+				setData(arg, v)
+				//data[normalizeKey(arg)] = v
 				_ = dot.Set(&data, arg, v)
 			}
 		}

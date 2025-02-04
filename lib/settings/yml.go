@@ -23,10 +23,12 @@ func LoadYAMLSettings(filename string) error {
 	flattenMap(nestedMap, "", flattenedMap)
 
 	for key, value := range flattenedMap {
-		data[strings.ToUpper(key)] = value
+		setData(key, value)
+		//data[strings.ToUpper(key)] = value
 	}
 	for key, value := range nestedMap {
-		data[strings.ToUpper(key)] = value
+		setData(key, value)
+		//data[strings.ToUpper(key)] = value
 	}
 
 	return nil

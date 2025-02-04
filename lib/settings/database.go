@@ -2,7 +2,6 @@ package settings
 
 import (
 	"github.com/getevo/evo/v2/lib/db"
-	"strings"
 	"time"
 )
 
@@ -86,7 +85,8 @@ func LoadDatabaseSettings() error {
 		setting.SettingsDomain = domainMap[setting.DomainID]
 		domainPath := getFullDomainPath(setting.SettingsDomain)
 		fullKey := domainPath + "." + setting.Name
-		data[strings.ToUpper(fullKey)] = setting.Value
+		//data[normalizeKey(fullKey)] = setting.Value
+		setData(fullKey, setting.Value)
 	}
 
 	return nil
