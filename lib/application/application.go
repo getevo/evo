@@ -33,7 +33,8 @@ type ReloadInterface interface {
 }
 
 type App struct {
-	apps []Application
+	apps  []Application
+	debug bool
 }
 
 var Instance *App
@@ -59,6 +60,14 @@ func (a *App) Register(applications ...Application) *App {
 	a.apps = append(a.apps, applications...)
 	return a
 }
+func (a *App) Debug(v ...bool) *App {
+	if len(v) > 0 {
+		a.debug = v[0]
+	} else {
+		a.debug = true
+	}
+	return a
+}
 
 func (a *App) Run() *App {
 	//Sort applications by priority
@@ -67,6 +76,9 @@ func (a *App) Run() *App {
 	})
 
 	for _, app := range a.apps {
+		if a.debug {
+			log.Infof("Registering application: %s %s.Router()", app.Name(), reflect.TypeOf(app).PkgPath())
+		}
 		if err := app.Register(); err != nil {
 			log.Fatalf("Can't start application Register() %s: %v", app.Name(), err)
 		}
@@ -79,11 +91,17 @@ func (a *App) Run() *App {
 				ref.Method(i).Call([]reflect.Value{})
 			}
 		}
+		if a.debug {
+			log.Infof("Setting router for application: %s %s.Router()", app.Name(), reflect.TypeOf(app).PkgPath())
+		}
 		if err := app.Router(); err != nil {
 			log.Fatalf("Can't start application Router() %s: %v", app.Name(), err)
 		}
 	}
 	for _, app := range a.apps {
+		if a.debug {
+			log.Infof("WhenReady application: %s %s.WhenReady()", app.Name(), reflect.TypeOf(app).PkgPath())
+		}
 		if err := app.WhenReady(); err != nil {
 			log.Fatalf("Can't start application WhenReady() %s: %v", app.Name(), err)
 		}
