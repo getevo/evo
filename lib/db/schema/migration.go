@@ -123,7 +123,7 @@ func GetMigrationScript(db *gorm.DB) []string {
 		//q = append(q, ddl.FromStatement(stmt).Constrains(constraints, is)...)
 		tail = append(tail, ddl.FromStatement(stmt).Constrains(constraints, is)...)
 		if len(q) > 0 {
-			queries = append(queries, "\r\n\r\n-- Migrate Model: "+stmt.Schema.ModelType.Name()+"("+stmt.Schema.Table+")")
+			queries = append(queries, "\r\n\r\n-- Migrate Model: "+stmt.Schema.ModelType.PkgPath()+"."+stmt.Schema.ModelType.Name()+"("+stmt.Schema.Table+")")
 			queries = append(queries, q...)
 		}
 		if caller, ok := el.(interface {
