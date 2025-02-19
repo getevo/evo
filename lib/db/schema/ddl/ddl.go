@@ -1,6 +1,8 @@
 package ddl
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"github.com/getevo/evo/v2/lib/args"
 	"github.com/getevo/evo/v2/lib/db/schema/table"
@@ -641,6 +643,7 @@ func (local Table) Constrains(constraints []table.Constraint, is table.Tables) [
 				if len(name) > 64 {
 					name = "fk_" + field.Name + "_" + referencedTable + "." + referencedCol
 				}
+				name = Generate32CharHash(name)
 				var skip = false
 				for _, constraint := range constraints {
 					//fmt.Println(constraint.Table, "==", local.Name, constraint.Column, "==", field.Name, constraint.ReferencedTable, "==", dstTable, constraint.ReferencedColumn, "==", dstCol)
@@ -668,4 +671,10 @@ func trimQuotes(s string) string {
 		}
 	}
 	return s
+}
+
+// Generate32CharHash takes a text input and returns a unique 32-character hash
+func Generate32CharHash(text string) string {
+	hash := sha256.Sum256([]byte(text))     // Generate SHA-256 hash
+	return hex.EncodeToString(hash[:])[:32] // Take the first 32 characters
 }
