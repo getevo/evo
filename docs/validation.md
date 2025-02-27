@@ -66,49 +66,50 @@ This means `Username` must be:
 
 These validators do not interact with the database. They only check the value in memory.
 
-| Validator              | Description                                                             | Example Usage                                |
-|------------------------|-------------------------------------------------------------------------|----------------------------------------------|
-| `text`                 | Ensures string contains no HTML tags.                                   | `validation:"text"`                          |
-| `name`                 | Checks if the value is a valid name (letters, spaces, etc.).            | `validation:"name"`                          |
-| `alpha`                | Only alphabetical characters allowed.                                   | `validation:"alpha"`                         |
-| `latin`                | Only Unicode letters are allowed.                                       | `validation:"latin"`                         |
-| `digit`                | Only digits [0-9] allowed.                                              | `validation:"digit"`                         |
-| `alphanumeric`         | Letters, digits, and spaces allowed.                                     | `validation:"alphanumeric"`                  |
-| `required`             | Value cannot be empty.                                                  | `validation:"required"`                      |
-| `email`                | Checks for a valid email format.                                         | `validation:"email"`                         |
-| `regex(...)`           | Matches value against a custom regex.                                    | `validation:"regex([a-z]{2,})"`              |
-| `len<`, `len>`, etc.   | Compares string length. Supports `<`, `>`, `<=`, `>=`, `==`, `!=`.       | `validation:"len==10"`                       |
-| Numeric comparisons     | Compares numeric value (`>`, `<`, `>=`, `<=`, etc.) with a given number.| `validation:">=18"`                          |
-| `int`, `+int`, `-int`  | Checks if value is integer (`+` for positive, `-` for negative).         | `validation:"+int"`                         |
-| `float`, `+float`, `-float` | Checks if value is float (`+` for positive, `-` for negative).     | `validation:"-float"`                        |
-| `password(...)`         | Checks complexity (`none`, `easy`, `medium`, `hard`).                  | `validation:"password(medium)"`              |
-| `domain`                | Valid domain format.                                                    | `validation:"domain"`                        |
-| `url`                   | Valid URL format.                                                       | `validation:"url"`                           |
-| `ip`, `ip4`, `ip6`      | Valid IP address (IPv4 or IPv6).                                        | `validation:"ip"`                           |
-| `cidr`                  | Valid CIDR notation.                                                    | `validation:"cidr"`                         |
-| `mac`                   | Valid MAC address.                                                      | `validation:"mac"`                          |
-| `date`                  | Valid date in RFC3339 format.                                           | `validation:"date"`                         |
-| `longitude`             | Valid longitude.                                                        | `validation:"longitude"`                    |
-| `latitude`              | Valid latitude.                                                         | `validation:"latitude"`                     |
-| `port`                  | Valid port number.                                                      | `validation:"port"`                        |
-| `json`                  | Valid JSON format.                                                      | `validation:"json"`                        |
-| `ISBN`, `ISBN10`, `ISBN13` | Checks if value is a valid ISBN.                                     | `validation:"ISBN13"`                       |
-| `creditcard`            | Checks if the value is a valid credit card number.                      | `validation:"creditcard"`                   |
-| `uuid`                  | Checks if the value is a valid UUID.                                    | `validation:"uuid"`                        |
-| `uppercase`             | Checks if string is uppercase.                                          | `validation:"uppercase"`                   |
-| `lowercase`             | Checks if string is lowercase.                                          | `validation:"lowercase"`                   |
-| `rgbcolor`, `rgba`, `hexcolor`, `hex` | Validates various color formats.                          | `validation:"hexcolor"`                    |
-| `countryalpha2`, `countryalpha3` | Valid ISO country code formats.                                | `validation:"countryalpha2"`               |
-| `btcaddress`, `ethaddress` | Checks if value is a valid Bitcoin or Ethereum address.              | `validation:"btcaddress"`                  |
-| `cron`                  | Valid CRON expression.                                                  | `validation:"cron"`                        |
-| `duration`              | Valid Go duration format.                                               | `validation:"duration"`                    |
-| `time`                  | Valid RFC3339 timestamp.                                                | `validation:"time"`                        |
-| `unixTimestamp`          | Valid unix timestamp.                                                   | `validation:"unixTimestamp"`               |
-| `timezone`              | Valid timezone string.                                                  | `validation:"timezone"`                    |
-| `e164`                  | Valid E164 phone number format.                                         | `validation:"e164"`                       |
-| `safeHTML`              | Checks string for possible XSS patterns.                                | `validation:"safeHTML"`                   |
-| `noHTML`                | Ensures string does not contain HTML tags.                              | `validation:"noHTML"`                     |
-| `phone`                 | Checks if string is a valid phone number.                               | `validation:"phone"`                      |
+| Validator                             | Description                                                             | Example Usage                   |
+|---------------------------------------|-------------------------------------------------------------------------|---------------------------------|
+| `text`                                | Ensures string contains no HTML tags.                                   | `validation:"text"`             |
+| `slug`                                | slug can contain only lowercase letters, numbers, hyphens, underscores, and must be between 1 and 200 characters long.                                   | `validation:"slug"`                |
+| `name`                                | Checks if the value is a valid name (letters, spaces, etc.).            | `validation:"name"`             |
+| `alpha`                               | Only alphabetical characters allowed.                                   | `validation:"alpha"`            |
+| `latin`                               | Only Unicode letters are allowed.                                       | `validation:"latin"`            |
+| `digit`                               | Only digits [0-9] allowed.                                              | `validation:"digit"`            |
+| `alphanumeric`                        | Letters, digits, and spaces allowed.                                     | `validation:"alphanumeric"`     |
+| `required`                            | Value cannot be empty.                                                  | `validation:"required"`         |
+| `email`                               | Checks for a valid email format.                                         | `validation:"email"`            |
+| `regex(...)`                          | Matches value against a custom regex.                                    | `validation:"regex([a-z]{2,})"` |
+| `len<`, `len>`, etc.                  | Compares string length. Supports `<`, `>`, `<=`, `>=`, `==`, `!=`.       | `validation:"len==10"`          |
+| Numeric comparisons                   | Compares numeric value (`>`, `<`, `>=`, `<=`, etc.) with a given number.| `validation:">=18"`             |
+| `int`, `+int`, `-int`                 | Checks if value is integer (`+` for positive, `-` for negative).         | `validation:"+int"`             |
+| `float`, `+float`, `-float`           | Checks if value is float (`+` for positive, `-` for negative).     | `validation:"-float"`           |
+| `password(...)`                       | Checks complexity (`none`, `easy`, `medium`, `hard`).                  | `validation:"password(medium)"` |
+| `domain`                              | Valid domain format.                                                    | `validation:"domain"`           |
+| `url`                                 | Valid URL format.                                                       | `validation:"url"`              |
+| `ip`, `ip4`, `ip6`                    | Valid IP address (IPv4 or IPv6).                                        | `validation:"ip"`               |
+| `cidr`                                | Valid CIDR notation.                                                    | `validation:"cidr"`             |
+| `mac`                                 | Valid MAC address.                                                      | `validation:"mac"`              |
+| `date`                                | Valid date in RFC3339 format.                                           | `validation:"date"`             |
+| `longitude`                           | Valid longitude.                                                        | `validation:"longitude"`        |
+| `latitude`                            | Valid latitude.                                                         | `validation:"latitude"`         |
+| `port`                                | Valid port number.                                                      | `validation:"port"`             |
+| `json`                                | Valid JSON format.                                                      | `validation:"json"`             |
+| `ISBN`, `ISBN10`, `ISBN13`            | Checks if value is a valid ISBN.                                     | `validation:"ISBN13"`           |
+| `creditcard`                          | Checks if the value is a valid credit card number.                      | `validation:"creditcard"`       |
+| `uuid`                                | Checks if the value is a valid UUID.                                    | `validation:"uuid"`             |
+| `uppercase`                           | Checks if string is uppercase.                                          | `validation:"uppercase"`        |
+| `lowercase`                           | Checks if string is lowercase.                                          | `validation:"lowercase"`        |
+| `rgbcolor`, `rgba`, `hexcolor`, `hex` | Validates various color formats.                          | `validation:"hexcolor"`         |
+| `countryalpha2`, `countryalpha3`      | Valid ISO country code formats.                                | `validation:"countryalpha2"`    |
+| `btcaddress`, `ethaddress`            | Checks if value is a valid Bitcoin or Ethereum address.              | `validation:"btcaddress"`       |
+| `cron`                                | Valid CRON expression.                                                  | `validation:"cron"`             |
+| `duration`                            | Valid Go duration format.                                               | `validation:"duration"`         |
+| `time`                                | Valid RFC3339 timestamp.                                                | `validation:"time"`             |
+| `unixTimestamp`                       | Valid unix timestamp.                                                   | `validation:"unixTimestamp"`    |
+| `timezone`                            | Valid timezone string.                                                  | `validation:"timezone"`         |
+| `e164`                                | Valid E164 phone number format.                                         | `validation:"e164"`             |
+| `safeHTML`                            | Checks string for possible XSS patterns.                                | `validation:"safeHTML"`         |
+| `noHTML`                              | Ensures string does not contain HTML tags.                              | `validation:"noHTML"`           |
+| `phone`                               | Checks if string is a valid phone number.                               | `validation:"phone"`            |
 
 ### Database-Related Validators (DBValidators)
 
