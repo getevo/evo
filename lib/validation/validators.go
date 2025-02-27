@@ -117,7 +117,7 @@ func slugValidator(match []string, value *generic.Value) error {
 		return nil
 	}
 	var re = regexp.MustCompile(`(?m)^[a-z0-9_-]{1,200}$`)
-	if re.MatchString(v) {
+	if !re.MatchString(v) {
 		return fmt.Errorf("slug can contain only lowercase letters, numbers, hyphens, underscores, and must be between 1 and 200 characters long")
 	}
 	return nil
