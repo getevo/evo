@@ -59,6 +59,7 @@ func uniqueColumnsValidator(match []string, value *generic.Value, stmt *gorm.Sta
 
 var Validators = map[*regexp.Regexp]func(match []string, value *generic.Value) error{
 	regexp.MustCompile("(?i)^text$"):                              textValidator,
+	regexp.MustCompile("(?i)^slug$"):                              slugValidator,
 	regexp.MustCompile("(?i)^name$"):                              nameValidator,
 	regexp.MustCompile("(?i)^alpha$"):                             alphaValidator,
 	regexp.MustCompile("(?i)^latin$"):                             latinValidator,
@@ -108,6 +109,18 @@ var Validators = map[*regexp.Regexp]func(match []string, value *generic.Value) e
 	regexp.MustCompile(`(?i)^safe[-_]?html`):                      safeHTMLValidator,
 	regexp.MustCompile(`(?i)^no[-_]?html$`):                       noHTMLValidator,
 	regexp.MustCompile(`(?i)^phone$`):                             phoneValidator,
+}
+
+func slugValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	var re = regexp.MustCompile(`(?m)^[a-z0-9_-]{1,200}$`)
+	if re.MatchString(v) {
+		return fmt.Errorf("slug can contain only lowercase letters, numbers, hyphens, underscores, and must be between 1 and 200 characters long")
+	}
+	return nil
 }
 
 func macValidator(match []string, value *generic.Value) error {
