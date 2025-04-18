@@ -533,10 +533,10 @@ func OnPrepareContext(fn func(v interface{}) *gorm.DB) {
 	_onContext = append(_onContext, fn)
 }
 
-func GetContext() *gorm.DB {
+func GetContext(v interface{}) *gorm.DB {
 	var dbo = db
 	for _, fn := range _onContext {
-		dbo = fn(dbo)
+		dbo = fn(v)
 	}
 	return dbo
 }
