@@ -527,16 +527,16 @@ func IsEnabled() bool {
 	return Enabled
 }
 
-var _onContext []func(v interface{}) *gorm.DB
+var _onContext []func(db *gorm.DB, v interface{}) *gorm.DB
 
-func OnPrepareContext(fn func(v interface{}) *gorm.DB) {
+func OnPrepareContext(fn func(db *gorm.DB, v interface{}) *gorm.DB) {
 	_onContext = append(_onContext, fn)
 }
 
-func GetContext(v interface{}) *gorm.DB {
+func GetContext(db *gorm.DB, v interface{}) *gorm.DB {
 	var dbo = db
 	for _, fn := range _onContext {
-		dbo = fn(v)
+		dbo = fn(dbo, v)
 	}
 	return dbo
 }
