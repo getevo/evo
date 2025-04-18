@@ -526,3 +526,17 @@ func SetDefaultEngine(engine string) {
 func IsEnabled() bool {
 	return Enabled
 }
+
+var _onContext []func(v interface{}) *gorm.DB
+
+func OnPrepareContext(fn func(v interface{}) *gorm.DB) {
+	_onContext = append(_onContext, fn)
+}
+
+func GetContext() *gorm.DB {
+	var dbo = db
+	for _, fn := range _onContext {
+		dbo = fn(dbo)
+	}
+	return dbo
+}
