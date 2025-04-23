@@ -2,9 +2,7 @@ package schema
 
 import (
 	"fmt"
-	"github.com/getevo/evo/v2/lib/db"
 	"github.com/getevo/evo/v2/lib/db/schema/table"
-	"github.com/getevo/evo/v2/lib/log"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 	"path/filepath"
@@ -103,12 +101,14 @@ func Find(v interface{}) *Model {
 		}
 		return nil
 	}
-
-	stmt := db.Model(v).Statement
-	err := stmt.Parse(stmt)
-	if err != nil {
-		log.Error(err)
-		return nil
+	var ref = reflect.ValueOf(v)
+	if ref.Kind() == reflect.Ptr {
+		ref = ref.Elem()
 	}
-	return Find(stmt.Table)
+	for idx, _ := range Models {
+		if Models[idx].Value.Type().Name() == ref.Type().Name() {
+			return &Models[idx]
+		}
+	}
+	return nil
 }
