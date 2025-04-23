@@ -2,7 +2,9 @@ package schema
 
 import (
 	"fmt"
+	"github.com/getevo/evo/v2/lib/db"
 	"github.com/getevo/evo/v2/lib/db/schema/table"
+	"github.com/getevo/evo/v2/lib/log"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 	"path/filepath"
@@ -92,11 +94,21 @@ func UseModel(db *gorm.DB, values ...any) {
 	}
 }
 
-func Find(name string) *Model {
-	for idx, _ := range Models {
-		if Models[idx].Name == name || Models[idx].Table == name {
-			return &Models[idx]
+func Find(v interface{}) *Model {
+	if name, ok := v.(string); ok {
+		for idx, _ := range Models {
+			if Models[idx].Name == name || Models[idx].Table == name {
+				return &Models[idx]
+			}
 		}
+		return nil
 	}
-	return nil
+
+	stmt := db.Model(v).Statement
+	err := stmt.Parse(stmt)
+	if err != nil {
+		log.Error(err)
+		return nil
+	}
+	return Find(stmt.Table)
 }
