@@ -27,11 +27,16 @@ type Request struct {
 	Context        *fiber.Ctx
 	Response       Response
 	CacheControl   *CacheControl
+	beforeResponse func(body []byte) []byte
 	url            *URL
 	status         int
 	_break         bool
 	jsonParsedBody *gjson.Result
 	UserInterface  *UserInterface
+}
+
+func (r *Request) OnResponse(fn func(body []byte) []byte) {
+	r.beforeResponse = fn
 }
 
 type Response struct {
