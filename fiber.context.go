@@ -539,6 +539,9 @@ func (r *Request) Write(body any) {
 	if r.status > 0 {
 		r.Status(r.status)
 	}
+	if r.beforeResponse != nil {
+		r.beforeResponse(data)
+	}
 	r.Context.Context().Response.SetBody(data)
 }
 
