@@ -18,23 +18,23 @@ import (
 
 // JSONType give a generic data type for json encoded data.
 type JSONType[T any] struct {
-	data T
+	Val T
 }
 
 func NewJSONType[T any](data T) JSONType[T] {
 	return JSONType[T]{
-		data: data,
+		Val: data,
 	}
 }
 
 // Data return data with generic Type T
 func (j JSONType[T]) Data() T {
-	return j.data
+	return j.Val
 }
 
 // Value return json value, implement driver.Valuer interface
 func (j JSONType[T]) Value() (driver.Value, error) {
-	return json.Marshal(j.data)
+	return json.Marshal(j.Val)
 }
 
 // Scan scan value into JSONType[T], implements sql.Scanner interface
@@ -48,17 +48,17 @@ func (j *JSONType[T]) Scan(value any) error {
 	default:
 		return errors.New(fmt.Sprint("Failed to unmarshal JSONB value:", value))
 	}
-	return json.Unmarshal(bytes, &j.data)
+	return json.Unmarshal(bytes, &j.Val)
 }
 
 // MarshalJSON to output non base64 encoded []byte
 func (j JSONType[T]) MarshalJSON() ([]byte, error) {
-	return json.Marshal(j.data)
+	return json.Marshal(j.Val)
 }
 
 // UnmarshalJSON to deserialize []byte
 func (j *JSONType[T]) UnmarshalJSON(b []byte) error {
-	return json.Unmarshal(b, &j.data)
+	return json.Unmarshal(b, &j.Val)
 }
 
 // GormDataType gorm common data type
