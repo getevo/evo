@@ -228,6 +228,9 @@ func (r *Resp) miniFormat(s fmt.State) {
 		fmt.Fprint(s, " ", str)
 	}
 }
+func (r *Resp) Status() int {
+	return r.Response().StatusCode
+}
 
 func (r *Resp) Dot(input string) gjson.Result {
 	if r.json == nil {
