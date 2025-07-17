@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"github.com/getevo/json"
+	"github.com/tidwall/gjson"
 	"io"
 	"net/http"
 	"os"
@@ -23,6 +24,7 @@ type Resp struct {
 	respBody         []byte
 	downloadProgress DownloadProgress
 	err              error // delayed error
+	json             *gjson.Result
 }
 
 type SerializedResponse struct {
@@ -225,4 +227,12 @@ func (r *Resp) miniFormat(s fmt.State) {
 		str := regNewline.ReplaceAllString(r.String(), " ")
 		fmt.Fprint(s, " ", str)
 	}
+}
+
+func (r *Resp) Dot(input string) gjson.Result {
+	if r.json == nil {
+		var j = gjson.Parse(r.String())
+		r.json = &j
+	}
+	return r.json.Get(input)
 }
