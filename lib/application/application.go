@@ -77,7 +77,7 @@ func (a *App) Run() *App {
 
 	for _, app := range a.apps {
 		if a.debug {
-			log.Infof("Registering application: %s %s.Router()", app.Name(), reflect.TypeOf(app).PkgPath())
+			log.Infof("Registering application: %s %s.Register()", app.Name(), reflect.TypeOf(app).PkgPath())
 		}
 		if err := app.Register(); err != nil {
 			log.Fatalf("Can't start application Register() %s: %v", app.Name(), err)
