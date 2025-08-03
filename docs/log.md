@@ -8,6 +8,7 @@ This logging library provides a structured and customizable logging system for G
 2. [How to Change Log Level](#how-to-change-log-level)
 3. [How to Implement New Logging Methods and Attach Them](#how-to-implement-new-logging-methods-and-attach-them)
 4. [How to Define a New StdLog Function and Set It as Default Logger](#how-to-define-a-new-stdlog-function-and-set-it-as-default-logger)
+5. [File Logging](#file-logging)
 
 ---
 
@@ -143,3 +144,79 @@ func main() {
 ```
 
 With `SetWriters`, you can completely replace the behavior of the logger.
+
+---
+
+## 5. File Logging
+
+The log library provides a file-based logging system with rotation and cleanup capabilities through the `file` subpackage.
+
+### Features:
+- Automatic daily log rotation
+- Configurable file naming with date/time placeholders
+- Automatic cleanup of old log files
+- Custom log entry formatting
+- Thread-safe for concurrent logging
+
+### Example: Basic File Logger
+```go
+package main
+
+import (
+    "github.com/getevo/evo/v2/lib/log"
+    "github.com/getevo/evo/v2/lib/log/file"
+    "time"
+)
+
+func main() {
+    // Configure file logger
+    fileLogger := file.NewFileLogger(file.Config{
+        Path:       "/var/log/myapp",
+        FileName:   "app_%y-%m-%d.log",  // Will create files like app_2025-08-03.log
+        Expiration: 7 * 24 * time.Hour,  // Keep logs for 7 days
+    })
+    
+    // Add file logger to writers
+    log.AddWriter(fileLogger)
+    
+    log.Info("This message will be logged to both console and file")
+}
+```
+
+### Example: Custom File Log Format
+```go
+package main
+
+import (
+    "fmt"
+    "github.com/getevo/evo/v2/lib/log"
+    "github.com/getevo/evo/v2/lib/log/file"
+)
+
+func main() {
+    // Custom log format
+    customFormat := func(entry *log.Entry) string {
+        return fmt.Sprintf("[%s] %s - %s",
+            entry.Level,
+            entry.Date.Format("2006-01-02 15:04:05"),
+            entry.Message)
+    }
+    
+    // Configure file logger with custom format
+    fileLogger := file.NewFileLogger(file.Config{
+        Path:       "logs",
+        FileName:   "app.log",
+        LogFormat:  customFormat,
+    })
+    
+    // Add file logger to writers
+    log.AddWriter(fileLogger)
+    
+    log.Info("This message will use the custom format in the log file")
+}
+```
+
+For more details, see the [File Logger](file_logger.md) documentation.
+
+---
+#### [< Table of Contents](https://github.com/getevo/evo#table-of-contents)

@@ -16,26 +16,63 @@ With EVO Framework, you can focus on your programming logic and rapidly develop 
 - [Configuration and Settings](docs/configuration.md)
 - [Database](docs/database.md)
 - [Database Migration](docs/migration.md)
-- [Modules](storage_interface.md)
+- [Modules](#libraries)
 - [Web Server](docs/webserver.md)
-- [Storage Interface](storage_interface.md)
-- [Cache Interface](cache_interface.md)
-- [Messaging Bus Interface](cache_interface.md)
-- [Date](storage_interface.md)
-- [Internationalization](storage_interface.md)
+- [Storage Interface](lib/storage/README.md)
+- [Cache Interface](lib/memo/README.md)
+- [Messaging Bus Interface](lib/pubsub/README.md)
+- [Date](lib/date/README.md)
+- [Internationalization](lib/text/README.md)
 - [TPL Templates](docs/tpl.md)
 - [CURL](docs/curl.md)
-- [Build](docs/build.md)
+- [Build](lib/build/README.md)
 - [Args](docs/args.md)
 - [Logging](docs/log.md)
-- - [File Logger](docs/file_logger.md)
-- [Concurrency Patterns](storage_interface.md)
-- [STract configuration language](storage_interface.md)
-- [Local Files](storage_interface.md)
+  - [File Logger](docs/file_logger.md)
+- [Concurrency Patterns](lib/async/README.md)
+- [STract configuration language](lib/stract/README.md)
+- [Local Files](lib/gpath/README.md)
 - [Dot Notation](docs/dot.md)
 - [Reflections](docs/reflections.md)
 - [Validations](docs/validation.md)
 - [GORM based pagination](https://github.com/getevo/pagination)
+
+## Libraries
+EVO Framework includes a comprehensive set of libraries in the `lib` directory:
+
+- [Application](lib/application/README.md) - Application management
+- [Args](lib/args/README.md) - Command-line argument handling
+- [Async](lib/async/README.md) - Asynchronous operations
+- [Build](lib/build/README.md) - Build utilities
+- [Connectors](lib/connectors/README.md) - External system connectors
+- [Curl](lib/curl/README.md) - HTTP client functionality
+- [Date](lib/date/README.md) - Date and time utilities
+- [DB](lib/db/README.md) - Database operations
+- [Dot](lib/dot/README.md) - Dot notation for accessing nested data
+- [Errors](lib/errors/README.md) - Error handling
+- [Frm](lib/frm/README.md) - Form handling
+- [Generic](lib/generic/README.md) - Generic data structures
+- [Gpath](lib/gpath/README.md) - Path manipulation
+- [Is](lib/is/README.md) - Type checking utilities
+- [JSON](lib/json/README.md) - JSON handling
+- [Log](lib/log/README.md) - Logging system
+- [Memo](lib/memo/README.md) - Memoization and caching
+- [Model](lib/model/README.md) - Data modeling
+- [Outcome](lib/outcome/README.md) - Function result handling
+- [Panics](lib/panics/README.md) - Panic handling
+- [Ptr](lib/ptr/README.md) - Pointer utilities
+- [Pubsub](lib/pubsub/README.md) - Publish-subscribe pattern
+- [Reflections](lib/reflections/README.md) - Reflection utilities
+- [Scheduler](lib/scheduler/README.md) - Task scheduling
+- [Serializer](lib/serializer/README.md) - Data serialization
+- [Settings](lib/settings/README.md) - Configuration management
+- [Storage](lib/storage/README.md) - Storage interfaces
+- [Stract](lib/stract/README.md) - Structured data handling
+- [Text](lib/text/README.md) - Text manipulation
+- [Tpl](lib/tpl/README.md) - Template system
+- [Try](lib/try/README.md) - Error handling with try/catch pattern
+- [Validation](lib/validation/README.md) - Data validation
+- [Version](lib/version/README.md) - Version management
 
 ## Getting Started
 

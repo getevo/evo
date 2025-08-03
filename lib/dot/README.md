@@ -16,40 +16,7 @@ import "github.com/getevo/evo/v2/lib/dot"
 - **Array Indexing**: Support for array/slice access using index notation (e.g., "users[0].name")
 - **Error Handling**: Proper error reporting for invalid paths or operations
 - **Reflection-Based**: Uses Go's reflection capabilities for dynamic property access
-
-## API Reference
-
-### Get
-
-```go
-func Get(obj any, prop string) (any, error)
-```
-
-Retrieves a value from an object using dot notation.
-
-Parameters:
-- `obj`: The object to retrieve the value from (can be a map, struct, array, or slice)
-- `prop`: The property path using dot notation (e.g., "user.address.city" or "users[0].name")
-
-Returns:
-- The value at the specified path
-- An error if the path is invalid or the property doesn't exist
-
-### Set
-
-```go
-func Set(input any, prop string, value any) error
-```
-
-Sets a value in an object using dot notation.
-
-Parameters:
-- `input`: The object to modify (must be a pointer for structs)
-- `prop`: The property path using dot notation (e.g., "user.address.city" or "users[0].name")
-- `value`: The new value to set
-
-Returns:
-- An error if the path is invalid, the property doesn't exist, or the object is not modifiable
+- **Integration**: Seamless integration with the EVO Framework
 
 ## Usage Examples
 
@@ -93,6 +60,57 @@ func main() {
     // Verify the change
     city, _ = dot.Get(data, "user.address.city")
     fmt.Println("New City:", city) // Output: New City: San Francisco
+}
+```
+
+### Working with Structs
+
+```go
+package main
+
+import (
+    "fmt"
+    "github.com/getevo/evo/v2/lib/dot"
+)
+
+func main() {
+    // Define nested structs
+    type Address struct {
+        City string
+        Zip  string
+    }
+    
+    type User struct {
+        Name    string
+        Address Address
+    }
+    
+    // Create a struct with nested properties
+    user := User{
+        Name: "Jane Smith",
+        Address: Address{
+            City: "Boston",
+            Zip:  "02108",
+        },
+    }
+    
+    // Get a nested property
+    city, err := dot.Get(user, "Address.City")
+    if err != nil {
+        fmt.Println("Error:", err)
+        return
+    }
+    fmt.Println("City:", city) // Output: City: Boston
+    
+    // Set a nested property (note: struct must be passed as pointer for Set)
+    err = dot.Set(&user, "Address.City", "Chicago")
+    if err != nil {
+        fmt.Println("Error:", err)
+        return
+    }
+    
+    // Verify the change
+    fmt.Println("New City:", user.Address.City) // Output: New City: Chicago
 }
 ```
 
@@ -142,6 +160,40 @@ func main() {
 }
 ```
 
+## API Reference
+
+### Get
+
+```go
+func Get(obj any, prop string) (any, error)
+```
+
+Retrieves a value from an object using dot notation.
+
+Parameters:
+- `obj`: The object to retrieve the value from (can be a map, struct, array, or slice)
+- `prop`: The property path using dot notation (e.g., "user.address.city" or "users[0].name")
+
+Returns:
+- The value at the specified path
+- An error if the path is invalid or the property doesn't exist
+
+### Set
+
+```go
+func Set(input any, prop string, value any) error
+```
+
+Sets a value in an object using dot notation.
+
+Parameters:
+- `input`: The object to modify (must be a pointer for structs)
+- `prop`: The property path using dot notation (e.g., "user.address.city" or "users[0].name")
+- `value`: The new value to set
+
+Returns:
+- An error if the path is invalid, the property doesn't exist, or the object is not modifiable
+
 ## How It Works
 
 The Dot library uses Go's reflection capabilities to dynamically access and modify properties in objects. It works by:
@@ -155,5 +207,10 @@ For maps, it directly accesses the map keys. For structs, it uses reflection to 
 
 When setting values, it ensures that the object is properly modifiable (e.g., structs must be passed as pointers) and creates intermediate objects as needed (e.g., creating nested maps if they don't exist).
 
----
-#### [< Table of Contents](https://github.com/getevo/evo#table-of-contents)
+## Related Libraries
+
+- **reflections**: Used internally for struct field access
+- **generic**: Used for type conversions
+- **text**: Used for string manipulation
+
+For more detailed information, please refer to the source code and comments within the library.

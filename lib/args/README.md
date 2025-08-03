@@ -59,6 +59,3 @@ func main() {
 ## How It Works
 
 The Args library works by parsing the `os.Args` slice, which contains the command-line arguments passed to the program. It provides a simple interface to check for the existence of arguments and retrieve their values without having to manually parse the arguments slice.
-
----
-#### [< Table of Contents](https://github.com/getevo/evo#table-of-contents)

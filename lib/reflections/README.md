@@ -1,9 +1,9 @@
-# Reflections Library
+# reflections Library
 
 The reflections library provides a set of utilities for working with Go's reflection capabilities. It simplifies common reflection tasks such as getting and setting struct fields, inspecting field types and tags, and working with nested structs.
 
 ## Installation
-To use this package, import it in your Go code:
+
 ```go
 import "github.com/getevo/evo/v2/lib/reflections"
 ```
@@ -16,103 +16,6 @@ import "github.com/getevo/evo/v2/lib/reflections"
 - **Tag Handling**: Access and search for struct tags
 - **Deep Reflection**: Work with nested struct fields
 - **Type Safety**: Proper error handling for type mismatches
-
-## Functions
-
----
-### GetField
-
-```go
-func GetField(obj interface{}, name string) (interface{}, error)
-```
-Description: Returns the value of the provided object field.
-
----
-### GetFieldKind
-```go
-func GetFieldKind(obj interface{}, name string) (reflect.Kind, error)
-```
-Description: Returns the kind of the provided object field.
-
----
-### GetFieldType
-```go
-func GetFieldType(obj interface{}, name string) (string, error)
-```
-Description: Returns the type of the provided object field.
-
----
-### GetFieldTag
-```go
-func GetFieldTag(obj interface{}, fieldName, tagKey string) (string, error)
-```
-Description: Returns the tag value of the provided object field.
-
----
-### GetFieldNameByTagValue
-```go
-func GetFieldNameByTagValue(obj interface{}, tagKey, tagValue string) (string, error)
-```
-Description: Looks up a field with a matching tag value in the provided object.
-
----
-### SetField
-```go
-func SetField(obj interface{}, name string, value interface{}) error
-```
-Description: Sets the value of the provided object field.
-
----
-### HasField
-```go
-func HasField(obj interface{}, name string) (bool, error)
-```
-Description: Checks if the provided object has a field with the given name.
-
----
-### Fields
-```go
-func Fields(obj interface{}) ([]string, error)
-```
-Description: Returns the names of the fields in the provided object.
-
----
-### FieldsDeep
-```go
-func FieldsDeep(obj interface{}) ([]string, error)
-```
-Description: Returns the "flattened" names of the fields in the provided object, including fields from anonymous inner structs.
-
----
-### Items
-```go
-func Items(obj interface{}) (map[string]interface{}, error)
-```
-Description: Returns the field:value pairs of the provided object as a map.
-
----
-### ItemsDeep
-
-```go
-func ItemsDeep(obj interface{}) (map[string]interface{}, error)
-```
-Description: Returns the "flattened" field:value pairs of the provided object as a map, including fields from anonymous inner structs.
-
----
-### Tags
-```go
-func Tags(obj interface{}, key string) (map[string]string, error)
-```
-Description: Returns the tags of the fields in the provided object as a map.
-
----
-### TagsDeep
-```go
-func TagsDeep(obj interface{}, key string) (map[string]string, error)
-```
-Description: Returns the "flattened" tags of the fields in the provided object as a map, including fields from anonymous inner structs.
-
----
 
 ## Usage Examples
 
@@ -200,6 +103,49 @@ func main() {
 }
 ```
 
+### Working with All Fields and Tags
+
+```go
+package main
+
+import (
+    "fmt"
+    "github.com/getevo/evo/v2/lib/reflections"
+)
+
+type Product struct {
+    ID          int     `json:"id"`
+    Name        string  `json:"name"`
+    Price       float64 `json:"price"`
+    Description string  `json:"description"`
+    InStock     bool    `json:"in_stock"`
+}
+
+func main() {
+    product := Product{
+        ID:          101,
+        Name:        "Laptop",
+        Price:       999.99,
+        Description: "High-performance laptop",
+        InStock:     true,
+    }
+    
+    // Get all field names
+    fields, _ := reflections.Fields(product)
+    fmt.Println("Fields:", fields)
+    
+    // Get all field values as a map
+    items, _ := reflections.Items(product)
+    for field, value := range items {
+        fmt.Printf("%s: %v\n", field, value)
+    }
+    
+    // Get all JSON tags
+    tags, _ := reflections.Tags(product, "json")
+    fmt.Println("JSON tags:", tags)
+}
+```
+
 ### Working with Nested Structs
 
 ```go
@@ -251,5 +197,4 @@ The reflections library uses Go's built-in `reflect` package to inspect and mani
 
 The library handles various edge cases, such as unexported fields, pointer values, and nested structs. It also provides both shallow and deep operations for working with nested structures.
 
----
-#### [< Table of Contents](https://github.com/getevo/evo#table-of-contents)
+For more detailed information, please refer to the source code and comments within the library.

@@ -1,10 +1,8 @@
-# Template Library
+# tpl Library
 
 The tpl library provides a simple yet powerful template rendering system for string interpolation. It allows you to replace variables in a template string with values from various data structures, supporting dot notation for accessing nested fields and array indexing.
 
 ## Installation
-
-To use this package, import it in your Go code:
 
 ```go
 import "github.com/getevo/evo/v2/lib/tpl"
@@ -18,17 +16,6 @@ import "github.com/getevo/evo/v2/lib/tpl"
 - **Nested Structures**: Support for complex nested objects and arrays
 - **Type Conversion**: Automatic conversion of values to strings
 - **Multiple Data Sources**: Pass multiple objects as data sources
-
-## Function: Render
-
-The **`Render`** function replaces placeholders in the source string with values from the provided parameters. Placeholders are identified using the following regular expression: (?mi)\$([a-z\.\_\[\]0-9]+)*.
-
-Parameters:
-- **`src`** (string): The source string containing placeholders to replace.
-- **`params`** (variadic interface{}): Parameters used to replace the placeholders. Can be any type of value.
-
-Return Value:
-- **`string`**: The modified source string with placeholders replaced by corresponding parameter values.
 
 ## Usage Examples
 
@@ -113,19 +100,75 @@ import (
     "github.com/getevo/evo/v2/lib/tpl"
 )
 
-type User struct {
-    Name   string
-    Family string
+type Person struct {
+    Name  string
+    Email string
 }
 
 func main() {
-    var text = `Hello $title $user.Name $user.Family you have $sender[0] email From $sender[2][from]($sender[2][user].Name $sender[2][user].Family) at $date[0]:$date[1]:$date[2]`
-    fmt.Println(tpl.Render(text, map[string]interface{}{
-        "title":  "Mrs",
-        "user":   User{Name: "Maria", Family: "Rossy"},
-        "sender": []interface{}{1, "empty!", map[string]interface{}{"from": "example@example.com", "user": User{Name: "Marco", Family: "Pollo"}}},
-        "date":   []int{10, 15, 20},
-    }))
+    // Template with array indexing and nested structures
+    template := "Message from: $sender[0].Name <$sender[0].Email>\n" +
+                "To: $recipients[0], $recipients[1]\n" +
+                "Subject: $metadata.subject\n" +
+                "Sent at: $metadata.time.hour:$metadata.time.minute"
+    
+    // Create complex data structure
+    data := map[string]interface{}{
+        "sender": []Person{
+            {Name: "John Smith", Email: "john@example.com"},
+        },
+        "recipients": []string{"alice@example.com", "bob@example.com"},
+        "metadata": map[string]interface{}{
+            "subject": "Meeting Reminder",
+            "time": map[string]int{
+                "hour":   14,
+                "minute": 30,
+            },
+        },
+    }
+    
+    // Render the template
+    result := tpl.Render(template, data)
+    
+    fmt.Println(result)
+    // Output:
+    // Message from: John Smith <john@example.com>
+    // To: alice@example.com, bob@example.com
+    // Subject: Meeting Reminder
+    // Sent at: 14:30
+}
+```
+
+### Multiple Data Sources
+
+```go
+package main
+
+import (
+    "fmt"
+    "github.com/getevo/evo/v2/lib/tpl"
+)
+
+func main() {
+    // Template with variables from different sources
+    template := "Hello, $user! Your account ($account) has $balance credits."
+    
+    // Define multiple data sources
+    userData := map[string]string{
+        "user": "Alice",
+    }
+    
+    accountData := map[string]interface{}{
+        "account": "A12345",
+        "balance": 150,
+    }
+    
+    // Render the template with multiple data sources
+    // The function will check each source in order until it finds a match
+    result := tpl.Render(template, userData, accountData)
+    
+    fmt.Println(result)
+    // Output: Hello, Alice! Your account (A12345) has 150 credits.
 }
 ```
 
@@ -147,5 +190,4 @@ When rendering a template, the library:
 
 The library supports multiple data sources, checking each one in order until it finds a match for a variable. This allows you to combine data from different sources in a single template.
 
----
-#### [< Table of Contents](https://github.com/getevo/evo#table-of-contents)
+For more detailed information, please refer to the source code and comments within the library.
