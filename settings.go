@@ -8,7 +8,7 @@ type DatabaseConfig struct {
 	// Enabled enables the database connection
 	Enabled bool `description:"Enabled database" default:"false" json:"enabled" yaml:"enabled"`
 
-	// Type of database. mysql,mssql,sqlite
+	// Type of database. mysql,postgres,sqlite
 	Type string `description:"Database engine" default:"sqlite" json:"type" yaml:"type"`
 
 	// Username indicates username of the database

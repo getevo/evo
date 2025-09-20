@@ -622,3 +622,24 @@ func (r *Request) Route(name string, params ...any) string {
 func (r *Request) Break() {
 	r._break = true
 }
+
+func (r *Request) Debug() string {
+	var debug strings.Builder
+	
+	debug.WriteString(fmt.Sprintf("> %s %s HTTP/1.1\r\n", r.Method(), r.Path()))
+	debug.WriteString(fmt.Sprintf("> Host: %s\r\n", r.Hostname()))
+	
+	headers := r.ReqHeaders()
+	for key, value := range headers {
+		debug.WriteString(fmt.Sprintf("> %s: %s\r\n", key, value))
+	}
+	
+	debug.WriteString(">\r\n")
+	
+	body := r.Body()
+	if body != "" {
+		debug.WriteString(fmt.Sprintf("%s\r\n", body))
+	}
+	
+	return debug.String()
+}

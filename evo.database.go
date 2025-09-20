@@ -10,8 +10,8 @@ import (
 
 	"github.com/getevo/evo/v2/lib/db/schema"
 	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
-	"gorm.io/driver/sqlserver"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -55,9 +55,9 @@ func setupDatabase() {
 	case "mysql":
 		connectionString := fmt.Sprintf("%s:%s@tcp(%s)/%s?%s", config.Username, config.Password, config.Server, config.Database, config.Params)
 		db, err = gorm.Open(mysql.Open(connectionString), cfg)
-	case "mssql":
-		connectionString := fmt.Sprintf("user id=%s;password=%s;server=%s;database:%s;"+config.Params, config.Username, config.Password, config.Server, config.Database)
-		db, err = gorm.Open(sqlserver.Open(connectionString), cfg)
+	case "postgres", "postgresql", "pgsql":
+		connectionString := fmt.Sprintf("host=%s user=%s password=%s dbname=%s %s", config.Server, config.Username, config.Password, config.Database, config.Params)
+		db, err = gorm.Open(postgres.Open(connectionString), cfg)
 	default:
 		db, err = gorm.Open(sqlite.Open(config.Database+config.Params), cfg)
 	}
