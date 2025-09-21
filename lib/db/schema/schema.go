@@ -11,6 +11,12 @@ import (
 
 var Models []Model
 
+// ClearModels clears all registered models
+func ClearModels() {
+	Models = []Model{}
+	migrations = []any{}
+}
+
 type Model struct {
 	Sample      any                 `json:"sample"`
 	Value       reflect.Value       `json:"-"`
@@ -58,7 +64,18 @@ var database = ""
 func UseModel(db *gorm.DB, values ...any) {
 	migrations = append(migrations, values...)
 	if database == "" {
-		db.Raw("SELECT DATABASE();").Scan(&database)
+		// Use database-specific query for getting current database name
+		dialectName := db.Dialector.Name()
+		switch dialectName {
+		case "mysql":
+			db.Raw("SELECT DATABASE();").Scan(&database)
+		case "postgres":
+			db.Raw("SELECT current_database();").Scan(&database)
+		case "sqlite":
+			database = "main" // SQLite uses main as default database
+		default:
+			db.Raw("SELECT DATABASE();").Scan(&database) // fallback
+		}
 	}
 	for index, _ := range values {
 		ref := reflect.ValueOf(values[index])

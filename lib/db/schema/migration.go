@@ -49,7 +49,7 @@ func GetMigrationScript(db *gorm.DB) []string {
 			}
 		}
 		if columns[idx].ColumnKey == "PRI" {
-			tb.PrimaryKey = append(tb.Columns, columns[idx])
+			tb.PrimaryKey = append(tb.PrimaryKey, columns[idx])
 		}
 		tb.Columns = append(tb.Columns, columns[idx])
 	}

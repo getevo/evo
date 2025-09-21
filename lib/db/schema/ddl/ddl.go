@@ -271,6 +271,13 @@ func cleanEnum(str string) string {
 }
 
 func (table Table) GetCreateQuery() []string {
+	// Check if we should use multi-database DDL
+	if Engine == "sqlite" || Engine == "postgresql" || Engine == "postgres" {
+		multiDDL := NewMultiDBDDL(GetDatabaseTypeFromDialect(Engine))
+		return multiDDL.GetCreateTableQuery(table)
+	}
+	
+	// Original MySQL/MariaDB implementation
 	var queries []string
 	var query = "CREATE TABLE IF NOT EXISTS " + quote(table.Name) + "("
 	var primaryKeys []string
@@ -334,6 +341,18 @@ func getFieldQuery(field *Column) string {
 				v = strconv.Quote("0000-00-00 00:00:00")
 			} else {
 				var needQuote = true
+				
+				// Handle boolean defaults for MySQL
+				if strings.Contains(strings.ToLower(field.Type), "tinyint(1)") {
+					if strings.ToLower(field.Default) == "true" {
+						v = "1"
+						needQuote = false
+					} else if strings.ToLower(field.Default) == "false" {
+						v = "0"
+						needQuote = false
+					}
+				}
+				
 				for _, fns := range InternalFunctions {
 					if slices.Contains(fns, field.Default) {
 						needQuote = false
@@ -568,6 +587,18 @@ func (local Table) GetDiff(remote table.Table) []string {
 }
 
 func fieldType(t string) string {
+	// Handle vector types for different databases
+	if strings.Contains(strings.ToLower(t), "vector(") || strings.Contains(strings.ToLower(t), "[]float32") {
+		switch Engine {
+		case "postgresql", "postgres":
+			return t // Keep vector type for PostgreSQL
+		case "mysql", "mariadb":
+			return "json" // MySQL fallback
+		default: // SQLite and others
+			return "text" // SQLite fallback
+		}
+	}
+	
 	if _, ok := EngineDataTypes[Engine]; ok {
 		if vi, ok := EngineDataTypes[Engine][t]; ok {
 			return vi
@@ -617,6 +648,21 @@ func GetCollate(statement *gorm.Statement) string {
 }
 
 func (local Table) Constrains(constraints []table.Constraint, is table.Tables) []string {
+	// Skip foreign key constraints for SQLite for now
+	// SQLite foreign key constraints need to be defined at table creation time
+	// or require special handling with PRAGMA foreign_keys=ON
+	if Engine == "sqlite" {
+		return []string{}
+	}
+	
+	// Use appropriate quote function based on database engine
+	var quoteFunc func(string) string
+	if Engine == "postgresql" || Engine == "postgres" {
+		quoteFunc = func(name string) string { return `"` + name + `"` }
+	} else {
+		quoteFunc = quote // MySQL-style backticks
+	}
+	
 	var queries []string
 	for idx, _ := range local.Columns {
 		var field = local.Columns[idx]
@@ -653,7 +699,7 @@ func (local Table) Constrains(constraints []table.Constraint, is table.Tables) [
 				if !skip {
 					queries = append(queries, "-- create foreign key")
 					var onDelete = "CASCADE"
-					queries = append(queries, "ALTER TABLE "+quote(local.Name)+" ADD CONSTRAINT "+quote(name)+" FOREIGN KEY ("+quote(field.Name)+") REFERENCES  "+quote(referencedTable)+"("+quote(referencedCol)+") ON DELETE "+onDelete+" ON UPDATE CASCADE")
+					queries = append(queries, "ALTER TABLE "+quoteFunc(local.Name)+" ADD CONSTRAINT "+quoteFunc(name)+" FOREIGN KEY ("+quoteFunc(field.Name)+") REFERENCES  "+quoteFunc(referencedTable)+"("+quoteFunc(referencedCol)+") ON DELETE "+onDelete+" ON UPDATE CASCADE")
 				}
 
 			}

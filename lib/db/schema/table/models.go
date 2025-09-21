@@ -82,6 +82,7 @@ type Column struct {
 
 func (c *Column) ReplaceDefault(from, to string) {
 	if c.ColumnDefault == nil {
+		return
 	}
 	if *c.ColumnDefault == from {
 		*c.ColumnDefault = to
@@ -147,5 +148,5 @@ type Constraint struct {
 }
 
 func (Constraint) TableName() string {
-	return "INFORMATION_SCHEMA.KEY_COLUMN_USAGE"
+	return "information_schema.key_column_usage"
 }

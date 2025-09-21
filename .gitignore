@@ -32,3 +32,4 @@ vendor/
 
 go.work
 /dev/
+/dev-migration/

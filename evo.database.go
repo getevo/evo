@@ -89,7 +89,8 @@ type Model struct {
 }
 
 func DoMigration() error {
-	return schema.DoMigration(db)
+	// Use the new v2 migration engine with database detection and multi-DB support
+	return schema.DoMigrationV2(db)
 }
 
 func Models() []schema.Model {
