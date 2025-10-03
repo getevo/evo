@@ -44,7 +44,7 @@ type Table struct {
 	Engine        string        `json:"engine" gorm:"column:ENGINE"`
 	RowFormat     string        `json:"row_format" gorm:"column:ROW_FORMAT"`
 	Rows          int           `json:"rows" gorm:"column:TABLE_ROWS"`
-	AutoIncrement int           `json:"auto_increment" gorm:"column:AUTO_INCREMENT"`
+	AutoIncrement uint64        `json:"auto_increment" gorm:"column:AUTO_INCREMENT"`
 	Collation     string        `json:"collation" gorm:"column:TABLE_COLLATION"`
 	Charset       string        `json:"charset" gorm:"column:TABLE_CHARSET"`
 	Columns       Columns       `json:"columns" gorm:"-"`
@@ -56,7 +56,7 @@ type Table struct {
 }
 
 func (Table) TableName() string {
-	return "information_schema.TABLES"
+	return "information_schema.tables"
 }
 
 type Column struct {
@@ -90,7 +90,7 @@ func (c *Column) ReplaceDefault(from, to string) {
 }
 
 func (Column) TableName() string {
-	return "information_schema.COLUMNS"
+	return "information_schema.columns"
 }
 
 type Tables []Table
@@ -144,7 +144,7 @@ type Constraint struct {
 	Column           string `gorm:"column:COLUMN_NAME" json:"column"`
 	ReferencedTable  string `gorm:"column:REFERENCED_TABLE_NAME" json:"referenced_table"`
 	ReferencedColumn string `gorm:"column:REFERENCED_COLUMN_NAME" json:"referenced_column"`
-	Database         string `gorm:"column:REFERENCED_TABLE_SCHEMA" json:"database"`
+	Database         string `gorm:"column:CONSTRAINT_SCHEMA" json:"database"`
 }
 
 func (Constraint) TableName() string {

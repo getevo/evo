@@ -2,18 +2,17 @@ package evo
 
 import (
 	"fmt"
+	"github.com/getevo/evo/v2/lib/db/schema"
 	"github.com/getevo/evo/v2/lib/settings"
+	"github.com/glebarez/sqlite"
+	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 	"log"
 	"os"
 	"strings"
 	"time"
-
-	"github.com/getevo/evo/v2/lib/db/schema"
-	"gorm.io/driver/mysql"
-	"gorm.io/driver/postgres"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
 var db *gorm.DB
@@ -59,7 +58,7 @@ func setupDatabase() {
 		connectionString := fmt.Sprintf("host=%s user=%s password=%s dbname=%s %s", config.Server, config.Username, config.Password, config.Database, config.Params)
 		db, err = gorm.Open(postgres.Open(connectionString), cfg)
 	default:
-		db, err = gorm.Open(sqlite.Open(config.Database+config.Params), cfg)
+		db, err = gorm.Open(sqlite.Open(config.Database), cfg)
 	}
 	if err != nil {
 		log.Fatal("unable to connect to database", "error", err)

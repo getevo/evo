@@ -21,6 +21,16 @@ var EngineDataTypes = map[string]map[string]string{
 		"current_timestamp(3)": "CURRENT_TIMESTAMP()",
 		"datetime(3)":          "timestamp",
 	},
+	"postgres": {
+		"character varying":           "varchar",
+		"timestamp without time zone": "timestamp",
+		"timestamp with time zone":    "timestamptz",
+		"bigint":                      "bigint",
+		"integer":                     "int",
+		"boolean":                     "boolean",
+		"text":                        "text",
+		"jsonb":                       "jsonb",
+	},
 }
 
 var DefaultValues = map[string]string{
@@ -276,7 +286,7 @@ func (table Table) GetCreateQuery() []string {
 		multiDDL := NewMultiDBDDL(GetDatabaseTypeFromDialect(Engine))
 		return multiDDL.GetCreateTableQuery(table)
 	}
-	
+
 	// Original MySQL/MariaDB implementation
 	var queries []string
 	var query = "CREATE TABLE IF NOT EXISTS " + quote(table.Name) + "("
@@ -341,7 +351,7 @@ func getFieldQuery(field *Column) string {
 				v = strconv.Quote("0000-00-00 00:00:00")
 			} else {
 				var needQuote = true
-				
+
 				// Handle boolean defaults for MySQL
 				if strings.Contains(strings.ToLower(field.Type), "tinyint(1)") {
 					if strings.ToLower(field.Default) == "true" {
@@ -352,7 +362,7 @@ func getFieldQuery(field *Column) string {
 						needQuote = false
 					}
 				}
-				
+
 				for _, fns := range InternalFunctions {
 					if slices.Contains(fns, field.Default) {
 						needQuote = false
@@ -403,12 +413,20 @@ func (local Table) GetDiff(remote table.Table) []string {
 		queries = append(queries, fmt.Sprintf("--  table charset does not match. new:%s old:%s", local.Charset, remote.Charset))
 		queries = append(queries, fmt.Sprintf("--  table collate does not match. new:%s old:%s", local.Collate, remote.Collation))
 		//queries = append(queries, fmt.Sprintf("ALTER TABLE %s CONVERT TO CHARACTER SET %s;", local.Name, local.Charset))
-		queries = append(queries, fmt.Sprintf("ALTER TABLE `%s` DEFAULT CHARACTER SET %s COLLATE %s", local.Name, local.Charset, local.Collate))
+		if Engine == "postgres" {
+			// PostgreSQL doesn't support table-level charset/collation changes
+		} else {
+			queries = append(queries, fmt.Sprintf("ALTER TABLE %s DEFAULT CHARACTER SET %s COLLATE %s", quote(local.Name), local.Charset, local.Collate))
+		}
 	}
 
 	if strings.ToLower(local.Engine) != strings.ToLower(remote.Engine) {
 		queries = append(queries, fmt.Sprintf("--  table engine does not match. new:%s old:%s", local.Engine, remote.Engine))
-		queries = append(queries, fmt.Sprintf("ALTER TABLE `%s` ENGINE=%s;", quote(local.Name), local.Engine))
+		if Engine == "postgres" {
+			// PostgreSQL doesn't have storage engines like MySQL
+		} else {
+			queries = append(queries, fmt.Sprintf("ALTER TABLE %s ENGINE=%s;", quote(local.Name), local.Engine))
+		}
 	}
 
 	for idx, _ := range local.Columns {
@@ -420,7 +438,7 @@ func (local Table) GetDiff(remote table.Table) []string {
 
 		if r := remote.Columns.GetColumn(field.Name); r == nil {
 			var position = ""
-			if idx > 0 {
+			if Engine != "postgres" && idx > 0 {
 				position = " AFTER " + quote(local.Columns[idx-1].Name)
 			}
 			queries = append(queries, fmt.Sprintf("--  column %s does not exists", field.Name))
@@ -431,8 +449,10 @@ func (local Table) GetDiff(remote table.Table) []string {
 				diff = true
 			}
 
-			if fieldType(strings.ToLower(field.Type)) != fieldType(strings.ToLower(r.ColumnType)) {
-				queries = append(queries, fmt.Sprintf("-- column %s type does not match. new:%s old:%s", field.Name, fieldType(field.Type), strings.ToLower(r.ColumnType)))
+			normalizedOldType := normalizeDataType(strings.ToLower(r.ColumnType))
+			normalizedNewType := fieldType(strings.ToLower(field.Type))
+			if normalizedNewType != fieldType(normalizedOldType) {
+				queries = append(queries, fmt.Sprintf("-- column %s type does not match. new:%s old:%s", field.Name, normalizedNewType, normalizedOldType))
 				diff = true
 			}
 			if len(field.Collate) > 0 && strings.ToLower(field.Collate) != strings.ToLower(r.Collation) {
@@ -475,13 +495,21 @@ func (local Table) GetDiff(remote table.Table) []string {
 			}
 			if diff {
 				var position = ""
-				if idx > 0 {
+				if Engine != "postgres" && idx > 0 {
 					position = " AFTER " + quote(local.Columns[idx-1].Name)
 				}
 				if needPK {
-					afterPK = append(afterPK, "ALTER TABLE "+quote(local.Name)+" MODIFY COLUMN "+getFieldQuery(&field)+position+";")
+					if Engine == "postgres" {
+						afterPK = append(afterPK, "ALTER TABLE "+quote(local.Name)+" ALTER COLUMN "+quote(field.Name)+" TYPE "+field.Type+";")
+					} else {
+						afterPK = append(afterPK, "ALTER TABLE "+quote(local.Name)+" MODIFY COLUMN "+getFieldQuery(&field)+position+";")
+					}
 				} else {
-					queries = append(queries, "ALTER TABLE "+quote(local.Name)+" MODIFY COLUMN "+getFieldQuery(&field)+position+";")
+					if Engine == "postgres" {
+						queries = append(queries, "ALTER TABLE "+quote(local.Name)+" ALTER COLUMN "+quote(field.Name)+" TYPE "+field.Type+";")
+					} else {
+						queries = append(queries, "ALTER TABLE "+quote(local.Name)+" MODIFY COLUMN "+getFieldQuery(&field)+position+";")
+					}
 				}
 
 			}
@@ -598,7 +626,7 @@ func fieldType(t string) string {
 			return "text" // SQLite fallback
 		}
 	}
-	
+
 	if _, ok := EngineDataTypes[Engine]; ok {
 		if vi, ok := EngineDataTypes[Engine][t]; ok {
 			return vi
@@ -623,7 +651,54 @@ func getString(v *string) string {
 }
 
 func quote(name string) string {
+	if Engine == "postgres" {
+		return "\"" + name + "\""
+	}
 	return "`" + name + "`"
+}
+
+func normalizeDataType(dataType string) string {
+	if Engine == "postgres" {
+		// Normalize PostgreSQL data types to match GORM expectations
+		if engineTypes, ok := EngineDataTypes["postgres"]; ok {
+			for pgType, gormType := range engineTypes {
+				if strings.HasPrefix(dataType, pgType) {
+					// Handle cases like "character varying(255)" -> "varchar(255)"
+					if pgType == "character varying" && strings.Contains(dataType, "(") {
+						// Extract length: "character varying(255)" -> "varchar(255)"
+						if idx := strings.Index(dataType, "("); idx > 0 {
+							length := dataType[idx:]
+							return gormType + length
+						}
+						return gormType
+					}
+					return strings.Replace(dataType, pgType, gormType, 1)
+				}
+			}
+		}
+	}
+	return dataType
+}
+
+func normalizeDefaultValue(defaultValue string) string {
+	if Engine == "postgres" {
+		// Normalize PostgreSQL default values
+		// PostgreSQL: 'enabled'::character varying -> enabled
+		// PostgreSQL: nextval('table_id_seq'::regclass) -> AUTO_INCREMENT
+		if strings.Contains(defaultValue, "::") {
+			// Remove type casting: 'enabled'::character varying -> 'enabled'
+			if idx := strings.Index(defaultValue, "::"); idx > 0 {
+				defaultValue = defaultValue[:idx]
+			}
+		}
+		if strings.HasPrefix(defaultValue, "nextval(") {
+			// PostgreSQL sequence -> equivalent to AUTO_INCREMENT
+			return ""
+		}
+		// Remove quotes: 'enabled' -> enabled
+		defaultValue = strings.Trim(defaultValue, "'\"")
+	}
+	return defaultValue
 }
 
 func GetEngine(statement *gorm.Statement) string {
@@ -654,7 +729,7 @@ func (local Table) Constrains(constraints []table.Constraint, is table.Tables) [
 	if Engine == "sqlite" {
 		return []string{}
 	}
-	
+
 	// Use appropriate quote function based on database engine
 	var quoteFunc func(string) string
 	if Engine == "postgresql" || Engine == "postgres" {
@@ -662,7 +737,7 @@ func (local Table) Constrains(constraints []table.Constraint, is table.Tables) [
 	} else {
 		quoteFunc = quote // MySQL-style backticks
 	}
-	
+
 	var queries []string
 	for idx, _ := range local.Columns {
 		var field = local.Columns[idx]

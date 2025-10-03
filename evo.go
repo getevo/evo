@@ -5,10 +5,10 @@ import (
 	"github.com/getevo/evo/v2/lib/args"
 	"github.com/getevo/evo/v2/lib/log"
 	"github.com/getevo/evo/v2/lib/settings"
+	"github.com/gofiber/fiber/v2/middleware/logger"
 
 	dbo "github.com/getevo/evo/v2/lib/db"
 	"github.com/getevo/evo/v2/lib/generic"
-	"github.com/getevo/evo/v2/lib/memo"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -27,7 +27,12 @@ func Setup() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	if settings.Get("LOG.LEVEL").String() != "" {
+		log.SetLevel(log.ParseLevel(settings.Get("LOG.LEVEL").String()))
+	}
+	if args.Exists("--debug") {
+		log.SetLevel(log.DebugLevel)
+	}
 	settings.Register("HTTP", &http)
 	settings.Get("HTTP").Cast(&http)
 	err = generic.Parse(http).Cast(&fiberConfig)
@@ -41,9 +46,20 @@ func Setup() {
 		dbo.Register(db)
 		settings.LoadDatabaseSettings()
 	}
-
-	memo.Register()
-
+	if settings.Get("HTTP.PrintRequest").Bool() {
+		GetFiber().Use(logger.New(logger.Config{
+			Next: func(c *fiber.Ctx) bool {
+				var path = c.Path()
+				if path == "/health" {
+					return true
+				}
+				return false
+			},
+		}))
+	}
+	Get("/health", func(request *Request) any {
+		return "ok"
+	})
 }
 
 // Run start EVO Server

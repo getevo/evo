@@ -100,7 +100,14 @@ func UseModel(db *gorm.DB, values ...any) {
 		model.Joins = make(map[string][]string)
 
 		var constraints []table.Constraint
-		db.Where(table.Constraint{Database: database}).Find(&constraints)
+		dialectName := db.Dialector.Name()
+		if dialectName == "postgres" {
+			// PostgreSQL uses CONSTRAINT_SCHEMA instead of REFERENCED_TABLE_SCHEMA
+			db.Where("constraint_schema = ?", database).Find(&constraints)
+		} else {
+			// MySQL/MariaDB use REFERENCED_TABLE_SCHEMA
+			db.Where(table.Constraint{Database: database}).Find(&constraints)
+		}
 		for _, constraint := range constraints {
 			model.Joins[constraint.ReferencedTable] = []string{constraint.Column, constraint.ReferencedColumn}
 		}
