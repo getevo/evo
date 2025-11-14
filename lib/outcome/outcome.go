@@ -208,3 +208,229 @@ func (response *Response) SetCacheControl(t time.Duration, headers ...string) *R
 
 	return response
 }
+
+// processResponseData processes the input data and returns the appropriate byte representation
+func processResponseData(input any) []byte {
+	if input == nil {
+		return nil
+	}
+
+	switch v := input.(type) {
+	case string:
+		return []byte(v)
+	case []byte:
+		return v
+	default:
+		// Check if it's a struct
+		val := reflect.ValueOf(input)
+		kind := val.Kind()
+		if kind == reflect.Ptr {
+			if val.IsNil() {
+				return nil
+			}
+			kind = val.Elem().Kind()
+		}
+
+		if kind == reflect.Struct || kind == reflect.Map || kind == reflect.Slice || kind == reflect.Array {
+			data, err := json.Marshal(input)
+			if err != nil {
+				return []byte(fmt.Sprint(input))
+			}
+			return data
+		}
+
+		return []byte(fmt.Sprint(input))
+	}
+}
+
+// BadRequest returns a 400 Bad Request response
+func BadRequest(input ...any) *Response {
+	response := &Response{
+		ContentType: fiber.MIMEApplicationJSONCharsetUTF8,
+		StatusCode:  fiber.StatusBadRequest,
+	}
+
+	if len(input) == 0 {
+		response.Data = []byte("Bad Request")
+	} else {
+		response.Data = processResponseData(input[0])
+	}
+
+	return response
+}
+
+// InternalServerError returns a 500 Internal Server Error response
+func InternalServerError(input ...any) *Response {
+	response := &Response{
+		ContentType: fiber.MIMEApplicationJSONCharsetUTF8,
+		StatusCode:  fiber.StatusInternalServerError,
+	}
+
+	if len(input) == 0 {
+		response.Data = []byte("Internal Server Error")
+	} else {
+		response.Data = processResponseData(input[0])
+	}
+
+	return response
+}
+
+// UnAuthorized returns a 401 Unauthorized response
+func UnAuthorized(input ...any) *Response {
+	response := &Response{
+		ContentType: fiber.MIMEApplicationJSONCharsetUTF8,
+		StatusCode:  fiber.StatusUnauthorized,
+	}
+
+	if len(input) == 0 {
+		response.Data = []byte("Unauthorized")
+	} else {
+		response.Data = processResponseData(input[0])
+	}
+
+	return response
+}
+
+// StatusOk returns a 200 OK response
+func StatusOk(input ...any) *Response {
+	response := &Response{
+		ContentType: fiber.MIMEApplicationJSONCharsetUTF8,
+		StatusCode:  fiber.StatusOK,
+	}
+
+	if len(input) == 0 {
+		response.Data = []byte("OK")
+	} else {
+		response.Data = processResponseData(input[0])
+	}
+
+	return response
+}
+
+// NoContent returns a 204 No Content response
+func NoContent(input ...any) *Response {
+	response := &Response{
+		ContentType: fiber.MIMEApplicationJSONCharsetUTF8,
+		StatusCode:  fiber.StatusNoContent,
+	}
+
+	if len(input) == 0 {
+		response.Data = []byte("")
+	} else {
+		response.Data = processResponseData(input[0])
+	}
+
+	return response
+}
+
+// NotFound returns a 404 Not Found response
+func NotFound(input ...any) *Response {
+	response := &Response{
+		ContentType: fiber.MIMEApplicationJSONCharsetUTF8,
+		StatusCode:  fiber.StatusNotFound,
+	}
+
+	if len(input) == 0 {
+		response.Data = []byte("Not Found")
+	} else {
+		response.Data = processResponseData(input[0])
+	}
+
+	return response
+}
+
+// NotAcceptable returns a 406 Not Acceptable response
+func NotAcceptable(input ...any) *Response {
+	response := &Response{
+		ContentType: fiber.MIMEApplicationJSONCharsetUTF8,
+		StatusCode:  fiber.StatusNotAcceptable,
+	}
+
+	if len(input) == 0 {
+		response.Data = []byte("Not Acceptable")
+	} else {
+		response.Data = processResponseData(input[0])
+	}
+
+	return response
+}
+
+// RequestTimeout returns a 408 Request Timeout response
+func RequestTimeout(input ...any) *Response {
+	response := &Response{
+		ContentType: fiber.MIMEApplicationJSONCharsetUTF8,
+		StatusCode:  fiber.StatusRequestTimeout,
+	}
+
+	if len(input) == 0 {
+		response.Data = []byte("Request Timeout")
+	} else {
+		response.Data = processResponseData(input[0])
+	}
+
+	return response
+}
+
+// TooManyRequests returns a 429 Too Many Requests response
+func TooManyRequests(input ...any) *Response {
+	response := &Response{
+		ContentType: fiber.MIMEApplicationJSONCharsetUTF8,
+		StatusCode:  fiber.StatusTooManyRequests,
+	}
+
+	if len(input) == 0 {
+		response.Data = []byte("Too Many Requests")
+	} else {
+		response.Data = processResponseData(input[0])
+	}
+
+	return response
+}
+
+// UnavailableForLegalReasons returns a 451 Unavailable For Legal Reasons response
+func UnavailableForLegalReasons(input ...any) *Response {
+	response := &Response{
+		ContentType: fiber.MIMEApplicationJSONCharsetUTF8,
+		StatusCode:  fiber.StatusUnavailableForLegalReasons,
+	}
+
+	if len(input) == 0 {
+		response.Data = []byte("Unavailable For Legal Reasons")
+	} else {
+		response.Data = processResponseData(input[0])
+	}
+
+	return response
+}
+
+// Created returns a 201 Created response
+func Created(input ...any) *Response {
+	response := &Response{
+		ContentType: fiber.MIMEApplicationJSONCharsetUTF8,
+		StatusCode:  fiber.StatusCreated,
+	}
+
+	if len(input) == 0 {
+		response.Data = []byte("Created")
+	} else {
+		response.Data = processResponseData(input[0])
+	}
+
+	return response
+}
+
+// Accepted returns a 202 Accepted response
+func Accepted(input ...any) *Response {
+	response := &Response{
+		ContentType: fiber.MIMEApplicationJSONCharsetUTF8,
+		StatusCode:  fiber.StatusAccepted,
+	}
+
+	if len(input) == 0 {
+		response.Data = []byte("Accepted")
+	} else {
+		response.Data = processResponseData(input[0])
+	}
+
+	return response
+}
