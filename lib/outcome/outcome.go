@@ -434,3 +434,18 @@ func Accepted(input ...any) *Response {
 
 	return response
 }
+
+func OK(input ...any) *Response {
+	response := &Response{
+		ContentType: fiber.MIMEApplicationJSONCharsetUTF8,
+		StatusCode:  fiber.StatusOK,
+	}
+
+	if len(input) == 0 {
+		response.Data = []byte("OK")
+	} else {
+		response.Data = processResponseData(input[0])
+	}
+
+	return response
+}
