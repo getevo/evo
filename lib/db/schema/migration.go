@@ -167,6 +167,7 @@ func DoMigration(db *gorm.DB) error {
 	err = db.Transaction(func(tx *gorm.DB) error {
 		for _, query := range GetMigrationScript(db) {
 			if !strings.HasPrefix(query, "--") {
+				fmt.Println("Executing: " + query)
 				err = tx.Debug().Exec(query).Error
 				if err != nil {
 					log.Error(err)
