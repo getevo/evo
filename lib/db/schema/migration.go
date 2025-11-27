@@ -165,7 +165,14 @@ func GetMigrationScript(db *gorm.DB) []string {
 func DoMigration(db *gorm.DB) error {
 	var err error
 	//err = db.Transaction(func(tx *gorm.DB) error {
-	for _, query := range GetMigrationScript(db) {
+	var migrations = GetMigrationScript(db)
+	if len(migrations) == 0 {
+		return nil
+	}
+	for _, query := range migrations {
+		fmt.Println(query)
+	}
+	for _, query := range migrations {
 		query = strings.TrimSpace(query)
 		if !strings.HasPrefix(strings.TrimSpace(query), "--") && strings.TrimSpace(query) != "" {
 			err = db.Debug().Exec(query).Error

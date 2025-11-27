@@ -409,6 +409,7 @@ func (local Table) GetDiff(remote table.Table) []string {
 		} else {
 			var diff = false
 			if idx > 0 && idx < len(remote.Columns) && remote.Columns[idx].Name != field.Name {
+				queries = append(queries, fmt.Sprintf("-- column %s position does not match", field.Name))
 				diff = true
 			}
 
@@ -459,10 +460,11 @@ func (local Table) GetDiff(remote table.Table) []string {
 				if idx > 0 {
 					position = " AFTER " + quote(local.Columns[idx-1].Name)
 				}
+				var q = "ALTER TABLE " + quote(local.Name) + " MODIFY COLUMN " + getFieldQuery(&field) + position + ";"
 				if needPK {
-					afterPK = append(afterPK, "ALTER TABLE "+quote(local.Name)+" MODIFY COLUMN "+getFieldQuery(&field)+position+";")
+					afterPK = append(afterPK, q)
 				} else {
-					queries = append(queries, "ALTER TABLE "+quote(local.Name)+" MODIFY COLUMN "+getFieldQuery(&field)+position+";")
+					queries = append(queries, q)
 				}
 
 			}
