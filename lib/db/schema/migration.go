@@ -170,9 +170,6 @@ func DoMigration(db *gorm.DB) error {
 		return nil
 	}
 	for _, query := range migrations {
-		fmt.Println(query)
-	}
-	for _, query := range migrations {
 		query = strings.TrimSpace(query)
 		if !strings.HasPrefix(strings.TrimSpace(query), "--") && strings.TrimSpace(query) != "" {
 			err = db.Debug().Exec(query).Error

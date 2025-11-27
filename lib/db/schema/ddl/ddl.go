@@ -153,7 +153,6 @@ func FromStatement(stmt *gorm.Statement) Table {
 
 		// fix gorm problem with primaryKey
 		if (column.Type == "bigint(20)" || column.Type == "bigint" || column.Type == "int") && field.FieldType.Kind() == reflect.String {
-			fmt.Println("===>", column.Name, field.FieldType.Kind())
 			column.Type = "varchar"
 		}
 		if column.Type == "varchar" {
@@ -408,6 +407,7 @@ func (local Table) GetDiff(remote table.Table) []string {
 			queries = append(queries, "ALTER TABLE "+quote(local.Name)+" ADD "+getFieldQuery(&field)+position+";")
 		} else {
 			var diff = false
+
 			if idx > 0 && idx < len(remote.Columns) && remote.Columns[idx].Name != field.Name {
 				queries = append(queries, fmt.Sprintf("-- column %s position does not match", field.Name))
 				diff = true
