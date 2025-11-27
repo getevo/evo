@@ -44,7 +44,7 @@ type Table struct {
 	Engine        string        `json:"engine" gorm:"column:ENGINE"`
 	RowFormat     string        `json:"row_format" gorm:"column:ROW_FORMAT"`
 	Rows          int           `json:"rows" gorm:"column:TABLE_ROWS"`
-	AutoIncrement int           `json:"auto_increment" gorm:"column:AUTO_INCREMENT"`
+	AutoIncrement uint64        `json:"auto_increment" gorm:"column:AUTO_INCREMENT"`
 	Collation     string        `json:"collation" gorm:"column:TABLE_COLLATION"`
 	Charset       string        `json:"charset" gorm:"column:TABLE_CHARSET"`
 	Columns       Columns       `json:"columns" gorm:"-"`
