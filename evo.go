@@ -54,7 +54,7 @@ func Run() {
 	if args.Exists("--migration-do") {
 		err := dbo.DoMigration()
 		if err != nil {
-			log.Fatal("unable to perform database migrations: ", err)
+			log.Error("unable to perform database migrations: ", err)
 		} else {
 			log.Info("database migrations performed successfully")
 		}
