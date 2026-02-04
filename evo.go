@@ -52,7 +52,10 @@ func Run() {
 
 	//do database migrations
 	if args.Exists("--migration-do") {
+		dbo.TriggerOnBeforeMigration()
 		err := dbo.DoMigration()
+		dbo.TriggerOnAfterMigration()
+
 		if err != nil {
 			log.Error("unable to perform database migrations: ", err)
 		} else {
