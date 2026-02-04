@@ -172,7 +172,9 @@ func DoMigration(db *gorm.DB) error {
 	if len(migrations) == 0 {
 		return nil
 	}
-	TriggerOnBeforeMigration()
+	for _, fn := range OnBeforeMigration {
+		fn(db)
+	}
 	for _, query := range migrations {
 		query = strings.TrimSpace(query)
 		if !strings.HasPrefix(strings.TrimSpace(query), "--") && strings.TrimSpace(query) != "" {
@@ -184,7 +186,9 @@ func DoMigration(db *gorm.DB) error {
 			fmt.Println(query)
 		}
 	}
-	TriggerOnBeforeMigration()
+	for _, fn := range OnAfterMigration {
+		fn(db)
+	}
 
 	//return nil
 
