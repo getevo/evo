@@ -10,8 +10,6 @@ import (
 )
 
 var Enabled = false
-var onBeforeMigration []func(db *gorm.DB)
-var onAfterMigration []func(db *gorm.DB)
 
 var (
 	db *gorm.DB
@@ -25,23 +23,23 @@ func Register(obj *gorm.DB) {
 }
 
 func TriggerOnBeforeMigration() {
-	for _, fn := range onBeforeMigration {
+	for _, fn := range schema.OnBeforeMigration {
 		fn(db)
 	}
 }
 
 func TriggerOnAfterMigration() {
-	for _, fn := range onAfterMigration {
+	for _, fn := range schema.OnAfterMigration {
 		fn(db)
 	}
 }
 
 func OnBeforeMigration(callback func(db *gorm.DB)) {
-	onBeforeMigration = append(onBeforeMigration, callback)
+	schema.OnBeforeMigration = append(schema.OnBeforeMigration, callback)
 }
 
 func OnAfterMigration(callback func(db *gorm.DB)) {
-	onAfterMigration = append(onAfterMigration, callback)
+	schema.OnAfterMigration = append(schema.OnAfterMigration, callback)
 }
 
 // Session create new db session
