@@ -16,36 +16,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-const (
-	Invalid reflect.Kind = iota
-	Bool
-	Int
-	Int8
-	Int16
-	Int32
-	Int64
-	Uint
-	Uint8
-	Uint16
-	Uint32
-	Uint64
-	Uintptr
-	Float32
-	Float64
-	Complex64
-	Complex128
-	Array
-	Chan
-	Func
-	Interface
-	Map
-	Ptr
-	Slice
-	String
-	Struct
-	UnsafePointer
-)
-
 // Parse parse input
 //
 //	@param i
@@ -412,13 +382,13 @@ func (v Value) Prop(property string) Value {
 	return Parse(nil)
 }
 
-func (v Value) PropByTag(tag string) Value {
+func (v Value) PropByTag(tagName, tagValue string) Value {
 	ref := v.Indirect()
 	if ref.Kind() == reflect.Struct {
 		var typ = reflect.TypeOf(ref.Interface())
 		for i := 0; i < typ.NumField(); i++ {
 			field := typ.Field(i)
-			if field.Tag.Get(tag) == tag {
+			if field.Tag.Get(tagName) == tagValue {
 				return Parse(ref.Field(i).Interface())
 			}
 		}
@@ -446,7 +416,7 @@ func (v Value) SetProp(property string, value any) error {
 
 		var field = ref.FieldByName(property)
 		if field.Kind() == reflect.Struct {
-			return Value{Input: field.Addr().Interface()}.SetProp(property, value)
+			return Parse(value).Cast(field.Addr().Interface())
 		}
 		if field.Kind() == reflect.Ptr {
 			field = field.Elem()
@@ -582,9 +552,9 @@ func (v Value) Cast(dst any) error {
 		}
 	case reflect.Uint8:
 		if sizeRegex.MatchString(v.String()) {
-			x = uint(v.SizeInBytes())
+			x = uint8(v.SizeInBytes())
 		} else {
-			x = v.Uint()
+			x = v.Uint8()
 		}
 	case reflect.Uint16:
 		if sizeRegex.MatchString(v.String()) {
@@ -600,7 +570,7 @@ func (v Value) Cast(dst any) error {
 		}
 	case reflect.Uint64:
 		if sizeRegex.MatchString(v.String()) {
-			x = uint32(v.SizeInBytes())
+			x = uint64(v.SizeInBytes())
 		} else {
 			x = v.Uint64()
 		}
@@ -683,6 +653,9 @@ func (v Value) Indirect() reflect.Value {
 func indirect(input any) reflect.Value {
 	var ref = reflect.ValueOf(input)
 	for ref.Kind() == reflect.Ptr {
+		if ref.IsNil() {
+			return reflect.Value{}
+		}
 		ref = ref.Elem()
 	}
 	return ref
@@ -701,7 +674,23 @@ func indirectType(input any) reflect.Type {
 }
 
 func (v Value) IsEmpty() bool {
-	return v.Input == nil || reflect.ValueOf(v.Input).IsNil()
+	if v.Input == nil {
+		return true
+	}
+	rv := reflect.ValueOf(v.Input)
+	switch rv.Kind() {
+	case reflect.Ptr, reflect.Map, reflect.Slice, reflect.Chan, reflect.Interface, reflect.Func:
+		return rv.IsNil()
+	}
+	return false
+}
+
+// IsZero returns true if the value is the zero value for its type.
+func (v Value) IsZero() bool {
+	if v.Input == nil {
+		return true
+	}
+	return reflect.ValueOf(v.Input).IsZero()
 }
 
 func (v Value) IsAny(s ...any) bool {

@@ -18,6 +18,6 @@ func TestIs(t *testing.T) {
 	}
 	Parse(&x).SetProp("Name", "Reza")
 	Parse(&y).SetProp("a", "c")
-	fmt.Println(Parse(x).PropByTag("name"))
+	fmt.Println(Parse(x).PropByTag("json", "name"))
 	fmt.Println(Parse(y).Prop("a"))
 }
