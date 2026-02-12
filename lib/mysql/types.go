@@ -1,6 +1,9 @@
 package mysql
 
-import "reflect"
+import (
+	"reflect"
+	"strings"
+)
 
 // --- Remote introspection types (MySQL information_schema) ---
 
@@ -16,7 +19,6 @@ type remoteTable struct {
 	Charset       string        `json:"charset" gorm:"column:TABLE_CHARSET"`
 	Columns       remoteColumns `json:"columns" gorm:"-"`
 	Indexes       remoteIndexes `json:"indexes" gorm:"-"`
-	Constraints   []remoteConstraint `json:"constraints" gorm:"-"`
 	Model         any           `json:"-" gorm:"-"`
 	Reflect       reflect.Value `json:"-" gorm:"-"`
 	PrimaryKey    []remoteColumn `json:"primary_key" gorm:"-"`
@@ -99,8 +101,9 @@ type remoteIndex struct {
 type remoteIndexes []remoteIndex
 
 func (list remoteIndexes) Find(name string) *remoteIndex {
+	lower := strings.ToLower(name)
 	for idx := range list {
-		if list[idx].Name == name {
+		if strings.ToLower(list[idx].Name) == lower {
 			return &list[idx]
 		}
 	}

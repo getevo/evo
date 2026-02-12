@@ -9,6 +9,7 @@ import (
 
 	"github.com/getevo/evo/v2/lib/args"
 	"github.com/getevo/evo/v2/lib/db/schema"
+	"github.com/getevo/evo/v2/lib/log"
 	"gorm.io/gorm"
 )
 
@@ -106,6 +107,13 @@ func fromStatementToTable(stmt *gorm.Statement) ddlTable {
 			column.ForeignKey = v
 		}
 
+		if v, ok := field.TagSettings["FK_ON_DELETE"]; ok {
+			column.OnDelete = v
+		}
+		if v, ok := field.TagSettings["FK_ON_UPDATE"]; ok {
+			column.FKOnUpdate = v
+		}
+
 		if v, ok := field.TagSettings["COLLATE"]; ok {
 			column.Collate = v
 		}
@@ -114,8 +122,8 @@ func fromStatementToTable(stmt *gorm.Statement) ddlTable {
 			column.FullText = true
 		}
 
-		if strings.ToLower(column.Type) == "datetime(3)" {
-			column.Type = "TIMESTAMP"
+		if v, ok := field.TagSettings["ON_UPDATE"]; ok {
+			column.OnUpdate = v
 		}
 
 		var nullable = false
@@ -135,12 +143,12 @@ func fromStatementToTable(stmt *gorm.Statement) ddlTable {
 		}
 
 		if (column.Type == "TIMESTAMP" || column.Type == "timestamp") && column.Default == "" && !column.Nullable {
-			column.Default = "0000-00-00 00:00:00"
+			column.Default = "CURRENT_TIMESTAMP"
 		}
 
 		if column.Unique {
 			t.Index = append(t.Index, schema.Index{
-				Name:    "idx_unique_" + column.Name,
+				Name:    schema.SafeIndexName("idx_unique_"+column.Name, 64),
 				Unique:  true,
 				Columns: schema.Columns{column},
 			})
@@ -169,12 +177,21 @@ func fromStatementToTable(stmt *gorm.Statement) ddlTable {
 	for _, index := range stmt.Schema.ParseIndexes() {
 
 		var idx = schema.Index{
-			Name:     index.Name,
+			Name:     schema.SafeIndexName(index.Name, 64),
 			Unique:   index.Class == "UNIQUE",
 			FullText: index.Class == "FULLTEXT",
 		}
+		var skip bool
 		for _, opt := range index.Fields {
-			idx.Columns = append(idx.Columns, *t.Columns.Find(opt.DBName))
+			col := t.Columns.Find(opt.DBName)
+			if col == nil {
+				skip = true
+				break
+			}
+			idx.Columns = append(idx.Columns, *col)
+		}
+		if skip {
+			continue
 		}
 
 		t.Index = append(t.Index, idx)
@@ -185,16 +202,13 @@ func fromStatementToTable(stmt *gorm.Statement) ddlTable {
 
 // ddlTable is the MySQL-private DDL table representation.
 type ddlTable struct {
-	Columns         schema.Columns
-	PrimaryKey      schema.Columns
-	Index           schema.Indexes
-	Constraints     []string
-	Engine          string
-	Name            string
-	Charset         string
-	Collate         string
-	FullTextColumns string
-	HasFullText     bool
+	Columns    schema.Columns
+	PrimaryKey schema.Columns
+	Index      schema.Indexes
+	Engine     string
+	Name       string
+	Charset    string
+	Collate    string
 }
 
 func getCreateQuery(t ddlTable) []string {
@@ -256,21 +270,15 @@ func getFieldQuery(field *schema.Column) string {
 
 	if field.Default != "" {
 		var v = field.Default
-		if field.Default != "" {
-			if (strings.ToLower(field.Type) == "timestamp" || strings.ToLower(field.Type) == "datetime") && !field.Nullable && field.Default == "" {
-				v = strconv.Quote("0000-00-00 00:00:00")
-			} else {
-				var needQuote = true
-				for _, fns := range schema.InternalFunctions {
-					if slices.Contains(fns, field.Default) {
-						needQuote = false
-						break
-					}
-				}
-				if needQuote {
-					v = strconv.Quote(v)
-				}
+		var needQuote = true
+		for _, fns := range schema.InternalFunctions {
+			if slices.Contains(fns, field.Default) {
+				needQuote = false
+				break
 			}
+		}
+		if needQuote {
+			v = strconv.Quote(v)
 		}
 		query += " DEFAULT " + v
 	}
@@ -463,7 +471,7 @@ func getDiff(local ddlTable, remote remoteTable) []string {
 				}
 			}
 			if changed {
-				queries = append(queries, "DROP INDEX "+quote(index.Name)+" ON "+local.Name+";")
+				queries = append(queries, "DROP INDEX "+quote(index.Name)+" ON "+quote(local.Name)+";")
 				var query = "CREATE "
 				if index.Unique {
 					query += "UNIQUE "
@@ -479,8 +487,8 @@ func getDiff(local ddlTable, remote remoteTable) []string {
 
 	}
 	for _, index := range remote.Indexes {
-		if local.Index.Find(index.Name) == nil {
-			if !strings.HasPrefix(index.Name, "fk_") {
+		if findIndexCaseInsensitive(local.Index, index.Name) == nil {
+			if !strings.HasPrefix(strings.ToLower(index.Name), "fk_") {
 				queries = append(queries, "-- drop unnecessary index")
 				queries = append(queries, "DROP INDEX "+quote(index.Name)+" ON "+quote(local.Name)+";")
 			}
@@ -510,25 +518,31 @@ func getConstraintsQuery(local ddlTable, constraints []remoteConstraint, is remo
 				referencedCol = chunks[1]
 			}
 
-			if referencedTable != "" && referencedCol != "" {
+			if referencedTable == "" || referencedCol == "" {
+				log.Warning("foreign key on ", local.Name, ".", field.Name, " references '", field.ForeignKey, "' but target table not found, skipping constraint")
+				continue
+			}
 
-				var name = local.Name + "." + field.Name + "_" + referencedTable + "." + referencedCol
-
-				name = "fk_" + schema.Generate32CharHash(name)
-				var skip = false
-				for _, constraint := range constraints {
-
-					if constraint.Table == local.Name && constraint.Column == field.Name && constraint.ReferencedTable == referencedTable && constraint.ReferencedColumn == referencedCol {
-						skip = true
-					}
+			var name = local.Name + "." + field.Name + "_" + referencedTable + "." + referencedCol
+			name = "fk_" + schema.Generate32CharHash(name)
+			var skip = false
+			for _, constraint := range constraints {
+				if constraint.Table == local.Name && constraint.Column == field.Name && constraint.ReferencedTable == referencedTable && constraint.ReferencedColumn == referencedCol {
+					skip = true
 				}
+			}
 
-				if !skip {
-					queries = append(queries, "-- create foreign key")
-					var onDelete = "CASCADE"
-					queries = append(queries, "ALTER TABLE "+quote(local.Name)+" ADD CONSTRAINT "+quote(name)+" FOREIGN KEY ("+quote(field.Name)+") REFERENCES  "+quote(referencedTable)+"("+quote(referencedCol)+") ON DELETE "+onDelete+" ON UPDATE CASCADE")
+			if !skip {
+				queries = append(queries, "-- create foreign key")
+				onDelete := "CASCADE"
+				if field.OnDelete != "" {
+					onDelete = field.OnDelete
 				}
-
+				onUpdate := "CASCADE"
+				if field.FKOnUpdate != "" {
+					onUpdate = field.FKOnUpdate
+				}
+				queries = append(queries, "ALTER TABLE "+quote(local.Name)+" ADD CONSTRAINT "+quote(name)+" FOREIGN KEY ("+quote(field.Name)+") REFERENCES "+quote(referencedTable)+"("+quote(referencedCol)+") ON DELETE "+onDelete+" ON UPDATE "+onUpdate)
 			}
 		}
 	}
@@ -551,6 +565,7 @@ func generateMigration(db *gorm.DB, database string, stmts []*gorm.Statement, mo
 	default:
 		engine = "mysql"
 	}
+	schema.SetConfig("mysql_engine", engine)
 
 	// Introspect remote schema
 	var is remoteTables
@@ -667,6 +682,10 @@ func fieldType(t string) string {
 			return vi
 		}
 	}
+	// Normalize: decimal and numeric are synonyms
+	if strings.HasPrefix(t, "numeric") {
+		return "decimal" + t[len("numeric"):]
+	}
 	return t
 }
 
@@ -696,4 +715,16 @@ func getCollate(statement *gorm.Statement) string {
 		return v.TableCollation()
 	}
 	return schema.GetConfigDefault("default_collation", "utf8mb4_unicode_ci")
+}
+
+// findIndexCaseInsensitive does a case-insensitive search in schema.Indexes.
+// MySQL index names are case-insensitive.
+func findIndexCaseInsensitive(indexes schema.Indexes, name string) *schema.Index {
+	lower := strings.ToLower(name)
+	for idx := range indexes {
+		if strings.ToLower(indexes[idx].Name) == lower {
+			return &indexes[idx]
+		}
+	}
+	return nil
 }

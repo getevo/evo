@@ -9,13 +9,13 @@ import (
 
 	"github.com/getevo/evo/v2/lib/args"
 	"github.com/getevo/evo/v2/lib/db/schema"
+	"github.com/getevo/evo/v2/lib/log"
 	"gorm.io/gorm"
 )
 
 // PGDialect implements schema.Dialect for PostgreSQL.
 type PGDialect struct {
-	engine            string
-	triggerFuncExists bool // track whether we've emitted the updated_at trigger function
+	triggerFuncExists map[string]bool // track emitted trigger functions per column
 }
 
 func (p *PGDialect) Name() string {
@@ -47,7 +47,7 @@ func (p *PGDialect) GetTableVersion(db *gorm.DB, database, tableName string) str
 }
 
 func (p *PGDialect) SetTableVersionSQL(tableName, version string) string {
-	return fmt.Sprintf(`COMMENT ON TABLE "%s" IS '%s';`, tableName, version)
+	return fmt.Sprintf(`COMMENT ON TABLE "%s" IS '%s';`, tableName, strings.ReplaceAll(version, "'", "''"))
 }
 
 func (p *PGDialect) GetJoinConstraints(db *gorm.DB, database string) []schema.JoinConstraint {
@@ -81,6 +81,27 @@ func (p *PGDialect) GetJoinConstraints(db *gorm.DB, database string) []schema.Jo
 
 func (p *PGDialect) GenerateMigration(db *gorm.DB, database string, stmts []*gorm.Statement, models []any) schema.MigrationResult {
 	return p.generateMigration(db, database, stmts, models)
+}
+
+func (p *PGDialect) AcquireMigrationLock(db *gorm.DB) error {
+	return db.Exec("SELECT pg_advisory_lock(hashtext('schema_migration_lock'))").Error
+}
+
+func (p *PGDialect) ReleaseMigrationLock(db *gorm.DB) {
+	if err := db.Exec("SELECT pg_advisory_unlock(hashtext('schema_migration_lock'))").Error; err != nil {
+		log.Error("failed to release migration lock: ", err)
+	}
+}
+
+func (p *PGDialect) BootstrapHistoryTable(db *gorm.DB) error {
+	return db.Exec(`CREATE TABLE IF NOT EXISTS "schema_migration" (
+  "id" BIGSERIAL PRIMARY KEY,
+  "hash" CHAR(32) NOT NULL,
+  "status" VARCHAR(10) NOT NULL,
+  "executed_queries" INT NOT NULL DEFAULT 0,
+  "error_message" TEXT,
+  "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);`).Error
 }
 
 // --- Private introspection types ---
@@ -197,8 +218,6 @@ type pgDdlTable struct {
 func (p *PGDialect) generateMigration(db *gorm.DB, database string, stmts []*gorm.Statement, models []any) schema.MigrationResult {
 	var result schema.MigrationResult
 	result.TableExists = make(map[string]bool)
-
-	p.engine = "postgres"
 
 	// Introspect remote tables
 	var is pgRemoteTables
@@ -465,12 +484,15 @@ func (p *PGDialect) fromStatementToTable(stmt *gorm.Statement) pgDdlTable {
 			column.ForeignKey = v
 		}
 
-		if _, ok := field.TagSettings["FULLTEXT"]; ok {
-			column.FullText = true
+		if v, ok := field.TagSettings["FK_ON_DELETE"]; ok {
+			column.OnDelete = v
+		}
+		if v, ok := field.TagSettings["FK_ON_UPDATE"]; ok {
+			column.FKOnUpdate = v
 		}
 
-		if strings.ToLower(column.Type) == "datetime(3)" {
-			column.Type = "timestamp"
+		if _, ok := field.TagSettings["FULLTEXT"]; ok {
+			column.FullText = true
 		}
 
 		// Handle ON_UPDATE tag for trigger generation
@@ -515,7 +537,7 @@ func (p *PGDialect) fromStatementToTable(stmt *gorm.Statement) pgDdlTable {
 
 		if column.Unique {
 			t.Index = append(t.Index, schema.Index{
-				Name:    "idx_unique_" + t.Name + "_" + column.Name,
+				Name:    schema.SafeIndexName("idx_unique_"+t.Name+"_"+column.Name, 63),
 				Unique:  true,
 				Columns: schema.Columns{column},
 			})
@@ -541,12 +563,21 @@ func (p *PGDialect) fromStatementToTable(stmt *gorm.Statement) pgDdlTable {
 
 	for _, index := range stmt.Schema.ParseIndexes() {
 		var idx = schema.Index{
-			Name:     index.Name,
+			Name:     schema.SafeIndexName(index.Name, 63),
 			Unique:   index.Class == "UNIQUE",
 			FullText: index.Class == "FULLTEXT",
 		}
+		var skip bool
 		for _, opt := range index.Fields {
-			idx.Columns = append(idx.Columns, *t.Columns.Find(opt.DBName))
+			col := t.Columns.Find(opt.DBName)
+			if col == nil {
+				skip = true
+				break
+			}
+			idx.Columns = append(idx.Columns, *col)
+		}
+		if skip {
+			continue
 		}
 		t.Index = append(t.Index, idx)
 	}
@@ -603,6 +634,14 @@ func (p *PGDialect) getCreateQuery(t pgDdlTable) []string {
 	// Post-CREATE: table comment
 	queries = append(queries, fmt.Sprintf(`COMMENT ON TABLE %s IS '0.0.0';`, p.Quote(t.Name)))
 
+	// Post-CREATE: column comments
+	for _, col := range t.Columns {
+		if col.Comment != "" {
+			queries = append(queries, fmt.Sprintf(`COMMENT ON COLUMN %s.%s IS '%s';`,
+				p.Quote(t.Name), p.Quote(col.Name), strings.ReplaceAll(col.Comment, "'", "''")))
+		}
+	}
+
 	// Post-CREATE: indexes
 	for _, index := range t.Index {
 		var q string
@@ -640,8 +679,8 @@ func (p *PGDialect) getCreateQuery(t pgDdlTable) []string {
 	}
 
 	// Post-CREATE: ON UPDATE triggers
-	if len(onUpdateColumns) > 0 {
-		queries = append(queries, p.getUpdateTriggerStatements(t.Name)...)
+	for _, col := range onUpdateColumns {
+		queries = append(queries, p.getUpdateTriggerStatements(t.Name, col.Name)...)
 	}
 
 	return queries
@@ -879,15 +918,10 @@ func (p *PGDialect) getDiff(local pgDdlTable, remote pgRemoteTable) []string {
 	}
 
 	// ON UPDATE trigger check
-	var hasOnUpdate = false
 	for _, col := range local.Columns {
 		if col.OnUpdate != "" {
-			hasOnUpdate = true
-			break
+			queries = append(queries, p.getUpdateTriggerStatements(local.Name, col.Name)...)
 		}
-	}
-	if hasOnUpdate {
-		queries = append(queries, p.getUpdateTriggerStatements(local.Name)...)
 	}
 
 	return queries
@@ -915,6 +949,7 @@ func (p *PGDialect) getConstraintsQuery(local pgDdlTable, constraints []pgConstr
 		}
 
 		if referencedTable == "" || referencedCol == "" {
+			log.Warning("foreign key on ", local.Name, ".", field.Name, " references '", field.ForeignKey, "' but target table not found, skipping constraint")
 			continue
 		}
 
@@ -932,10 +967,17 @@ func (p *PGDialect) getConstraintsQuery(local pgDdlTable, constraints []pgConstr
 		if !skip {
 			queries = append(queries, "-- create foreign key")
 			onDelete := "CASCADE"
+			if field.OnDelete != "" {
+				onDelete = field.OnDelete
+			}
+			onUpdate := "CASCADE"
+			if field.FKOnUpdate != "" {
+				onUpdate = field.FKOnUpdate
+			}
 			queries = append(queries, fmt.Sprintf(
-				"ALTER TABLE %s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s(%s) ON DELETE %s ON UPDATE CASCADE;",
+				"ALTER TABLE %s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s(%s) ON DELETE %s ON UPDATE %s;",
 				p.Quote(local.Name), p.Quote(name), p.Quote(field.Name),
-				p.Quote(referencedTable), p.Quote(referencedCol), onDelete))
+				p.Quote(referencedTable), p.Quote(referencedCol), onDelete, onUpdate))
 		}
 	}
 	return queries
@@ -1015,16 +1057,22 @@ func (p *PGDialect) createIndexSQL(index schema.Index, tableName string) string 
 	return q
 }
 
-func (p *PGDialect) getUpdateTriggerStatements(tableName string) []string {
+func (p *PGDialect) getUpdateTriggerStatements(tableName, columnName string) []string {
 	var stmts []string
-	if !p.triggerFuncExists {
-		stmts = append(stmts, `CREATE OR REPLACE FUNCTION update_updated_at_column() RETURNS TRIGGER AS $$ BEGIN NEW.updated_at = CURRENT_TIMESTAMP; RETURN NEW; END; $$ LANGUAGE plpgsql;`)
-		p.triggerFuncExists = true
+	if p.triggerFuncExists == nil {
+		p.triggerFuncExists = make(map[string]bool)
 	}
-	triggerName := "set_updated_at_" + tableName
+	funcName := fmt.Sprintf("update_%s_%s_column", tableName, columnName)
+	if !p.triggerFuncExists[funcName] {
+		stmts = append(stmts, fmt.Sprintf(
+			`CREATE OR REPLACE FUNCTION %s() RETURNS TRIGGER AS $$ BEGIN NEW.%s = CURRENT_TIMESTAMP; RETURN NEW; END; $$ LANGUAGE plpgsql;`,
+			funcName, columnName))
+		p.triggerFuncExists[funcName] = true
+	}
+	triggerName := fmt.Sprintf("set_%s_%s", columnName, tableName)
 	stmts = append(stmts, fmt.Sprintf(
-		`DO $$ BEGIN CREATE TRIGGER "%s" BEFORE UPDATE ON %s FOR EACH ROW EXECUTE FUNCTION update_updated_at_column(); EXCEPTION WHEN duplicate_object THEN NULL; END $$;`,
-		triggerName, p.Quote(tableName)))
+		`DO $$ BEGIN CREATE TRIGGER "%s" BEFORE UPDATE ON %s FOR EACH ROW EXECUTE FUNCTION %s(); EXCEPTION WHEN duplicate_object THEN NULL; END $$;`,
+		triggerName, p.Quote(tableName), funcName))
 	return stmts
 }
 
