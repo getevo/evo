@@ -7,9 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/getevo/json"
-	"strings"
 
-	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/schema"
@@ -90,11 +88,8 @@ func (JSONMap) GormDBDataType(db *gorm.DB, field *schema.Field) string {
 
 func (jm JSONMap) GormValue(ctx context.Context, db *gorm.DB) clause.Expr {
 	data, _ := jm.MarshalJSON()
-	switch db.Dialector.Name() {
-	case "mysql":
-		if v, ok := db.Dialector.(*mysql.Dialector); ok && !strings.Contains(v.ServerVersion, "MariaDB") {
-			return gorm.Expr("CAST(? AS JSON)", string(data))
-		}
+	if db.Dialector.Name() == "mysql" && !isMariaDB() {
+		return gorm.Expr("CAST(? AS JSON)", string(data))
 	}
 	return gorm.Expr("?", string(data))
 }

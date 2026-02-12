@@ -499,7 +499,7 @@ func Attrs(attrs ...any) (tx *gorm.DB) {
 // [FirstOrCreate]: https://gorm.io/docs/advanced_query.html#FirstOrCreate
 // [FirstOrInit]: https://gorm.io/docs/advanced_query.html#FirstOrInit
 func Assign(attrs ...any) (tx *gorm.DB) {
-	return Assign(attrs...)
+	return db.Assign(attrs...)
 }
 
 func Unscoped() (tx *gorm.DB) {
@@ -524,6 +524,14 @@ func GetMigrationScript() []string {
 
 func DoMigration() error {
 	return schema.DoMigration(db)
+}
+
+func DryRunMigration() []string {
+	return schema.DryRunMigration(db)
+}
+
+func DumpSchema() []string {
+	return schema.DumpSchema(db)
 }
 
 func Models() []schema.Model {

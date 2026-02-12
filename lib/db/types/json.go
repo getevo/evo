@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/getevo/json"
-	"gorm.io/driver/mysql"
+	dbschema "github.com/getevo/evo/v2/lib/db/schema"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/schema"
@@ -34,7 +34,11 @@ func (j JSONType[T]) Data() T {
 
 // Value return json value, implement driver.Valuer interface
 func (j JSONType[T]) Value() (driver.Value, error) {
-	return json.Marshal(j.Val)
+	data, err := json.Marshal(j.Val)
+	if err != nil {
+		return nil, err
+	}
+	return string(data), nil
 }
 
 // Scan scan value into JSONType[T], implements sql.Scanner interface
@@ -82,11 +86,8 @@ func (JSONType[T]) GormDBDataType(db *gorm.DB, field *schema.Field) string {
 func (js JSONType[T]) GormValue(ctx context.Context, db *gorm.DB) clause.Expr {
 	data, _ := js.MarshalJSON()
 
-	switch db.Dialector.Name() {
-	case "mysql":
-		if v, ok := db.Dialector.(*mysql.Dialector); ok && !strings.Contains(v.ServerVersion, "MariaDB") {
-			return gorm.Expr("CAST(? AS JSON)", string(data))
-		}
+	if db.Dialector.Name() == "mysql" && !isMariaDB() {
+		return gorm.Expr("CAST(? AS JSON)", string(data))
 	}
 
 	return gorm.Expr("?", string(data))
@@ -101,7 +102,11 @@ func NewJSONSlice[T any](s []T) JSONSlice[T] {
 
 // Value return json value, implement driver.Valuer interface
 func (j JSONSlice[T]) Value() (driver.Value, error) {
-	return json.Marshal(j)
+	data, err := json.Marshal(j)
+	if err != nil {
+		return nil, err
+	}
+	return string(data), nil
 }
 
 // Scan scan value into JSONType[T], implements sql.Scanner interface
@@ -139,11 +144,8 @@ func (JSONSlice[T]) GormDBDataType(db *gorm.DB, field *schema.Field) string {
 func (j JSONSlice[T]) GormValue(ctx context.Context, db *gorm.DB) clause.Expr {
 	data, _ := json.Marshal(j)
 
-	switch db.Dialector.Name() {
-	case "mysql":
-		if v, ok := db.Dialector.(*mysql.Dialector); ok && !strings.Contains(v.ServerVersion, "MariaDB") {
-			return gorm.Expr("CAST(? AS JSON)", string(data))
-		}
+	if db.Dialector.Name() == "mysql" && !isMariaDB() {
+		return gorm.Expr("CAST(? AS JSON)", string(data))
 	}
 
 	return gorm.Expr("?", string(data))
@@ -226,11 +228,8 @@ func (js JSON) GormValue(ctx context.Context, db *gorm.DB) clause.Expr {
 
 	data, _ := js.MarshalJSON()
 
-	switch db.Dialector.Name() {
-	case "mysql":
-		if v, ok := db.Dialector.(*mysql.Dialector); ok && !strings.Contains(v.ServerVersion, "MariaDB") {
-			return gorm.Expr("CAST(? AS JSON)", string(data))
-		}
+	if db.Dialector.Name() == "mysql" && !isMariaDB() {
+		return gorm.Expr("CAST(? AS JSON)", string(data))
 	}
 
 	return gorm.Expr("?", string(data))
@@ -384,6 +383,12 @@ func (json *JSONOverlapsExpression) Build(builder clause.Builder) {
 	}
 }
 
+// isMariaDB checks whether the MySQL engine is MariaDB via schema config.
+func isMariaDB() bool {
+	v, _ := dbschema.GetConfig("mysql_engine")
+	return v == "mariadb"
+}
+
 type columnExpression string
 
 func Column(col string) columnExpression {
@@ -463,10 +468,7 @@ func (jsonSet *JSONSetExpression) Build(builder clause.Builder) {
 		switch stmt.Dialector.Name() {
 		case "mysql":
 
-			var isMariaDB bool
-			if v, ok := stmt.Dialector.(*mysql.Dialector); ok {
-				isMariaDB = strings.Contains(v.ServerVersion, "MariaDB")
-			}
+			mariaDB := isMariaDB()
 
 			builder.WriteString("JSON_SET(")
 			builder.WriteQuoted(jsonSet.column)
@@ -487,7 +489,7 @@ func (jsonSet *JSONSetExpression) Build(builder clause.Builder) {
 				switch rv.Kind() {
 				case reflect.Slice, reflect.Array, reflect.Struct, reflect.Map:
 					b, _ := json.Marshal(value)
-					if isMariaDB {
+					if mariaDB {
 						stmt.AddVar(builder, string(b))
 						break
 					}

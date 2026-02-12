@@ -34,7 +34,7 @@ func (UUID) GormDataType() string {
 func (UUID) GormDBDataType(db *gorm.DB, field *schema.Field) string {
 	switch db.Dialector.Name() {
 	case "mysql":
-		return "LONGTEXT"
+		return "CHAR(36)"
 	case "postgres":
 		return "UUID"
 	case "sqlserver":

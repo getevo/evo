@@ -1,6 +1,7 @@
 package evo
 
 import (
+	"os"
 	"strings"
 
 	"github.com/getevo/evo/v2/lib/application"
@@ -88,6 +89,16 @@ func Run() {
 		} else {
 			log.Info("database migrations performed successfully")
 		}
+	}
+
+	if args.Exists("--migration-dry-run") {
+		dbo.DryRunMigration()
+		os.Exit(0)
+	}
+
+	if args.Exists("--migration-dump") {
+		dbo.DumpSchema()
+		os.Exit(0)
 	}
 
 	if Any != nil {

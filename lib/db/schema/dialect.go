@@ -29,6 +29,15 @@ type Dialect interface {
 
 	// GetJoinConstraints returns foreign key relationships for building joins.
 	GetJoinConstraints(db *gorm.DB, database string) []JoinConstraint
+
+	// AcquireMigrationLock obtains an advisory lock to prevent concurrent migrations.
+	AcquireMigrationLock(db *gorm.DB) error
+
+	// ReleaseMigrationLock releases the advisory migration lock.
+	ReleaseMigrationLock(db *gorm.DB)
+
+	// BootstrapHistoryTable creates the schema_migration table if it does not exist.
+	BootstrapHistoryTable(db *gorm.DB) error
 }
 
 // currentDialect holds the active dialect implementation.
@@ -44,12 +53,6 @@ func InitDialect(db *gorm.DB) Dialect {
 	if d, ok := dialectRegistry[name]; ok {
 		currentDialect = d
 		return currentDialect
-	}
-	for key, d := range dialectRegistry {
-		if key == name {
-			currentDialect = d
-			return currentDialect
-		}
 	}
 	return currentDialect
 }

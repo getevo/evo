@@ -5,6 +5,7 @@ import (
 	"github.com/getevo/evo/v2/lib/db"
 	"github.com/getevo/evo/v2/lib/db/schema"
 	"github.com/getevo/evo/v2/lib/db/types"
+	"github.com/getevo/evo/v2/lib/log"
 	"github.com/getevo/restify"
 	"gorm.io/gorm/clause"
 	"strings"
@@ -136,10 +137,14 @@ func (a App) WhenReady() error {
 		entity.PrimaryKey = pk
 		entities = append(entities, entity)
 	}
-	db.Save(&entities)
-	db.Clauses(clause.OnConflict{
+	if err := db.Save(&entities).Error; err != nil {
+		log.Error("entity: failed to save entities:", err)
+	}
+	if err := db.Clauses(clause.OnConflict{
 		DoUpdates: clause.AssignmentColumns([]string{"field_name", "primary_key", "db_field", "json_tag", "type", "db_type"}),
-	}).Create(&fields)
+	}).Create(&fields).Error; err != nil {
+		log.Error("entity: failed to create fields:", err)
+	}
 
 	return nil
 }

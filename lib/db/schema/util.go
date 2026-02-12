@@ -9,7 +9,8 @@ import (
 // InternalFunctions groups equivalent function names for default-value comparison.
 // Used by both MySQL and PostgreSQL dialects when comparing default values.
 var InternalFunctions = [][]string{
-	{"CURRENT_TIMESTAMP", "CURRENT_TIMESTAMP()", "current_timestamp()", "current_timestamp", "NOW()", "now()", "CURRENT_DATE", "CURRENT_DATE()", "current_date", "current_date()"},
+	{"CURRENT_TIMESTAMP", "CURRENT_TIMESTAMP()", "current_timestamp()", "current_timestamp", "NOW()", "now()"},
+	{"CURRENT_DATE", "CURRENT_DATE()", "current_date", "current_date()"},
 	{"NULL", "null"},
 }
 
@@ -43,6 +44,8 @@ type Column struct {
 	Comment       string
 	Charset       string
 	OnUpdate      string
+	OnDelete      string
+	FKOnUpdate    string
 	Collate       string
 	ForeignKey    string
 	After         string
@@ -124,6 +127,17 @@ func TrimQuotes(s string) string {
 func Generate32CharHash(text string) string {
 	hash := sha256.Sum256([]byte(text))
 	return hex.EncodeToString(hash[:])[:32]
+}
+
+// SafeIndexName truncates an index name to maxLen characters if it exceeds
+// the limit, appending a short hash to preserve uniqueness.
+// MySQL limit: 64, PostgreSQL limit: 63.
+func SafeIndexName(name string, maxLen int) string {
+	if len(name) <= maxLen {
+		return name
+	}
+	h := Generate32CharHash(name)[:8]
+	return name[:maxLen-9] + "_" + h
 }
 
 // --- Config map for dialect defaults ---

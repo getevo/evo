@@ -24,9 +24,7 @@ The DB library offers a wide range of features:
 The DB library includes several subdirectories for specialized functionality:
 
 - **entity**: Provides base entity structures and functionality
-- **schema**: Tools for schema management and migrations
-  - **ddl**: Data Definition Language utilities
-  - **table**: Table definition utilities
+- **schema**: Tools for schema management and migrations (DB-agnostic)
 - **types**: Custom data types for database interactions
 
 ## Usage Examples

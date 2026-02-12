@@ -15,8 +15,7 @@ func (o *StringArray) Scan(src any) error {
 	if !ok {
 		return fmt.Errorf("src value cannot cast to []byte")
 	}
-	json.Unmarshal(bytes, o)
-	return nil
+	return json.Unmarshal(bytes, o)
 }
 
 func (o StringArray) Value() (driver.Value, error) {
@@ -43,15 +42,14 @@ func (StringArray) GormDBDataType(db *gorm.DB, field *schema.Field) string {
 	return "text"
 }
 
-type IntArray []string
+type IntArray []int
 
 func (o *IntArray) Scan(src any) error {
 	bytes, ok := src.([]byte)
 	if !ok {
 		return fmt.Errorf("src value cannot cast to []byte")
 	}
-	json.Unmarshal(bytes, o)
-	return nil
+	return json.Unmarshal(bytes, o)
 }
 
 func (o IntArray) Value() (driver.Value, error) {
@@ -78,15 +76,14 @@ func (IntArray) GormDBDataType(db *gorm.DB, field *schema.Field) string {
 	return "text"
 }
 
-type Int64Array []string
+type Int64Array []int64
 
 func (o *Int64Array) Scan(src any) error {
 	bytes, ok := src.([]byte)
 	if !ok {
 		return fmt.Errorf("src value cannot cast to []byte")
 	}
-	json.Unmarshal(bytes, o)
-	return nil
+	return json.Unmarshal(bytes, o)
 }
 
 func (o Int64Array) Value() (driver.Value, error) {

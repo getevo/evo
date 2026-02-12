@@ -2,10 +2,12 @@ package schema
 
 import (
 	"fmt"
-	"gorm.io/gorm"
-	"gorm.io/gorm/schema"
 	"path/filepath"
 	"reflect"
+
+	"github.com/getevo/evo/v2/lib/log"
+	"gorm.io/gorm"
+	"gorm.io/gorm/schema"
 )
 
 var Models []Model
@@ -72,7 +74,7 @@ func UseModel(db *gorm.DB, values ...any) {
 	for index := range values {
 		ref := reflect.ValueOf(values[index])
 		if ref.Kind() != reflect.Struct {
-			return
+			continue
 		}
 		var model = Model{
 			Sample:      ref.Interface(),
@@ -84,7 +86,14 @@ func UseModel(db *gorm.DB, values ...any) {
 		}
 		model.Name = model.Package + "." + ref.Type().Name()
 		stmt := db.Model(values[index]).Statement
-		stmt.Parse(values[index])
+		if err := stmt.Parse(values[index]); err != nil {
+			log.Error("failed to parse model ", reflect.TypeOf(values[index]), ": ", err)
+			continue
+		}
+		if stmt.Schema == nil {
+			log.Error("invalid schema for ", reflect.TypeOf(values[index]))
+			continue
+		}
 		model.Schema = stmt.Schema
 		model.PrimaryKey = stmt.Schema.PrimaryFieldDBNames
 		model.Statement = stmt

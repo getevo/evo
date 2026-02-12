@@ -1,7 +1,9 @@
 package types
 
 import (
+	"database/sql/driver"
 	"fmt"
+	"github.com/getevo/json"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 	"sync"
@@ -178,6 +180,47 @@ func (m *Map[K, V]) GormDBDataType(db *gorm.DB, field *schema.Field) string {
 		return "NVARCHAR(MAX)"
 	}
 	return "TEXT"
+}
+
+// Value implements driver.Valuer by marshaling all shards to JSON.
+func (m *Map[K, V]) Value() (driver.Value, error) {
+	if m == nil {
+		return nil, nil
+	}
+	all := make(map[K]V)
+	for _, shard := range m.shards {
+		shard.RLock()
+		for k, v := range shard.items {
+			all[k] = v
+		}
+		shard.RUnlock()
+	}
+	data, err := json.Marshal(all)
+	if err != nil {
+		return nil, err
+	}
+	return string(data), nil
+}
+
+// Scan implements sql.Scanner by unmarshaling JSON into the map shards.
+func (m *Map[K, V]) Scan(src any) error {
+	var bytes []byte
+	switch v := src.(type) {
+	case []byte:
+		bytes = v
+	case string:
+		bytes = []byte(v)
+	case nil:
+		return nil
+	default:
+		return fmt.Errorf("Map.Scan: unsupported type %T", src)
+	}
+	var all map[K]V
+	if err := json.Unmarshal(bytes, &all); err != nil {
+		return err
+	}
+	m.MSet(all)
+	return nil
 }
 
 // Iterate returns a channel to iterate over all key-value pairs in the map.

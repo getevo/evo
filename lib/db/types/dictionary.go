@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/getevo/json"
-	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/schema"
@@ -164,11 +163,11 @@ func (dict *Dictionary[K, V]) Scan(val any) error {
 
 // MarshalJSON serializes the dictionary to JSON (Thread-Safe)
 func (dict *Dictionary[K, V]) MarshalJSON() ([]byte, error) {
-	dict.mu.RLock()
-	defer dict.mu.RUnlock()
 	if dict == nil {
 		return []byte("null"), nil
 	}
+	dict.mu.RLock()
+	defer dict.mu.RUnlock()
 	if len(dict.items) == 0 {
 		return []byte("[]"), nil
 	}
@@ -211,11 +210,8 @@ func (dict *Dictionary[K, V]) GormValue(ctx context.Context, db *gorm.DB) clause
 	if err != nil {
 		return gorm.Expr("?", "null")
 	}
-	switch db.Dialector.Name() {
-	case "mysql":
-		if v, ok := db.Dialector.(*mysql.Dialector); ok && !strings.Contains(v.ServerVersion, "MariaDB") {
-			return gorm.Expr("CAST(? AS JSON)", string(data))
-		}
+	if db.Dialector.Name() == "mysql" && !isMariaDB() {
+		return gorm.Expr("CAST(? AS JSON)", string(data))
 	}
 	return gorm.Expr("?", string(data))
 }
