@@ -245,3 +245,13 @@ func (r *Req) SetProgressInterval(interval time.Duration) {
 func SetProgressInterval(interval time.Duration) {
 	std.SetProgressInterval(interval)
 }
+
+// OnResponse registers a callback invoked after every response.
+func (r *Req) OnResponse(fn OnResponse) {
+	r.onResponse = append(r.onResponse, fn)
+}
+
+// SetOnResponse registers a global callback invoked after every response.
+func SetOnResponse(fn OnResponse) {
+	std.OnResponse(fn)
+}

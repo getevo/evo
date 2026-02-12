@@ -7,6 +7,10 @@ type BasicAuth struct {
 	Password string
 }
 
+type BearerAuth struct {
+	Token string
+}
+
 // Header represents http request header
 type Header map[string]string
 

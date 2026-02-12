@@ -70,6 +70,14 @@ type DownloadProgress func(current, total int64)
 
 type UploadProgress func(current, total int64)
 
+// Retry sets the number of retry attempts for failed requests.
+// Retries on: connection errors, 502, 503, 504 status codes.
+// Uses exponential backoff: 1s, 2s, 4s, ...
+type Retry int
+
+// OnResponse is a callback invoked after a successful response.
+type OnResponse func(resp *Resp)
+
 // File upload files matching the name pattern such as
 // /usr/*/bin/go* (assuming the Separator is '/')
 func File(patterns ...string) any {
@@ -140,6 +148,7 @@ type Req struct {
 	xmlEncOpts       *xmlEncOpts
 	flag             int
 	progressInterval time.Duration
+	onResponse       []OnResponse
 }
 
 // New create a new *Req
@@ -210,6 +219,8 @@ func (r *Req) Do(method, rawurl string, vs ...any) (resp *Resp, err error) {
 	var delayedFunc []func()
 	var lastFunc []func()
 	var cacheConfig *Cache
+	var retryCount int
+	var onResponseCallbacks []OnResponse
 	for idx, _ := range vs {
 		switch vv := vs[idx].(type) {
 		case dbg:
@@ -309,6 +320,12 @@ func (r *Req) Do(method, rawurl string, vs ...any) (resp *Resp, err error) {
 			resp.req = req
 		case BasicAuth:
 			req.Header.Add("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(vv.Username+":"+vv.Password)))
+		case BearerAuth:
+			req.Header.Set("Authorization", "Bearer "+vv.Token)
+		case Retry:
+			retryCount = int(vv)
+		case OnResponse:
+			onResponseCallbacks = append(onResponseCallbacks, vv)
 		case error:
 			return nil, vv
 		}
@@ -404,13 +421,47 @@ func (r *Req) Do(method, rawurl string, vs ...any) (resp *Resp, err error) {
 	}
 
 	var response *http.Response
-	if r.flag&Lcost != 0 {
-		before := time.Now()
-		response, err = resp.client.Do(req)
-		after := time.Now()
-		resp.cost = after.Sub(before)
-	} else {
-		response, err = resp.client.Do(req)
+	for attempt := 0; attempt <= retryCount; attempt++ {
+		// Rewind body for retries
+		if attempt > 0 && resp.reqBody != nil {
+			req.Body = io.NopCloser(bytes.NewReader(resp.reqBody))
+		}
+
+		if r.flag&Lcost != 0 {
+			before := time.Now()
+			response, err = resp.client.Do(req)
+			after := time.Now()
+			resp.cost = after.Sub(before)
+		} else {
+			response, err = resp.client.Do(req)
+		}
+
+		// Check if we should retry
+		shouldRetry := false
+		if err != nil {
+			shouldRetry = true
+		} else if response.StatusCode == 502 || response.StatusCode == 503 || response.StatusCode == 504 {
+			shouldRetry = true
+		}
+
+		if !shouldRetry || attempt >= retryCount {
+			break
+		}
+
+		// Close response body before retry if we got a response
+		if response != nil {
+			response.Body.Close()
+		}
+
+		// Exponential backoff with context awareness
+		backoff := time.Duration(1<<uint(attempt)) * time.Second
+		timer := time.NewTimer(backoff)
+		select {
+		case <-timer.C:
+		case <-req.Context().Done():
+			timer.Stop()
+			return nil, req.Context().Err()
+		}
 	}
 	if err != nil {
 		return nil, err
@@ -421,6 +472,14 @@ func (r *Req) Do(method, rawurl string, vs ...any) (resp *Resp, err error) {
 	}
 
 	resp.resp = response
+
+	// Invoke OnResponse callbacks
+	for _, fn := range onResponseCallbacks {
+		fn(resp)
+	}
+	for _, fn := range r.onResponse {
+		fn(resp)
+	}
 
 	if _, ok := resp.client.Transport.(*http.Transport); ok && req.Header.Get("Accept-Encoding") != "" {
 		if response.Header.Get("Content-Encoding") == "gzip" {

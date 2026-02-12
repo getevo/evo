@@ -141,6 +141,20 @@ func (r *Resp) ToFile(name string) error {
 	return err
 }
 
+// ToWriter streams the response body to the provided writer.
+func (r *Resp) ToWriter(w io.Writer) error {
+	if r.respBody != nil {
+		_, err := w.Write(r.respBody)
+		return err
+	}
+	if r.resp == nil {
+		return nil
+	}
+	defer r.resp.Body.Close()
+	_, err := io.Copy(w, r.resp.Body)
+	return err
+}
+
 func (r *Resp) download(file *os.File) error {
 	p := make([]byte, 1024)
 	b := r.resp.Body
@@ -230,6 +244,14 @@ func (r *Resp) miniFormat(s fmt.State) {
 }
 func (r *Resp) Status() int {
 	return r.Response().StatusCode
+}
+
+// Header returns the value of the specified response header.
+func (r *Resp) Header(key string) string {
+	if r.resp == nil {
+		return ""
+	}
+	return r.resp.Header.Get(key)
 }
 
 func (r *Resp) Dot(input string) gjson.Result {
