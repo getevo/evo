@@ -4,7 +4,6 @@ import (
 	"github.com/getevo/evo/v2/lib/application"
 	"github.com/getevo/evo/v2/lib/db"
 	"github.com/getevo/evo/v2/lib/db/schema"
-	"github.com/getevo/evo/v2/lib/db/schema/ddl"
 	"github.com/getevo/evo/v2/lib/db/types"
 	"github.com/getevo/restify"
 	"gorm.io/gorm/clause"
@@ -83,7 +82,7 @@ type Mapper struct {
 
 type Option string
 
-func (o Option) ColumnDefinition(column *ddl.Column) {
+func (o Option) ColumnDefinition(column *schema.Column) {
 	column.ForeignKey = "entity_field_option"
 	column.Type = "varchar(32)"
 }

@@ -2,12 +2,9 @@ package schema
 
 import (
 	"fmt"
+	"github.com/getevo/evo/v2/lib/log"
 	"github.com/getevo/evo/v2/lib/version"
 	"gorm.io/gorm"
-
-	"github.com/getevo/evo/v2/lib/db/schema/ddl"
-	"github.com/getevo/evo/v2/lib/db/schema/table"
-	"github.com/getevo/evo/v2/lib/log"
 	"reflect"
 	"strings"
 )
@@ -17,71 +14,31 @@ var OnAfterMigration []func(db *gorm.DB)
 
 var migrations []any
 
+// ResetMigrations clears the registered migrations and models (used for testing).
+func ResetMigrations() {
+	migrations = nil
+	Models = nil
+	database = ""
+}
+
 const null = "NULL"
 
 func GetMigrationScript(db *gorm.DB) []string {
 	var queries []string
 
-	var database = ""
-	var engine string
-	db.Raw("SELECT DATABASE();").Scan(&database)
-	db.Raw("SELECT VERSION();").Scan(&engine)
-	engine = strings.ToLower(engine)
-	switch {
-	case strings.Contains(engine, "mariadb"):
-		ddl.Engine = "mariadb"
-	case strings.Contains(engine, "mysql"):
-		ddl.Engine = "mysql"
+	// Initialize dialect if needed
+	d := GetDialect()
+	if d == nil {
+		d = InitDialect(db)
 	}
 
-	var is table.Tables
-	db.Raw(`SELECT CCSA.character_set_name  AS 'TABLE_CHARSET',T.* FROM information_schema.TABLES T, information_schema.COLLATION_CHARACTER_SET_APPLICABILITY CCSA WHERE CCSA.collation_name = T.table_collation AND T.table_schema = ?`, database).Scan(&is)
+	// Get current database
+	var database = d.GetCurrentDatabase(db)
 
-	var columns table.Columns
-	db.Where(table.Table{Database: database}).Order("TABLE_NAME ASC,ORDINAL_POSITION ASC").Find(&columns)
-
-	var constraints []table.Constraint
-	db.Where(table.Constraint{Database: database}).Find(&constraints)
-
-	var tb *table.Table
-	for idx, _ := range columns {
-		if tb == nil || columns[idx].Table != tb.Table {
-			tb = is.GetTable(columns[idx].Table)
-			if tb == nil {
-				continue
-			}
-		}
-		if columns[idx].ColumnKey == "PRI" {
-			tb.PrimaryKey = append(tb.Columns, columns[idx])
-		}
-		tb.Columns = append(tb.Columns, columns[idx])
-	}
-
-	var istats []table.IndexStat
-	db.Where(table.IndexStat{Database: database}).Order("TABLE_NAME ASC, SEQ_IN_INDEX ASC").Find(&istats)
-	var tail []string
-	var indexMap = map[string]table.Index{}
-	for _, item := range istats {
-		if item.Name == "PRIMARY" {
-			continue
-		}
-		if _, ok := indexMap[item.Table+item.Name]; !ok {
-			indexMap[item.Table+item.Name] = table.Index{
-				Name:   item.Name,
-				Table:  item.Table,
-				Unique: !item.NonUnique,
-			}
-		}
-		var m = indexMap[item.Table+item.Name]
-		var c = is.GetTable(item.Table).Columns.GetColumn(item.ColumnName)
-		m.Columns = append(m.Columns, *c)
-		indexMap[item.Table+item.Name] = m
-	}
-	for key, item := range indexMap {
-		is.GetTable(item.Table).Indexes = append(is.GetTable(item.Table).Indexes, indexMap[key])
-	}
-
-	for idx, el := range migrations {
+	// Parse all registered models into GORM statements
+	var stmts []*gorm.Statement
+	var modelSlice []any
+	for _, el := range migrations {
 		var ref = reflect.ValueOf(el)
 		for {
 			if ref.Kind() == reflect.Ptr {
@@ -110,31 +67,24 @@ func GetMigrationScript(db *gorm.DB) []string {
 			log.Fatal(fmt.Errorf("invalid schema for %s", reflect.TypeOf(el)))
 		}
 
-		//check if table exists
-		var table = is.GetTable(stmt.Schema.Table)
+		stmts = append(stmts, stmt)
+		modelSlice = append(modelSlice, el)
+	}
 
-		var q []string
-		if table != nil {
-			table.Model = migrations[idx]
-			table.Reflect = reflect.ValueOf(table.Model)
-			q = ddl.FromStatement(stmt).GetDiff(*table)
+	// Delegate all introspection + DDL generation to the dialect
+	result := d.GenerateMigration(db, database, stmts, modelSlice)
 
-		} else {
-			q = ddl.FromStatement(stmt).GetCreateQuery()
-		}
+	queries = append(queries, result.Queries...)
 
-		//q = append(q, ddl.FromStatement(stmt).Constrains(constraints, is)...)
-		tail = append(tail, ddl.FromStatement(stmt).Constrains(constraints, is)...)
-		if len(q) > 0 {
-			queries = append(queries, "\r\n\r\n-- Migrate Model: "+stmt.Schema.ModelType.PkgPath()+"."+stmt.Schema.ModelType.Name()+"("+stmt.Schema.Table+")")
-			queries = append(queries, q...)
-		}
+	// Version-based migrations (shared across dialects)
+	for idx, el := range modelSlice {
 		if caller, ok := el.(interface {
 			Migration(version string) []Migration
 		}); ok {
+			tableName := stmts[idx].Schema.Table
 			var currentVersion = "0.0.0"
-			if table != nil {
-				db.Raw("SELECT table_comment FROM INFORMATION_SCHEMA.TABLES  WHERE table_schema=?  AND table_name=?", database, table.Table).Scan(&currentVersion)
+			if result.TableExists[tableName] {
+				currentVersion = d.GetTableVersion(db, database, tableName)
 			}
 			var buff []string
 			var ptr = "0.0.0"
@@ -154,20 +104,19 @@ func GetMigrationScript(db *gorm.DB) []string {
 			}
 
 			if len(buff) > 0 {
-				queries = append(queries, "\r\n\r\n-- Migrate "+stmt.Schema.Table+".Migrate:")
+				queries = append(queries, "\r\n\r\n-- Migrate "+tableName+".Migrate:")
 				queries = append(queries, buff...)
-				queries = append(queries, "ALTER TABLE `"+stmt.Schema.Table+"`  COMMENT '"+ptr+"';")
+				queries = append(queries, d.SetTableVersionSQL(tableName, ptr))
 			}
 		}
-
 	}
-	queries = append(queries, tail...)
+
+	queries = append(queries, result.Tail...)
 	return queries
 }
 
 func DoMigration(db *gorm.DB) error {
 	var err error
-	//err = db.Transaction(func(tx *gorm.DB) error {
 	var migrations = GetMigrationScript(db)
 	if len(migrations) == 0 {
 		return nil
@@ -190,9 +139,6 @@ func DoMigration(db *gorm.DB) error {
 		fn(db)
 	}
 
-	//return nil
-
-	//})
 	return err
 }
 

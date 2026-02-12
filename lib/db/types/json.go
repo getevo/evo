@@ -364,7 +364,7 @@ func JSONOverlaps(column clause.Expression, value string) *JSONOverlapsExpressio
 }
 
 // Build implements clause.Expression
-// only mysql support JSON_OVERLAPS
+// MySQL uses JSON_OVERLAPS, PostgreSQL uses JSONB @> (containment check)
 func (json *JSONOverlapsExpression) Build(builder clause.Builder) {
 	if stmt, ok := builder.(*gorm.Statement); ok {
 		switch stmt.Dialector.Name() {
@@ -374,6 +374,12 @@ func (json *JSONOverlapsExpression) Build(builder clause.Builder) {
 			builder.WriteString(",")
 			builder.AddVar(stmt, json.val)
 			builder.WriteString(")")
+		case "postgres":
+			builder.WriteString("(")
+			json.column.Build(builder)
+			builder.WriteString("::jsonb @> ")
+			builder.AddVar(stmt, json.val)
+			builder.WriteString("::jsonb)")
 		}
 	}
 }
@@ -559,6 +565,10 @@ func (json *JSONArrayExpression) Build(builder clause.Builder) {
 			builder.WriteString("JSON_CONTAINS (" + stmt.Quote(json.column) + ", JSON_ARRAY(")
 			builder.AddVar(stmt, json.equalsValue)
 			builder.WriteString("))")
+		case "postgres":
+			builder.WriteString(stmt.Quote(json.column) + "::jsonb @> jsonb_build_array(")
+			builder.AddVar(stmt, json.equalsValue)
+			builder.WriteString(")::jsonb")
 		}
 	}
 }

@@ -2,7 +2,6 @@ package schema
 
 import (
 	"fmt"
-	"github.com/getevo/evo/v2/lib/db/schema/table"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 	"path/filepath"
@@ -50,17 +49,27 @@ func (m Model) Join(joins ...*Model) ([]string, []string, error) {
 }
 
 func quote(s string) string {
-	return "`" + s + "`"
+	if d := GetDialect(); d != nil {
+		return d.Quote(s)
+	}
+	return s
 }
 
 var database = ""
 
 func UseModel(db *gorm.DB, values ...any) {
 	migrations = append(migrations, values...)
-	if database == "" {
-		db.Raw("SELECT DATABASE();").Scan(&database)
+
+	// Initialize dialect if needed
+	d := GetDialect()
+	if d == nil {
+		d = InitDialect(db)
 	}
-	for index, _ := range values {
+
+	if database == "" && d != nil {
+		database = d.GetCurrentDatabase(db)
+	}
+	for index := range values {
 		ref := reflect.ValueOf(values[index])
 		if ref.Kind() != reflect.Struct {
 			return
@@ -82,8 +91,10 @@ func UseModel(db *gorm.DB, values ...any) {
 		model.Table = stmt.Table
 		model.Joins = make(map[string][]string)
 
-		var constraints []table.Constraint
-		db.Where(table.Constraint{Database: database}).Find(&constraints)
+		var constraints []JoinConstraint
+		if d != nil {
+			constraints = d.GetJoinConstraints(db, database)
+		}
 		for _, constraint := range constraints {
 			model.Joins[constraint.ReferencedTable] = []string{constraint.Column, constraint.ReferencedColumn}
 		}
@@ -94,7 +105,7 @@ func UseModel(db *gorm.DB, values ...any) {
 
 func Find(v interface{}) *Model {
 	if name, ok := v.(string); ok {
-		for idx, _ := range Models {
+		for idx := range Models {
 			if Models[idx].Name == name || Models[idx].Table == name {
 				return &Models[idx]
 			}
@@ -105,7 +116,7 @@ func Find(v interface{}) *Model {
 	if ref.Kind() == reflect.Ptr {
 		ref = ref.Elem()
 	}
-	for idx, _ := range Models {
+	for idx := range Models {
 		if Models[idx].Value.Type().Name() == ref.Type().Name() {
 			return &Models[idx]
 		}

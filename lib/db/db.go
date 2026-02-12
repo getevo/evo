@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"github.com/getevo/evo/v2/lib/db/schema"
-	"github.com/getevo/evo/v2/lib/db/schema/ddl"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -516,7 +515,11 @@ func UseModel(models ...any) {
 }
 
 func GetMigrationScript() []string {
-	return schema.GetMigrationScript(db)
+	drv := GetDriver()
+	if drv == nil {
+		return nil
+	}
+	return drv.GetMigrationScript(db)
 }
 
 func DoMigration() error {
@@ -532,19 +535,37 @@ func GetModel(name string) *schema.Model {
 }
 
 func SetDefaultCollation(collation string) {
-	ddl.DefaultCollation = collation
+	schema.SetConfig("default_collation", collation)
 }
 
 func SetDefaultCharset(charset string) {
-	ddl.DefaultCharset = charset
+	schema.SetConfig("default_charset", charset)
 }
 
 func SetDefaultEngine(engine string) {
-	ddl.DefaultEngine = engine
+	schema.SetConfig("default_engine", engine)
 }
 
 func IsEnabled() bool {
 	return Enabled
+}
+
+// QuoteIdent returns the dialect-appropriate quoted identifier.
+// MySQL uses backticks: `name`, PostgreSQL uses double quotes: "name"
+func QuoteIdent(name string) string {
+	if d := schema.GetDialect(); d != nil {
+		return d.Quote(name)
+	}
+	return name
+}
+
+// DialectName returns the current database dialect name ("mysql", "postgres", etc.)
+// Returns empty string if no database is connected.
+func DialectName() string {
+	if db != nil {
+		return db.Dialector.Name()
+	}
+	return ""
 }
 
 var _onContext []func(db *gorm.DB, v interface{}) *gorm.DB

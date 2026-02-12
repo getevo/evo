@@ -1,21 +1,21 @@
-package ddl
+package mysql
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
-	"github.com/getevo/evo/v2/lib/args"
-	"github.com/getevo/evo/v2/lib/db/schema/table"
-	"gorm.io/gorm"
 	"reflect"
 	"slices"
 	"strconv"
 	"strings"
+
+	"github.com/getevo/evo/v2/lib/args"
+	"github.com/getevo/evo/v2/lib/db/schema"
+	"gorm.io/gorm"
 )
 
-var Engine = "mysql"
+// engine tracks the detected MySQL/MariaDB engine type.
+var engine = "mysql"
 
-var EngineDataTypes = map[string]map[string]string{
+var engineDataTypes = map[string]map[string]string{
 	"mariadb": {
 		"json":                 "longtext",
 		"current_timestamp(3)": "CURRENT_TIMESTAMP()",
@@ -23,97 +23,12 @@ var EngineDataTypes = map[string]map[string]string{
 	},
 }
 
-var DefaultValues = map[string]string{
-	"current_timestamp(3)": "CURRENT_TIMESTAMP()",
-}
-
-var InternalFunctions = [][]string{
-	{"CURRENT_TIMESTAMP", "CURRENT_TIMESTAMP()", "current_timestamp()", "current_timestamp", "NOW()", "now()", "CURRENT_DATE", "CURRENT_DATE()", "current_date", "current_date()"},
-	{"NULL", "null"},
-}
-
-var (
-	DefaultEngine    = "INNODB"
-	DefaultCharset   = "utf8mb4"
-	DefaultCollation = "utf8mb4_unicode_ci"
-)
-
-type Table struct {
-	Columns         Columns
-	PrimaryKey      Columns
-	Index           Indexes
-	Constraints     []string
-	Engine          string
-	Name            string
-	Charset         string
-	Collate         string
-	FullTextColumns string
-	HasFullText     bool
-}
-
-type Column struct {
-	Name          string
-	Nullable      bool
-	PrimaryKey    bool
-	Size          int
-	Scale         int
-	Precision     int
-	Type          string
-	Default       string
-	AutoIncrement bool
-	Unique        bool
-	Comment       string
-	Charset       string
-	OnUpdate      string
-	Collate       string
-	ForeignKey    string
-	After         string
-	FullText      bool
-}
-
-type Columns []Column
-
-func (list Columns) Find(name string) *Column {
-	for idx, _ := range list {
-		if list[idx].Name == name {
-			return &list[idx]
-		}
-	}
-	return nil
-}
-
-func (list Columns) Keys() []string {
-	var result []string
-	for _, item := range list {
-		result = append(result, item.Name)
-	}
-	return result
-}
-
-type Index struct {
-	Name     string
-	Unique   bool
-	FullText bool
-	Columns  Columns
-}
-
-type Indexes []Index
-
-func (list Indexes) Find(name string) *Index {
-	for idx, _ := range list {
-		if list[idx].Name == name {
-			return &list[idx]
-		}
-	}
-	return nil
-}
-
-func FromStatement(stmt *gorm.Statement) Table {
-	var table = Table{
+func fromStatementToTable(stmt *gorm.Statement) ddlTable {
+	var t = ddlTable{
 		Name:    stmt.Table,
-		Engine:  GetEngine(stmt),
-		Charset: GetCharset(stmt),
-		Collate: GetCollate(stmt),
+		Engine:  getEngine(stmt),
+		Charset: getCharset(stmt),
+		Collate: getCollate(stmt),
 	}
 
 	for _, field := range stmt.Schema.Fields {
@@ -124,7 +39,7 @@ func FromStatement(stmt *gorm.Statement) Table {
 		var datatype = stmt.Dialector.DataTypeOf(field)
 
 		if strings.Contains(datatype, "enum") {
-			datatype = cleanEnum(datatype)
+			datatype = schema.CleanEnum(datatype)
 		} else {
 			datatype = strings.Split(datatype, " ")[0]
 		}
@@ -136,9 +51,14 @@ func FromStatement(stmt *gorm.Statement) Table {
 			datatype = "bigint(20)"
 		case "datetime(3)":
 			datatype = "timestamp"
+		case "longtext":
+			// GORM defaults string without size to longtext; use varchar(255) instead
+			if _, hasType := field.TagSettings["TYPE"]; !hasType {
+				datatype = "varchar"
+			}
 		}
 
-		var column = Column{
+		var column = schema.Column{
 			Name:          field.DBName,
 			Type:          datatype,
 			Size:          field.Size,
@@ -151,20 +71,29 @@ func FromStatement(stmt *gorm.Statement) Table {
 			Unique:        field.Unique,
 		}
 
+		// normalize bool defaults for MySQL tinyint(1)
+		if strings.ToLower(datatype) == "tinyint(1)" || field.FieldType.Kind() == reflect.Bool {
+			if column.Default == "false" {
+				column.Default = "0"
+			} else if column.Default == "true" {
+				column.Default = "1"
+			}
+		}
+
 		// fix gorm problem with primaryKey
 		if (column.Type == "bigint(20)" || column.Type == "bigint" || column.Type == "int") && field.FieldType.Kind() == reflect.String {
 			column.Type = "varchar"
 		}
 		if column.Type == "varchar" {
 			if column.Size == 0 {
-				column.Size = 255 // default size for VARCHAR is 255, but GORM requires a size > 0 for string fields.
+				column.Size = 255
 			}
 			column.Type = "varchar(" + strconv.Itoa(column.Size) + ")"
 		}
 
 		if column.Type == "char" {
 			if column.Size == 0 {
-				column.Size = 255 // default size for VARCHAR is 255, but GORM requires a size > 0 for string fields.
+				column.Size = 255
 			}
 			column.Type = "char(" + strconv.Itoa(column.Size) + ")"
 		}
@@ -210,10 +139,10 @@ func FromStatement(stmt *gorm.Statement) Table {
 		}
 
 		if column.Unique {
-			table.Index = append(table.Index, Index{
+			t.Index = append(t.Index, schema.Index{
 				Name:    "idx_unique_" + column.Name,
 				Unique:  true,
-				Columns: Columns{column},
+				Columns: schema.Columns{column},
 			})
 		}
 
@@ -223,69 +152,68 @@ func FromStatement(stmt *gorm.Statement) Table {
 		}
 		var ref = reflect.New(r)
 
-		if obj, ok := ref.Interface().(interface{ ColumnDefinition(column *Column) }); ok {
+		if obj, ok := ref.Interface().(interface{ ColumnDefinition(column *schema.Column) }); ok {
 			obj.ColumnDefinition(&column)
-		} else if obj, ok := ref.Elem().Interface().(interface{ ColumnDefinition(column *Column) }); ok {
+		} else if obj, ok := ref.Elem().Interface().(interface{ ColumnDefinition(column *schema.Column) }); ok {
 			obj.ColumnDefinition(&column)
 		}
 
-		column.Default = trimQuotes(column.Default)
-		table.Columns = append(table.Columns, column)
+		column.Default = schema.TrimQuotes(column.Default)
+		t.Columns = append(t.Columns, column)
 		if field.PrimaryKey {
-			table.PrimaryKey = append(table.PrimaryKey, column)
+			t.PrimaryKey = append(t.PrimaryKey, column)
 		}
 
 	}
 
 	for _, index := range stmt.Schema.ParseIndexes() {
 
-		var idx = Index{
+		var idx = schema.Index{
 			Name:     index.Name,
 			Unique:   index.Class == "UNIQUE",
 			FullText: index.Class == "FULLTEXT",
 		}
 		for _, opt := range index.Fields {
-			idx.Columns = append(idx.Columns, *table.Columns.Find(opt.DBName))
+			idx.Columns = append(idx.Columns, *t.Columns.Find(opt.DBName))
 		}
 
-		table.Index = append(table.Index, idx)
+		t.Index = append(t.Index, idx)
 	}
 
-	return table
+	return t
 }
 
-func cleanEnum(str string) string {
-	var result = ""
-	var inside = false
-	for _, char := range str {
-		if char == '\'' || char == '"' || char == '`' {
-			inside = !inside
-		}
-		if !inside && char == ' ' {
-			continue
-		}
-		result += string(char)
-	}
-	return result
+// ddlTable is the MySQL-private DDL table representation.
+type ddlTable struct {
+	Columns         schema.Columns
+	PrimaryKey      schema.Columns
+	Index           schema.Indexes
+	Constraints     []string
+	Engine          string
+	Name            string
+	Charset         string
+	Collate         string
+	FullTextColumns string
+	HasFullText     bool
 }
 
-func (table Table) GetCreateQuery() []string {
+func getCreateQuery(t ddlTable) []string {
 	var queries []string
-	var query = "CREATE TABLE IF NOT EXISTS " + quote(table.Name) + "("
+	var query = "CREATE TABLE IF NOT EXISTS " + quote(t.Name) + "("
 	var primaryKeys []string
 	var fullTextIndexes []string
-	for idx, _ := range table.Columns {
-		var field = table.Columns[idx]
+	for idx := range t.Columns {
+		var field = t.Columns[idx]
 		query += "\r\n\t"
 		if field.PrimaryKey {
 			primaryKeys = append(primaryKeys, quote(field.Name))
 			field.Nullable = false
 		}
 		query += getFieldQuery(&field)
-		if idx < len(table.Columns)-1 {
+		if idx < len(t.Columns)-1 {
 			query += ","
 		}
-		if table.Columns[idx].FullText {
+		if t.Columns[idx].FullText {
 			fullTextIndexes = append(fullTextIndexes, quote(field.Name))
 		}
 	}
@@ -298,10 +226,10 @@ func (table Table) GetCreateQuery() []string {
 		query += "\r\n\t" + "FULLTEXT (" + strings.Join(fullTextIndexes, ",") + ")"
 	}
 
-	query += "\r\n) DEFAULT CHARSET=" + table.Charset + " COLLATE=" + table.Collate + " ENGINE=" + table.Engine + " COMMENT '0.0.0';"
+	query += "\r\n) DEFAULT CHARSET=" + t.Charset + " COLLATE=" + t.Collate + " ENGINE=" + t.Engine + " COMMENT '0.0.0';"
 	queries = append(queries, query)
 
-	for _, index := range table.Index {
+	for _, index := range t.Index {
 		query = "CREATE "
 		if index.Unique {
 			query += "UNIQUE "
@@ -310,16 +238,16 @@ func (table Table) GetCreateQuery() []string {
 			query += "FULLTEXT "
 		}
 		var keys = index.Columns.Keys()
-		for idx, _ := range keys {
+		for idx := range keys {
 			keys[idx] = quote(keys[idx])
 		}
-		query += "INDEX `" + index.Name + "` ON `" + table.Name + "` (" + strings.Join(keys, ",") + ");"
+		query += "INDEX `" + index.Name + "` ON `" + t.Name + "` (" + strings.Join(keys, ",") + ");"
 		queries = append(queries, query)
 	}
 	return queries
 }
 
-func getFieldQuery(field *Column) string {
+func getFieldQuery(field *schema.Column) string {
 	var query = quote(field.Name)
 	query += " " + fieldType(field.Type)
 	if field.AutoIncrement {
@@ -333,7 +261,7 @@ func getFieldQuery(field *Column) string {
 				v = strconv.Quote("0000-00-00 00:00:00")
 			} else {
 				var needQuote = true
-				for _, fns := range InternalFunctions {
+				for _, fns := range schema.InternalFunctions {
 					if slices.Contains(fns, field.Default) {
 						needQuote = false
 						break
@@ -370,19 +298,13 @@ func getFieldQuery(field *Column) string {
 	return query
 }
 
-func (local Table) GetDiff(remote table.Table) []string {
+func getDiff(local ddlTable, remote remoteTable) []string {
 	var queries []string
 	var afterPK []string
 	var primaryKeys []string
-	/*	if local.Collate != remote.Collation  {
-		queries = append(queries, fmt.Sprintf("--  table collation does not match. new:%s old:%s", local.Collate, remote.Collation))
-		queries = append(queries, fmt.Sprintf("ALTER TABLE %s CONVERT TO COLLATE %s;", quote(local.Name), local.Collate))
-
-	}*/
 	if local.Charset != remote.Charset || local.Collate != remote.Collation {
 		queries = append(queries, fmt.Sprintf("--  table charset does not match. new:%s old:%s", local.Charset, remote.Charset))
 		queries = append(queries, fmt.Sprintf("--  table collate does not match. new:%s old:%s", local.Collate, remote.Collation))
-		//queries = append(queries, fmt.Sprintf("ALTER TABLE %s CONVERT TO CHARACTER SET %s;", local.Name, local.Charset))
 		queries = append(queries, fmt.Sprintf("ALTER TABLE `%s` DEFAULT CHARACTER SET %s COLLATE %s", local.Name, local.Charset, local.Collate))
 	}
 
@@ -391,7 +313,7 @@ func (local Table) GetDiff(remote table.Table) []string {
 		queries = append(queries, fmt.Sprintf("ALTER TABLE `%s` ENGINE=%s;", quote(local.Name), local.Engine))
 	}
 
-	for idx, _ := range local.Columns {
+	for idx := range local.Columns {
 		var field = local.Columns[idx]
 		if field.PrimaryKey {
 			primaryKeys = append(primaryKeys, quote(field.Name))
@@ -431,7 +353,7 @@ func (local Table) GetDiff(remote table.Table) []string {
 			}
 			if field.Default != getString(r.ColumnDefault) {
 				var skip = false
-				for _, row := range InternalFunctions {
+				for _, row := range schema.InternalFunctions {
 					if slices.Contains(row, field.Default) && slices.Contains(row, getString(r.ColumnDefault)) {
 						skip = true
 					}
@@ -491,8 +413,6 @@ func (local Table) GetDiff(remote table.Table) []string {
 				}
 			}
 			if !found {
-				// todo: drop constraints
-
 				queries = append(queries, fmt.Sprintf("--  column %s does not exists on schema", column.Name))
 				queries = append(queries, "ALTER TABLE "+quote(local.Name)+" DROP COLUMN "+quote(column.Name)+";")
 			}
@@ -518,7 +438,7 @@ func (local Table) GetDiff(remote table.Table) []string {
 				query += "UNIQUE "
 			}
 			var keys = index.Columns.Keys()
-			for idx, _ := range keys {
+			for idx := range keys {
 				keys[idx] = quote(keys[idx])
 			}
 			query += "INDEX `" + index.Name + "` ON `" + local.Name + "` (" + strings.Join(keys, ",") + ");"
@@ -549,7 +469,7 @@ func (local Table) GetDiff(remote table.Table) []string {
 					query += "UNIQUE "
 				}
 				var keys = index.Columns.Keys()
-				for idx, _ := range keys {
+				for idx := range keys {
 					keys[idx] = quote(keys[idx])
 				}
 				query += "INDEX `" + index.Name + "` ON `" + local.Name + "` (" + strings.Join(keys, ",") + ");"
@@ -569,58 +489,9 @@ func (local Table) GetDiff(remote table.Table) []string {
 	return queries
 }
 
-func fieldType(t string) string {
-	if _, ok := EngineDataTypes[Engine]; ok {
-		if vi, ok := EngineDataTypes[Engine][t]; ok {
-			return vi
-		}
-	}
-	return t
-}
-
-func getInt(v *int) int {
-	if v == nil {
-		return 0
-	}
-	return *v
-}
-
-func getString(v *string) string {
-	if v == nil {
-		return ""
-	} else {
-		return trimQuotes(*v)
-	}
-}
-
-func quote(name string) string {
-	return "`" + name + "`"
-}
-
-func GetEngine(statement *gorm.Statement) string {
-	if v, ok := statement.Model.(interface{ TableEngine() string }); ok {
-		return v.TableEngine()
-	}
-	return DefaultEngine
-}
-
-func GetCharset(statement *gorm.Statement) string {
-	if v, ok := statement.Model.(interface{ TableCharset() string }); ok {
-		return v.TableCharset()
-	}
-	return DefaultCharset
-}
-
-func GetCollate(statement *gorm.Statement) string {
-	if v, ok := statement.Model.(interface{ TableCollation() string }); ok {
-		return v.TableCollation()
-	}
-	return DefaultCollation
-}
-
-func (local Table) Constrains(constraints []table.Constraint, is table.Tables) []string {
+func getConstraintsQuery(local ddlTable, constraints []remoteConstraint, is remoteTables) []string {
 	var queries []string
-	for idx, _ := range local.Columns {
+	for idx := range local.Columns {
 		var field = local.Columns[idx]
 		//Foreign Keys
 		if field.ForeignKey != "" {
@@ -643,7 +514,7 @@ func (local Table) Constrains(constraints []table.Constraint, is table.Tables) [
 
 				var name = local.Name + "." + field.Name + "_" + referencedTable + "." + referencedCol
 
-				name = "fk_" + Generate32CharHash(name)
+				name = "fk_" + schema.Generate32CharHash(name)
 				var skip = false
 				for _, constraint := range constraints {
 
@@ -664,17 +535,165 @@ func (local Table) Constrains(constraints []table.Constraint, is table.Tables) [
 	return queries
 }
 
-func trimQuotes(s string) string {
-	if len(s) >= 2 {
-		if c := s[len(s)-1]; s[0] == c && (c == '"' || c == '\'') {
-			return s[1 : len(s)-1]
+// generateMigration performs the full MySQL migration generation:
+// introspection + diff/create for all models.
+func generateMigration(db *gorm.DB, database string, stmts []*gorm.Statement, models []any) schema.MigrationResult {
+	var result schema.MigrationResult
+	result.TableExists = make(map[string]bool)
+
+	// Detect engine
+	var ver string
+	db.Raw("SELECT VERSION();").Scan(&ver)
+	ver = strings.ToLower(ver)
+	switch {
+	case strings.Contains(ver, "mariadb"):
+		engine = "mariadb"
+	default:
+		engine = "mysql"
+	}
+
+	// Introspect remote schema
+	var is remoteTables
+	db.Raw(`SELECT CCSA.character_set_name AS 'TABLE_CHARSET', T.*
+		FROM information_schema.TABLES T,
+		     information_schema.COLLATION_CHARACTER_SET_APPLICABILITY CCSA
+		WHERE CCSA.collation_name = T.table_collation
+		  AND T.table_schema = ?`, database).Scan(&is)
+
+	var columns remoteColumns
+	db.Raw(`SELECT * FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? ORDER BY TABLE_NAME ASC, ORDINAL_POSITION ASC`, database).Scan(&columns)
+
+	var constraints []remoteConstraint
+	db.Raw(`SELECT * FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE REFERENCED_TABLE_SCHEMA = ?`, database).Scan(&constraints)
+
+	// Assemble columns into tables
+	var tb *remoteTable
+	for idx := range columns {
+		if tb == nil || columns[idx].Table != tb.Table {
+			tb = is.GetTable(columns[idx].Table)
+			if tb == nil {
+				continue
+			}
+		}
+		if columns[idx].ColumnKey == "PRI" {
+			tb.PrimaryKey = append(tb.PrimaryKey, columns[idx])
+		}
+		tb.Columns = append(tb.Columns, columns[idx])
+	}
+
+	// Assemble indexes
+	var istats []remoteIndexStat
+	db.Raw(`SELECT * FROM information_schema.statistics WHERE TABLE_SCHEMA = ? ORDER BY TABLE_NAME ASC, SEQ_IN_INDEX ASC`, database).Scan(&istats)
+
+	var indexMap = map[string]remoteIndex{}
+	for _, item := range istats {
+		if item.Name == "PRIMARY" {
+			continue
+		}
+		if _, ok := indexMap[item.Table+item.Name]; !ok {
+			indexMap[item.Table+item.Name] = remoteIndex{
+				Name:   item.Name,
+				Table:  item.Table,
+				Unique: !item.NonUnique,
+			}
+		}
+		var m = indexMap[item.Table+item.Name]
+		tbl := is.GetTable(item.Table)
+		if tbl == nil {
+			continue
+		}
+		var c = tbl.Columns.GetColumn(item.ColumnName)
+		if c == nil {
+			continue
+		}
+		m.Columns = append(m.Columns, *c)
+		indexMap[item.Table+item.Name] = m
+	}
+	for key, item := range indexMap {
+		tbl := is.GetTable(item.Table)
+		if tbl != nil {
+			tbl.Indexes = append(tbl.Indexes, indexMap[key])
 		}
 	}
-	return s
+
+	// Mark which tables exist
+	for _, t := range is {
+		result.TableExists[t.Table] = true
+	}
+
+	// Generate DDL for each model
+	for idx, stmt := range stmts {
+		if stmt.Schema == nil {
+			continue
+		}
+
+		if obj, ok := stmt.Model.(interface{ TableName() string }); ok {
+			if strings.HasPrefix(obj.TableName(), "information_schema.") {
+				continue
+			}
+		}
+
+		local := fromStatementToTable(stmt)
+		tbl := is.GetTable(stmt.Schema.Table)
+
+		var q []string
+		if tbl != nil {
+			tbl.Model = models[idx]
+			tbl.Reflect = reflect.ValueOf(tbl.Model)
+			q = getDiff(local, *tbl)
+		} else {
+			q = getCreateQuery(local)
+		}
+
+		result.Tail = append(result.Tail, getConstraintsQuery(local, constraints, is)...)
+		if len(q) > 0 {
+			result.Queries = append(result.Queries, "\r\n\r\n-- Migrate Model: "+stmt.Schema.ModelType.PkgPath()+"."+stmt.Schema.ModelType.Name()+"("+stmt.Schema.Table+")")
+			result.Queries = append(result.Queries, q...)
+		}
+	}
+
+	return result
 }
 
-// Generate32CharHash takes a text input and returns a unique 32-character hash
-func Generate32CharHash(text string) string {
-	hash := sha256.Sum256([]byte(text))     // Generate SHA-256 hash
-	return hex.EncodeToString(hash[:])[:32] // Take the first 32 characters
+// --- MySQL-specific helpers ---
+
+func quote(name string) string {
+	return "`" + name + "`"
+}
+
+func fieldType(t string) string {
+	if _, ok := engineDataTypes[engine]; ok {
+		if vi, ok := engineDataTypes[engine][t]; ok {
+			return vi
+		}
+	}
+	return t
+}
+
+func getString(v *string) string {
+	if v == nil {
+		return ""
+	}
+	return schema.TrimQuotes(*v)
+}
+
+func getEngine(statement *gorm.Statement) string {
+	if v, ok := statement.Model.(interface{ TableEngine() string }); ok {
+		return v.TableEngine()
+	}
+	return schema.GetConfigDefault("default_engine", "INNODB")
+}
+
+func getCharset(statement *gorm.Statement) string {
+	if v, ok := statement.Model.(interface{ TableCharset() string }); ok {
+		return v.TableCharset()
+	}
+	return schema.GetConfigDefault("default_charset", "utf8mb4")
+}
+
+func getCollate(statement *gorm.Statement) string {
+	if v, ok := statement.Model.(interface{ TableCollation() string }); ok {
+		return v.TableCollation()
+	}
+	return schema.GetConfigDefault("default_collation", "utf8mb4_unicode_ci")
 }

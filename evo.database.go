@@ -2,16 +2,15 @@ package evo
 
 import (
 	"fmt"
-	"github.com/getevo/evo/v2/lib/settings"
 	"log"
 	"os"
 	"strings"
 	"time"
 
+	dbpkg "github.com/getevo/evo/v2/lib/db"
 	"github.com/getevo/evo/v2/lib/db/schema"
-	"gorm.io/driver/mysql"
-	"gorm.io/driver/postgres"
-	"gorm.io/driver/sqlite"
+	evolog "github.com/getevo/evo/v2/lib/log"
+	"github.com/getevo/evo/v2/lib/settings"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -51,26 +50,25 @@ func setupDatabase() {
 	cfg := &gorm.Config{
 		Logger: newLog,
 	}
-	switch strings.ToLower(config.Type) {
-	case "mysql":
-		connectionString := fmt.Sprintf("%s:%s@tcp(%s)/%s?%s", config.Username, config.Password, config.Server, config.Database, config.Params)
-		db, err = gorm.Open(mysql.Open(connectionString), cfg)
-	case "postgres", "postgresql", "pgsql":
-		connectionString := fmt.Sprintf("host=%s user=%s password=%s dbname=%s %s", config.Server, config.Username, config.Password, config.Database, config.Params)
-		db, err = gorm.Open(postgres.Open(connectionString), cfg)
-	default:
-		db, err = gorm.Open(sqlite.Open(config.Database+config.Params), cfg)
+
+	driver := dbpkg.GetDriver()
+	if driver == nil {
+		log.Fatal("no database driver registered")
+		return
 	}
+	driverCfg := dbpkg.DriverConfig{
+		Server:   config.Server,
+		Username: config.Username,
+		Password: config.Password,
+		Database: config.Database,
+		SSLMode:  config.SSLMode,
+		Params:   config.Params,
+	}
+	db, err = driver.Open(driverCfg, cfg)
 	if err != nil {
 		log.Fatal("unable to connect to database", "error", err)
 		return
 	}
-
-	//switch settings to database
-	/*	var driver = database.Database{}
-		driver.Init()
-		settings.SetInterface(&driver)*/
-
 }
 
 // GetDBO return database object instance
@@ -89,7 +87,32 @@ type Model struct {
 }
 
 func DoMigration() error {
-	return schema.DoMigration(db)
+	driver := dbpkg.GetDriver()
+	if driver == nil {
+		return fmt.Errorf("no database driver registered")
+	}
+	for _, fn := range schema.OnBeforeMigration {
+		fn(db)
+	}
+	queries := driver.GetMigrationScript(db)
+	var err error
+	for _, query := range queries {
+		query = strings.TrimSpace(query)
+		if query == "" || strings.HasPrefix(query, "--") {
+			if query != "" {
+				fmt.Println(query)
+			}
+			continue
+		}
+		if e := db.Debug().Exec(query).Error; e != nil {
+			evolog.Error(e)
+			err = e
+		}
+	}
+	for _, fn := range schema.OnAfterMigration {
+		fn(db)
+	}
+	return err
 }
 
 func Models() []schema.Model {

@@ -1,6 +1,7 @@
 package types
 
 import (
+	"context"
 	"database/sql/driver"
 	"errors"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"gorm.io/gorm/schema"
 )
 
@@ -72,6 +74,20 @@ func (t *Date) setFromTime(src time.Time) {
 // Value implements driver.Valuer interface and returns string format of Time.
 func (t Date) Value() (driver.Value, error) {
 	return t.String(), nil
+}
+
+// GormValue implements GormValuerInterface for dialect-aware date handling.
+// PostgreSQL rejects "0000-00-00" as an invalid date, so we return NULL instead.
+func (t Date) GormValue(ctx context.Context, db *gorm.DB) clause.Expr {
+	if t.Year() < 1000 {
+		switch db.Dialector.Name() {
+		case "postgres":
+			return gorm.Expr("NULL")
+		default:
+			return gorm.Expr("?", "0000-00-00")
+		}
+	}
+	return gorm.Expr("?", fmt.Sprintf("%d-%02d-%02d", t.Year(), t.Month(), t.Day()))
 }
 
 // String implements fmt.Stringer interface.

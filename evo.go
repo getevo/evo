@@ -1,6 +1,8 @@
 package evo
 
 import (
+	"strings"
+
 	"github.com/getevo/evo/v2/lib/application"
 	"github.com/getevo/evo/v2/lib/args"
 	"github.com/getevo/evo/v2/lib/log"
@@ -20,8 +22,9 @@ var http = HTTPConfig{}
 var fiberConfig = fiber.Config{}
 var Application *application.App
 
-// Setup set up the EVO app
-func Setup() {
+// Setup set up the EVO app.
+// Optional params: pass a db.Driver to select the database driver (e.g. pgsql.Driver{} or mysql.Driver{}).
+func Setup(params ...any) {
 	Application = application.GetInstance()
 	var err = settings.Init()
 	if err != nil {
@@ -35,15 +38,40 @@ func Setup() {
 		log.Fatal("Unable to retrieve HTTP server configurations: ", err)
 	}
 
+	// Extract driver from params
+	var driverCount int
+	for _, p := range params {
+		if d, ok := p.(dbo.Driver); ok {
+			driverCount++
+			if driverCount > 1 {
+				log.Fatal("only one database driver can be registered")
+			}
+			dbo.RegisterDriver(d)
+		}
+	}
+
 	app = fiber.New(fiberConfig)
 	if settings.Get("Database.Enabled").Bool() {
+		if dbo.GetDriver() == nil {
+			log.Fatal("Database.Enabled is true but no driver passed to evo.Setup()")
+		}
+		// Validate that config type matches the provided driver
+		configType := strings.ToLower(settings.Get("Database.Type").String())
+		driverName := dbo.GetDriver().Name()
+		validNames := map[string]string{
+			"mysql": "mysql", "mariadb": "mysql",
+			"postgres": "postgres", "postgresql": "postgres", "pgsql": "postgres",
+		}
+		if expected, ok := validNames[configType]; ok && expected != driverName {
+			log.Fatal("Database.Type is '", configType, "' but driver '", driverName, "' was provided")
+		}
+
 		db = GetDBO()
 		dbo.Register(db)
 		settings.LoadDatabaseSettings()
 	}
 
 	memo.Register()
-
 }
 
 // Run start EVO Server
