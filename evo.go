@@ -85,7 +85,7 @@ func Run() {
 		err := dbo.DoMigration()
 
 		if err != nil {
-			log.Error("unable to perform database migrations: ", err)
+			log.Error("unable to perform database migrations", "error", err)
 		} else {
 			log.Info("database migrations performed successfully")
 		}
@@ -101,6 +101,9 @@ func Run() {
 		os.Exit(0)
 	}
 
+	// Register health check endpoints
+	registerHealthCheckEndpoints()
+
 	if Any != nil {
 		app.Use(func(ctx *fiber.Ctx) error {
 			r := Upgrade(ctx)
@@ -112,8 +115,7 @@ func Run() {
 	} else {
 		// Last middleware to match anything
 		app.Use(func(c *fiber.Ctx) error {
-			c.SendStatus(404)
-			return nil
+			return c.SendStatus(404)
 		})
 	}
 

@@ -49,7 +49,7 @@ func New(err ...interface{}) HTTPError {
 			r.Error = fmt.Sprint(v)
 		}
 	}
-	out.Data = text.ToJSON(r)
+	out.Data = []byte(text.ToJSON(r))
 	return out
 }
 
