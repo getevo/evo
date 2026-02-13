@@ -122,7 +122,7 @@ func (grp *group) Static(path string, dir string, config ...fiber.Static) group 
 		panic("Access object before call Setup()")
 	}
 	var route fiber.Router
-	route = app.Static(path, dir, config...)
+	route = (*grp.app).Static(path, dir, config...)
 	gp := group{
 		app: &route,
 	}

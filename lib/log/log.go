@@ -1,45 +1,22 @@
 package log
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
-	"github.com/getevo/json"
 	"os"
+	"path/filepath"
 	"reflect"
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 )
 
 // Level represents the severity level of the log message.
-// It is defined as an integer type and uses constants for named levels.
-type Level int
-
-// wd stores the current working directory path.
-// Used to shorten file paths in log entries.
-var wd, _ = os.Getwd()
-
-// level stores the current global logging level.
-// Only messages at or above this level will be logged.
-var level = WarningLevel
-
-// stackTraceLevel indicates how many additional stack frames to skip when determining the caller location.
-var stackTraceLevel = 0
-
-// writers holds a list of functions that process log entries.
-// Each writer is a function that takes an *Entry and outputs it (e.g., to console, file, etc.).
-var writers []func(log *Entry) = []func(log *Entry){
-	StdWriter,
-}
-
-// StdWriter is a default writer function that prints the log message to stdout.
-var StdWriter = func(log *Entry) {
-	fmt.Println(log.Date.Format("15:04:05"), "["+log.Level+"]", log.File+":"+strconv.Itoa(log.Line), log.Message)
-}
-
-// levels maps the Level constants to their string representations.
-// The index corresponds to the Level value (with a placeholder at index 0).
-var levels = []string{"", "Critical", "Error", "Warning", "Notice", "Info", "Debug"}
+type Level int32
 
 // Logging levels as constants. Each constant represents a severity level.
 const (
@@ -51,11 +28,81 @@ const (
 	DebugLevel
 )
 
+// Format represents the log output format.
+type Format int32
+
+const (
+	TextFormat Format = iota
+	JSONFormat
+)
+
+// Field represents a structured key-value pair in a log entry.
+type Field struct {
+	Key   string `json:"key"`
+	Value any    `json:"value"`
+}
+
+// Entry represents a single log message, including metadata such as timestamp, file, line number, and severity level.
+type Entry struct {
+	Level   string    `json:"level"`   // The severity level as a string (e.g., "Error", "Info")
+	Date    time.Time `json:"date"`    // The timestamp when this log entry was created
+	File    string    `json:"file"`    // The source file that generated the log entry
+	Line    int       `json:"line"`    // The line number in the source file
+	Message string    `json:"message"` // The formatted log message
+	Fields  []Field   `json:"fields,omitempty"`
+}
+
+type contextKey struct{}
+
+var (
+	wd              string
+	level           atomic.Int32
+	format          atomic.Int32
+	stackTraceLevel atomic.Int32
+	writersMu       sync.RWMutex
+	writers         []func(*Entry)
+	levels          = []string{"", "Critical", "Error", "Warning", "Notice", "Info", "Debug"}
+)
+
+// StdWriter is the default log writer that outputs to stdout.
+var StdWriter = func(entry *Entry) {
+	if Format(format.Load()) == JSONFormat {
+		data, _ := json.Marshal(entry)
+		fmt.Fprintln(os.Stdout, string(data))
+		return
+	}
+	var b strings.Builder
+	b.WriteString(entry.Date.Format("15:04:05"))
+	b.WriteString(" [")
+	b.WriteString(entry.Level)
+	b.WriteString("] ")
+	b.WriteString(entry.File)
+	b.WriteString(":")
+	b.WriteString(strconv.Itoa(entry.Line))
+	b.WriteString(" ")
+	b.WriteString(entry.Message)
+	for _, f := range entry.Fields {
+		b.WriteString(" ")
+		b.WriteString(f.Key)
+		b.WriteString("=")
+		b.WriteString(formatValue(f.Value))
+	}
+	fmt.Fprintln(os.Stdout, b.String())
+}
+
+func init() {
+	wd, _ = os.Getwd()
+	level.Store(int32(WarningLevel))
+	format.Store(int32(TextFormat))
+	writers = []func(*Entry){StdWriter}
+}
+
+// --- Configuration ---
+
 // ParseLevel converts a string expression (like "error", "warn") into a corresponding Level constant.
 // If it cannot find a match, it defaults to NoticeLevel.
 func ParseLevel(expr string) Level {
-	expr = strings.TrimSpace(strings.ToLower(expr))
-	switch expr {
+	switch strings.TrimSpace(strings.ToLower(expr)) {
 	case "critical", "crit":
 		return CriticalLevel
 	case "error", "erro":
@@ -73,279 +120,312 @@ func ParseLevel(expr string) Level {
 	}
 }
 
-// AddWriter adds one or more writer functions to the global list of writers.
-// These writers are called for each log message.
-func AddWriter(input ...func(message *Entry)) {
-	writers = append(writers, input...)
-}
-
-// SetWriters replaces the current list of writers with the provided ones.
-// It sets the global writers slice to only the specified functions.
-func SetWriters(input ...func(message *Entry)) {
-	writers = input
-}
-
 // SetLevel updates the global logging level.
 // Messages below this level will not be output.
 func SetLevel(lvl Level) {
-	level = lvl
+	level.Store(int32(lvl))
+}
+
+// GetLevel returns the current global logging level.
+func GetLevel() Level {
+	return Level(level.Load())
+}
+
+// SetFormat sets the global log output format (TextFormat or JSONFormat).
+func SetFormat(f Format) {
+	format.Store(int32(f))
+}
+
+// GetFormat returns the current global log output format.
+func GetFormat() Format {
+	return Format(format.Load())
 }
 
 // SetStackTrace configures how many additional stack frames are skipped
 // when determining the source file and line number for log messages.
 func SetStackTrace(lvl int) {
-	stackTraceLevel = lvl
+	stackTraceLevel.Store(int32(lvl))
 }
 
-// Entry represents a single log message, including metadata such as timestamp, file, line number, and severity level.
-type Entry struct {
-	Level   string    `json:"level"`   // The severity level as a string (e.g., "Error", "Info")
-	Date    time.Time `json:"date"`    // The timestamp when this log entry was created
-	File    string    `json:"file"`    // The source file that generated the log entry
-	Line    int       `json:"line"`    // The line number in the source file
-	Message string    `json:"message"` // The formatted log message
+// AddWriter adds one or more writer functions to the global list of writers.
+func AddWriter(input ...func(*Entry)) {
+	writersMu.Lock()
+	writers = append(writers, input...)
+	writersMu.Unlock()
 }
 
-// msg is an internal function that creates a log Entry and passes it to all configured writers.
-// It uses runtime.Caller to determine file and line number and applies message formatting.
-func msg(message any, level Level, params ...any) {
-	if message == nil {
+// SetWriters replaces the current list of writers with the provided ones.
+func SetWriters(input ...func(*Entry)) {
+	writersMu.Lock()
+	writers = input
+	writersMu.Unlock()
+}
+
+// --- Context ---
+
+// WithContextFields returns a new context with the given key-value fields attached for logging.
+func WithContextFields(ctx context.Context, keysAndValues ...any) context.Context {
+	existing := ContextFields(ctx)
+	fields := append(existing, parseFields(keysAndValues)...)
+	return context.WithValue(ctx, contextKey{}, fields)
+}
+
+// ContextFields returns the log fields stored in the context.
+func ContextFields(ctx context.Context) []Field {
+	if ctx == nil {
+		return nil
+	}
+	if fields, ok := ctx.Value(contextKey{}).([]Field); ok {
+		cp := make([]Field, len(fields))
+		copy(cp, fields)
+		return cp
+	}
+	return nil
+}
+
+// --- Core ---
+
+func doLog(lvl Level, skip int, ctx context.Context, message string, fields []Field) {
+	if lvl > Level(level.Load()) {
 		return
 	}
-	_, file, line, _ := runtime.Caller(2 + stackTraceLevel)
+	_, file, line, _ := runtime.Caller(skip + int(stackTraceLevel.Load()))
+	file = shortenPath(file)
 
-	entry := Entry{
-		Level:   levels[level],
+	entry := &Entry{
+		Level:   levels[lvl],
 		Date:    time.Now(),
 		File:    file,
 		Line:    line,
-		Message: fmt.Sprintf(fmt.Sprint(message), params...),
+		Message: message,
+		Fields:  fields,
 	}
 
-	for _, writer := range writers {
-		writer(&entry)
+	if ctx != nil {
+		if ctxFields := ContextFields(ctx); len(ctxFields) > 0 {
+			entry.Fields = append(ctxFields, entry.Fields...)
+		}
+	}
+
+	writersMu.RLock()
+	ws := make([]func(*Entry), len(writers))
+	copy(ws, writers)
+	writersMu.RUnlock()
+
+	for _, w := range ws {
+		w(entry)
 	}
 }
 
-// toValue converts various parameter types into a string representation.
-// For strings, it wraps the value in quotes, and for complex types, it attempts JSON marshaling.
-func toValue(param any) string {
-	var ref = reflect.ValueOf(param)
-	for ref.Kind() == reflect.Ptr {
+// msg handles structured logging with key-value params.
+func msg(message any, lvl Level, params ...any) {
+	if message == nil {
+		return
+	}
+	doLog(lvl, 3, nil, fmt.Sprint(message), parseFields(params))
+}
+
+// msgf handles printf-style formatting.
+func msgf(message any, lvl Level, params ...any) {
+	if message == nil {
+		return
+	}
+	doLog(lvl, 3, nil, fmt.Sprintf(fmt.Sprint(message), params...), nil)
+}
+
+// msgCtx handles context-aware structured logging.
+func msgCtx(ctx context.Context, message any, lvl Level, params ...any) {
+	if message == nil {
+		return
+	}
+	doLog(lvl, 3, ctx, fmt.Sprint(message), parseFields(params))
+}
+
+// --- Helpers ---
+
+func parseFields(params []any) []Field {
+	if len(params) == 0 {
+		return nil
+	}
+	fields := make([]Field, 0, (len(params)+1)/2)
+	i := 0
+	for i < len(params) {
+		if key, ok := params[i].(string); ok {
+			if i+1 < len(params) {
+				fields = append(fields, Field{Key: key, Value: params[i+1]})
+				i += 2
+			} else {
+				fields = append(fields, Field{Key: key, Value: nil})
+				i++
+			}
+		} else {
+			fields = append(fields, Field{Key: "!BADKEY", Value: params[i]})
+			i++
+		}
+	}
+	return fields
+}
+
+func formatValue(v any) string {
+	if v == nil {
+		return "nil"
+	}
+	ref := reflect.ValueOf(v)
+	if ref.Kind() == reflect.Ptr {
+		if ref.IsNil() {
+			return "nil"
+		}
 		ref = ref.Elem()
 	}
 	switch ref.Kind() {
 	case reflect.String:
-		return strconv.Quote(ref.Interface().(string))
+		return strconv.Quote(ref.String())
 	case reflect.Bool:
-		if ref.Interface().(bool) {
-			return "true"
-		} else {
-			return "false"
+		return strconv.FormatBool(ref.Bool())
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return strconv.FormatInt(ref.Int(), 10)
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return strconv.FormatUint(ref.Uint(), 10)
+	case reflect.Float32, reflect.Float64:
+		return strconv.FormatFloat(ref.Float(), 'f', -1, 64)
+	case reflect.Slice, reflect.Map, reflect.Struct, reflect.Array:
+		data, err := json.Marshal(ref.Interface())
+		if err != nil {
+			return fmt.Sprint(ref.Interface())
 		}
-	case reflect.Float64, reflect.Float32, reflect.Int, reflect.Int64, reflect.Int32, reflect.Int8, reflect.Uint16, reflect.Uint, reflect.Uint64, reflect.Uint32, reflect.Uint8:
-		return fmt.Sprint(ref.Interface())
-	case reflect.Array, reflect.Slice, reflect.Struct, reflect.Map:
-		var b, _ = json.Marshal(ref.Interface())
-		return string(b)
+		return string(data)
 	default:
-		return quote(fmt.Sprint(ref.Interface()))
+		return fmt.Sprint(ref.Interface())
 	}
 }
 
-// quote wraps a string in double quotes and escapes any existing double quotes within the string.
-func quote(s string) string {
-	return "\"" + strings.ReplaceAll(s, "\"", "\\\"") + "\""
+func shortenPath(file string) string {
+	if wd != "" {
+		if rel, err := filepath.Rel(wd, file); err == nil {
+			return filepath.ToSlash(rel)
+		}
+	}
+	return file
 }
 
-// Fatal logs a message at the Critical level and then exits the program.
-// It behaves like Critical but calls os.Exit(1) after logging.
+// --- Logging functions ---
+
+// Critical logs a message at the Critical level with optional key-value fields.
+func Critical(message any, params ...any) { msg(message, CriticalLevel, params...) }
+
+// Criticalf logs a printf-formatted message at the Critical level.
+func Criticalf(message any, params ...any) { msgf(message, CriticalLevel, params...) }
+
+// CriticalF is an alias for Criticalf.
+func CriticalF(message any, params ...any) { msgf(message, CriticalLevel, params...) }
+
+// CriticalContext logs at Critical level with context fields.
+func CriticalContext(ctx context.Context, message any, params ...any) {
+	msgCtx(ctx, message, CriticalLevel, params...)
+}
+
+// Error logs a message at the Error level with optional key-value fields.
+func Error(message any, params ...any) { msg(message, ErrorLevel, params...) }
+
+// Errorf logs a printf-formatted message at the Error level.
+func Errorf(message any, params ...any) { msgf(message, ErrorLevel, params...) }
+
+// ErrorF is an alias for Errorf.
+func ErrorF(message any, params ...any) { msgf(message, ErrorLevel, params...) }
+
+// ErrorContext logs at Error level with context fields.
+func ErrorContext(ctx context.Context, message any, params ...any) {
+	msgCtx(ctx, message, ErrorLevel, params...)
+}
+
+// Warning logs a message at the Warning level with optional key-value fields.
+func Warning(message any, params ...any) { msg(message, WarningLevel, params...) }
+
+// Warningf logs a printf-formatted message at the Warning level.
+func Warningf(message any, params ...any) { msgf(message, WarningLevel, params...) }
+
+// WarningF is an alias for Warningf.
+func WarningF(message any, params ...any) { msgf(message, WarningLevel, params...) }
+
+// WarningContext logs at Warning level with context fields.
+func WarningContext(ctx context.Context, message any, params ...any) {
+	msgCtx(ctx, message, WarningLevel, params...)
+}
+
+// Notice logs a message at the Notice level with optional key-value fields.
+func Notice(message any, params ...any) { msg(message, NoticeLevel, params...) }
+
+// Noticef logs a printf-formatted message at the Notice level.
+func Noticef(message any, params ...any) { msgf(message, NoticeLevel, params...) }
+
+// NoticeF is an alias for Noticef.
+func NoticeF(message any, params ...any) { msgf(message, NoticeLevel, params...) }
+
+// NoticeContext logs at Notice level with context fields.
+func NoticeContext(ctx context.Context, message any, params ...any) {
+	msgCtx(ctx, message, NoticeLevel, params...)
+}
+
+// Info logs a message at the Info level with optional key-value fields.
+func Info(message any, params ...any) { msg(message, InfoLevel, params...) }
+
+// Infof logs a printf-formatted message at the Info level.
+func Infof(message any, params ...any) { msgf(message, InfoLevel, params...) }
+
+// InfoF is an alias for Infof.
+func InfoF(message any, params ...any) { msgf(message, InfoLevel, params...) }
+
+// InfoContext logs at Info level with context fields.
+func InfoContext(ctx context.Context, message any, params ...any) {
+	msgCtx(ctx, message, InfoLevel, params...)
+}
+
+// Debug logs a message at the Debug level with optional key-value fields.
+func Debug(message any, params ...any) { msg(message, DebugLevel, params...) }
+
+// Debugf logs a printf-formatted message at the Debug level.
+func Debugf(message any, params ...any) { msgf(message, DebugLevel, params...) }
+
+// DebugF is an alias for Debugf.
+func DebugF(message any, params ...any) { msgf(message, DebugLevel, params...) }
+
+// DebugContext logs at Debug level with context fields.
+func DebugContext(ctx context.Context, message any, params ...any) {
+	msgCtx(ctx, message, DebugLevel, params...)
+}
+
+// Fatal logs a message at the Critical level and exits with code 1.
 func Fatal(message any, params ...any) {
-	if level >= CriticalLevel {
-		msg(message, CriticalLevel, params...)
-	}
-	os.Exit(128)
+	msg(message, CriticalLevel, params...)
+	os.Exit(1)
 }
 
-// FatalF logs a formatted message at the Critical level and then exits the program.
-// It uses formatting similar to fmt.Printf before logging.
-func FatalF(message any, params ...any) {
-	if level >= CriticalLevel {
-		msg(message, CriticalLevel, params...)
-	}
-	os.Exit(128)
-}
-
-// Fatalf logs a formatted message at the Critical level and then exits the program.
-// It is similar to FatalF, provided for compatibility.
+// Fatalf logs a printf-formatted message at the Critical level and exits with code 1.
 func Fatalf(message any, params ...any) {
-	if level >= CriticalLevel {
-		msg(message, CriticalLevel, params...)
-	}
-	os.Exit(128)
+	msgf(message, CriticalLevel, params...)
+	os.Exit(1)
 }
 
-// Panic logs a message at the Critical level and then calls panic().
-// It behaves like Critical but ends with a panic.
+// FatalF is an alias for Fatalf.
+func FatalF(message any, params ...any) {
+	msgf(message, CriticalLevel, params...)
+	os.Exit(1)
+}
+
+// Panic logs a message at the Critical level and panics.
 func Panic(message any, params ...any) {
-	if level >= CriticalLevel {
-		msg(message, CriticalLevel, params...)
-	}
-	os.Exit(128)
+	msg(message, CriticalLevel, params...)
+	panic(fmt.Sprint(message))
 }
 
-// PanicF logs a formatted message at the Critical level and then calls panic().
-// It uses formatting similar to fmt.Printf before logging.
-func PanicF(message any, params ...any) {
-	if level >= CriticalLevel {
-		msg(message, CriticalLevel, params...)
-	}
-	os.Exit(128)
-}
-
-// Panicf logs a formatted message at the Critical level and then calls panic().
-// It behaves like PanicF, provided for compatibility.
+// Panicf logs a printf-formatted message at the Critical level and panics.
 func Panicf(message any, params ...any) {
-	if level >= CriticalLevel {
-		msg(message, CriticalLevel, params...)
-	}
-	os.Exit(128)
+	msgf(message, CriticalLevel, params...)
+	panic(fmt.Sprintf(fmt.Sprint(message), params...))
 }
 
-// Critical logs a message at the Critical level.
-// These messages typically indicate severe errors or conditions.
-func Critical(message any, params ...any) {
-	if level >= CriticalLevel {
-		msg(message, CriticalLevel, params...)
-	}
-}
-
-// CriticalF logs a formatted message at the Critical level using fmt.Printf-style formatting.
-func CriticalF(message any, params ...any) {
-	if level >= CriticalLevel {
-		msg(message, CriticalLevel, params...)
-	}
-}
-
-// Criticalf logs a formatted message at the Critical level using fmt.Printf-style formatting.
-// Provided for compatibility; behaves like CriticalF.
-func Criticalf(message any, params ...any) {
-	if level >= CriticalLevel {
-		msg(message, CriticalLevel, params...)
-	}
-}
-
-// Error logs a message at the Error level.
-// These messages represent errors that may require attention, but are not as severe as Critical.
-func Error(message any, params ...any) {
-	if level >= ErrorLevel {
-		msg(message, ErrorLevel, params...)
-	}
-}
-
-// ErrorF logs a formatted message at the Error level using fmt.Printf-style formatting.
-func ErrorF(message any, params ...any) {
-	if level >= ErrorLevel {
-		msg(message, ErrorLevel, params...)
-	}
-}
-
-// Errorf logs a formatted message at the Error level using fmt.Printf-style formatting.
-// Provided for compatibility; behaves like ErrorF.
-func Errorf(message any, params ...any) {
-	if level >= ErrorLevel {
-		msg(message, ErrorLevel, params...)
-	}
-}
-
-// Warning logs a message at the Warning level.
-// Warnings indicate potentially problematic situations that deserve attention.
-func Warning(message any, params ...any) {
-	if level >= WarningLevel {
-		msg(message, WarningLevel, params...)
-	}
-}
-
-// WarningF logs a formatted message at the Warning level using fmt.Printf-style formatting.
-func WarningF(message any, params ...any) {
-	if level >= WarningLevel {
-		msg(message, WarningLevel, params...)
-	}
-}
-
-// Warningf logs a formatted message at the Warning level using fmt.Printf-style formatting.
-// Provided for compatibility; behaves like WarningF.
-func Warningf(message any, params ...any) {
-	if level >= WarningLevel {
-		msg(message, WarningLevel, params...)
-	}
-}
-
-// Notice logs a message at the Notice level.
-// Notices provide informational messages that are more important than Info but not as severe as Warnings.
-func Notice(message any, params ...any) {
-	if level >= NoticeLevel {
-		msg(message, NoticeLevel, params...)
-	}
-}
-
-// NoticeF logs a formatted message at the Notice level using fmt.Printf-style formatting.
-func NoticeF(message any, params ...any) {
-	if level >= NoticeLevel {
-		msg(message, NoticeLevel, params...)
-	}
-}
-
-// Noticef logs a formatted message at the Notice level using fmt.Printf-style formatting.
-// Provided for compatibility; behaves like NoticeF.
-func Noticef(message any, params ...any) {
-	if level >= NoticeLevel {
-		msg(message, NoticeLevel, params...)
-	}
-}
-
-// Info logs a message at the Info level.
-// Info messages provide general operational information.
-func Info(message any, params ...any) {
-	if level >= InfoLevel {
-		msg(message, InfoLevel, params...)
-	}
-}
-
-// InfoF logs a formatted message at the Info level using fmt.Printf-style formatting.
-func InfoF(message any, params ...any) {
-	if level >= InfoLevel {
-		msg(message, InfoLevel, params...)
-	}
-}
-
-// Infof logs a formatted message at the Info level using fmt.Printf-style formatting.
-// Provided for compatibility; behaves like InfoF.
-func Infof(message any, params ...any) {
-	if level >= InfoLevel {
-		msg(message, InfoLevel, params...)
-	}
-}
-
-// Debug logs a message at the Debug level.
-// Debug messages are used for internal testing and troubleshooting.
-func Debug(message any, params ...any) {
-	if level >= DebugLevel {
-		msg(message, DebugLevel, params...)
-	}
-}
-
-// DebugF logs a formatted message at the Debug level using fmt.Printf-style formatting.
-func DebugF(message any, params ...any) {
-	if level >= DebugLevel {
-		msg(message, DebugLevel, params...)
-	}
-}
-
-// Debugf logs a formatted message at the Debug level using fmt.Printf-style formatting.
-// Provided for compatibility; behaves like DebugF.
-func Debugf(message any, params ...any) {
-	if level >= DebugLevel {
-		msg(message, DebugLevel, params...)
-	}
+// PanicF is an alias for Panicf.
+func PanicF(message any, params ...any) {
+	msgf(message, CriticalLevel, params...)
+	panic(fmt.Sprintf(fmt.Sprint(message), params...))
 }

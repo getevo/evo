@@ -1,183 +1,127 @@
-# settings Library
+# Settings Package
 
-The settings library provides a unified configuration management system that can load settings from multiple sources with a hierarchical override mechanism. It allows you to manage application configuration in a flexible and consistent way.
-
-## Installation
-
-```go
-import "github.com/getevo/evo/v2/lib/settings"
-```
+Thread-safe, multi-source configuration management system for Go applications.
 
 ## Features
 
-- **Multiple Configuration Sources**: Load settings from environment variables, database, YAML files, and command-line arguments
-- **Hierarchical Override**: Later sources override earlier ones in a predictable manner
-- **Dot Notation**: Access nested settings using dot notation (e.g., "Database.Username")
-- **Type Conversion**: Automatically convert settings to the desired type
-- **Default Values**: Provide default values for settings that don't exist
-- **Database Integration**: Store and retrieve settings from a database
-- **Case Insensitive**: Keys are case-insensitive for easier access
+- ✅ **Thread-Safe**: All operations protected by `sync.RWMutex`
+- ✅ **Multi-Source Loading**: Environment variables, YAML, Database, CLI arguments
+- ✅ **Type Conversion**: Automatic conversion to string, int, bool, duration, size, etc.
+- ✅ **Dot Notation**: Hierarchical keys (e.g., `DATABASE.HOST`)
+- ✅ **Change Notifications**: Callbacks for config changes and reloads
+- ✅ **Persistence**: Save settings back to YAML or Database
+- ✅ **Case-Insensitive**: Keys normalized to uppercase
 
-## Usage Examples
+## Loading Priority
+
+Settings are loaded in this order (highest priority last):
+
+1. **Environment Variables** (lowest)
+2. **Database Settings** (if enabled)
+3. **YAML Configuration File**
+4. **Command-Line Arguments** (highest)
+
+Later sources override earlier ones.
+
+## Quick Start
 
 ### Basic Usage
 
 ```go
-package main
+import "github.com/getevo/evo/v2/lib/settings"
 
-import (
-    "fmt"
-    "github.com/getevo/evo/v2/lib/settings"
-)
+// Initialize settings (call once at startup)
+settings.Init()
 
-func main() {
-    // Initialize settings from all sources
-    settings.Init()
-    
-    // Get a string setting with a default value
-    dbUser := settings.Get("Database.Username", "root").String()
-    fmt.Println("Database Username:", dbUser)
-    
-    // Get an integer setting with a default value
-    port := settings.Get("HTTP.Port", 8080).Int()
-    fmt.Println("HTTP Port:", port)
-    
-    // Get a boolean setting with a default value
-    debug := settings.Get("App.Debug", false).Bool()
-    fmt.Println("Debug Mode:", debug)
-    
-    // Get a float setting with a default value
-    timeout := settings.Get("API.Timeout", 5.5).Float64()
-    fmt.Println("API Timeout:", timeout)
-}
+// Get settings with type conversion
+host := settings.Get("DATABASE.HOST", "localhost").String()
+port := settings.Get("DATABASE.PORT", 3306).Int()
+timeout := settings.Get("HTTP.TIMEOUT", "30s").Duration()
+maxSize := settings.Get("UPLOAD.MAX_SIZE", "10MB").SizeInBytes()
+enabled := settings.Get("FEATURE.ENABLED", false).Bool()
+
+// Set settings (automatically persists to database if enabled)
+settings.Set("APP.NAME", "MyApp")
+settings.Set("APP.VERSION", "1.0.0")
+
+// Set multiple at once (automatically persists to database if enabled)
+settings.SetMulti(map[string]any{
+    "DATABASE.HOST": "localhost",
+    "DATABASE.PORT": 3306,
+    "DATABASE.NAME": "mydb",
+})
 ```
 
-### Setting Values Programmatically
+See full documentation in the package godoc.
+
+## Advanced Features
+
+### Change Notifications
 
 ```go
-package main
+// Watch for reload events
+settings.OnReload(func() {
+    log.Info("Configuration reloaded!")
+})
 
-import (
-    "fmt"
-    "github.com/getevo/evo/v2/lib/settings"
-)
+// Watch for specific setting changes
+settings.OnChange("DATABASE.HOST", func(key string, oldValue, newValue any) {
+    log.Info("Database host changed:", oldValue, "->", newValue)
+})
 
-func main() {
-    // Set individual settings
-    settings.Set("App.Name", "My Application")
-    settings.Set("App.Version", "1.0.0")
-    settings.Set("App.Debug", true)
-    
-    // Set multiple settings at once
-    settings.SetMulti(map[string]any{
-        "Database.Host":     "localhost",
-        "Database.Port":     3306,
-        "Database.Username": "admin",
-        "Database.Password": "secret",
-    })
-    
-    // Check if a setting exists
-    exists, value := settings.Has("App.Name")
-    if exists {
-        fmt.Println("App Name:", value.String())
-    }
-    
-    // Get all settings
-    allSettings := settings.All()
-    fmt.Printf("All Settings: %+v\n", allSettings)
-}
+// Watch all database settings (wildcard)
+settings.OnChange("DATABASE.*", func(key string, oldValue, newValue any) {
+    log.Info("Database setting changed:", key, "from", oldValue, "to", newValue)
+    db.Reconnect() // Reconnect on any DB config change
+})
+
+// Watch all settings
+settings.OnChange("*", func(key string, oldValue, newValue any) {
+    log.Info("Config changed:", key, "=", newValue)
+})
 ```
 
-### Working with YAML Configuration
+### Persistence
 
-Create a `config.yml` file:
-
-```yaml
-Database:
-  Host: localhost
-  Port: 3306
-  Username: root
-  Password: secret
-  
-HTTP:
-  Host: 0.0.0.0
-  Port: 8080
-  
-App:
-  Name: My Application
-  Debug: true
-  LogLevel: info
-```
-
-Then in your code:
+Settings are automatically persisted to the database when you call `Set()` or `SetMulti()` if database settings are enabled. You can also manually save all settings to YAML or database:
 
 ```go
-package main
+// Automatic database persistence (if db enabled)
+settings.Set("APP.NAME", "MyApp")  // Saved to DB immediately
 
-import (
-    "fmt"
-    "github.com/getevo/evo/v2/lib/settings"
-)
+// Manual YAML persistence
+settings.SaveToYAML("./config.yml")
 
-func main() {
-    // Initialize settings (loads from config.yml by default)
-    settings.Init()
-    
-    // Access nested settings using dot notation
-    dbHost := settings.Get("Database.Host").String()
-    dbPort := settings.Get("Database.Port").Int()
-    appName := settings.Get("App.Name").String()
-    
-    fmt.Printf("Connecting to %s:%d for %s\n", dbHost, dbPort, appName)
-    
-    // Reload settings if configuration changes
-    settings.Reload()
-}
+// Manual database persistence (saves all settings)
+settings.SaveToDB()
 ```
 
-### Using Command-Line Arguments
+**Note:** When database is enabled:
+- `Set()` and `SetMulti()` automatically update the database
+- `SaveToDB()` saves ALL current in-memory settings to database
+- `SaveToYAML()` is always manual (not automatic)
 
-You can override settings using command-line arguments in two formats:
-
-```
-./myapp Database.Username=admin Database.Password=secret
-./myapp --HTTP.Port 9090 --App.Debug true
-```
+## Type Conversions
 
 ```go
-package main
+// String, Int, Bool, Float
+name := settings.Get("APP.NAME").String()
+port := settings.Get("PORT").Int()
+enabled := settings.Get("ENABLED").Bool()
 
-import (
-    "fmt"
-    "github.com/getevo/evo/v2/lib/settings"
-)
+// Duration and Time
+timeout := settings.Get("TIMEOUT").Duration() // "30s" -> 30 * time.Second
 
-func main() {
-    // Initialize settings (automatically loads command-line arguments)
-    settings.Init()
-    
-    // Access settings that might be overridden by command-line arguments
-    dbUser := settings.Get("Database.Username").String()
-    httpPort := settings.Get("HTTP.Port").Int()
-    
-    fmt.Printf("Using database user: %s\n", dbUser)
-    fmt.Printf("HTTP server running on port: %d\n", httpPort)
-}
+// Size in Bytes
+maxSize := settings.Get("MAX_SIZE").SizeInBytes() // "10MB" -> 10485760
 ```
 
-## How It Works
+## Thread Safety
 
-The settings library loads configuration from multiple sources in the following order:
+All operations are thread-safe and can be called from multiple goroutines.
 
-1. **Environment Variables**: All environment variables are loaded first
-2. **Database Settings**: If database is enabled, settings are loaded from the database
-3. **YAML Configuration**: Settings are loaded from the YAML configuration file (default: `./config.yml`)
-4. **Command-Line Arguments**: Command-line arguments override all previous settings
+## Key Normalization
 
-This order ensures that more specific sources (like command-line arguments) override more general ones (like environment variables).
-
-The library normalizes all keys to uppercase and provides case-insensitive access. Nested settings can be accessed using dot notation, which is automatically handled by the library.
-
-When retrieving a setting with `Get()`, you can provide a default value that will be used if the setting doesn't exist. The library automatically converts the setting to the appropriate type based on the default value or the requested conversion method.
-
-For more detailed information, please refer to the source code and comments within the library.
+Keys are case-insensitive and normalized:
+- `database.host`, `DATABASE.HOST`, `DATABASE_HOST` all access the same setting
+- Non-alphanumeric characters converted to underscores

@@ -28,14 +28,12 @@ func Group(path string, handlers ...Middleware) *group {
 		route = app.Group(path, func(ctx *fiber.Ctx) error {
 			r := Upgrade(ctx)
 			for _, handler := range handlers {
-				var response = handler(r)
-				if response != nil {
-					r.WriteResponse(response)
-					break
+				var err = handler(r)
+				if err != nil {
+					return err
 				}
 			}
-
-			return nil
+			return r.Next()
 		})
 	} else {
 		route = app.Group(path)

@@ -1,6 +1,7 @@
 package evo
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
@@ -25,11 +26,12 @@ var Application *application.App
 
 // Setup set up the EVO app.
 // Optional params: pass a db.Driver to select the database driver (e.g. pgsql.Driver{} or mysql.Driver{}).
-func Setup(params ...any) {
+// Returns an error if setup fails instead of calling log.Fatal, allowing for graceful error handling.
+func Setup(params ...any) error {
 	Application = application.GetInstance()
 	var err = settings.Init()
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to initialize settings: %w", err)
 	}
 
 	settings.Register("HTTP", &http)
@@ -45,7 +47,7 @@ func Setup(params ...any) {
 		if d, ok := p.(dbo.Driver); ok {
 			driverCount++
 			if driverCount > 1 {
-				log.Fatal("only one database driver can be registered")
+				return fmt.Errorf("only one database driver can be registered")
 			}
 			dbo.RegisterDriver(d)
 		}
@@ -54,7 +56,7 @@ func Setup(params ...any) {
 	app = fiber.New(fiberConfig)
 	if settings.Get("Database.Enabled").Bool() {
 		if dbo.GetDriver() == nil {
-			log.Fatal("Database.Enabled is true but no driver passed to evo.Setup()")
+			return fmt.Errorf("Database.Enabled is true but no driver passed to evo.Setup()")
 		}
 		// Validate that config type matches the provided driver
 		configType := strings.ToLower(settings.Get("Database.Type").String())
@@ -64,19 +66,28 @@ func Setup(params ...any) {
 			"postgres": "postgres", "postgresql": "postgres", "pgsql": "postgres",
 		}
 		if expected, ok := validNames[configType]; ok && expected != driverName {
-			log.Fatal("Database.Type is '", configType, "' but driver '", driverName, "' was provided")
+			return fmt.Errorf("Database.Type is '%s' but driver '%s' was provided", configType, driverName)
 		}
 
 		db = GetDBO()
-		dbo.Register(db)
-		settings.LoadDatabaseSettings()
+		if db != nil {
+			dbo.Register(db)
+			if err := settings.LoadDatabaseSettings(); err != nil {
+				log.Warning("Failed to load database settings: ", err)
+				// Continue without database settings
+			}
+		} else {
+			log.Warning("Database is nil, skipping database settings load")
+		}
 	}
 
 	memo.Register()
+	return nil
 }
 
 // Run start EVO Server
-func Run() {
+// Returns an error if the server fails to start, allowing for graceful shutdown.
+func Run() error {
 	Application.Run()
 
 	//do database migrations
@@ -122,7 +133,10 @@ func Run() {
 	var err error
 	err = app.Listen(http.Host + ":" + http.Port)
 
-	log.Fatal("unable to start web server", "error", err)
+	if err != nil {
+		return fmt.Errorf("unable to start web server: %w", err)
+	}
+	return nil
 }
 
 // GetFiber return fiber instance

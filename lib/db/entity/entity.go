@@ -138,12 +138,12 @@ func (a App) WhenReady() error {
 		entities = append(entities, entity)
 	}
 	if err := db.Save(&entities).Error; err != nil {
-		log.Error("entity: failed to save entities:", err)
+		log.Error("entity: failed to save entities", "error", err)
 	}
 	if err := db.Clauses(clause.OnConflict{
 		DoUpdates: clause.AssignmentColumns([]string{"field_name", "primary_key", "db_field", "json_tag", "type", "db_type"}),
 	}).Create(&fields).Error; err != nil {
-		log.Error("entity: failed to create fields:", err)
+		log.Error("entity: failed to create fields", "error", err)
 	}
 
 	return nil

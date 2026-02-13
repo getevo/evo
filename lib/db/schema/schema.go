@@ -87,11 +87,11 @@ func UseModel(db *gorm.DB, values ...any) {
 		model.Name = model.Package + "." + ref.Type().Name()
 		stmt := db.Model(values[index]).Statement
 		if err := stmt.Parse(values[index]); err != nil {
-			log.Error("failed to parse model ", reflect.TypeOf(values[index]), ": ", err)
+			log.Error("failed to parse model", "model", reflect.TypeOf(values[index]), "error", err)
 			continue
 		}
 		if stmt.Schema == nil {
-			log.Error("invalid schema for ", reflect.TypeOf(values[index]))
+			log.Error("invalid schema", "model", reflect.TypeOf(values[index]))
 			continue
 		}
 		model.Schema = stmt.Schema

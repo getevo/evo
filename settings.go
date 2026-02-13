@@ -29,6 +29,9 @@ type DatabaseConfig struct {
 	// Database indicates name of the database
 	Database string `description:"Database Name" default:"" json:"database" yaml:"database"`
 
+	// Schema name (PostgreSQL only, defaults to 'public')
+	Schema string `description:"Database schema (PostgreSQL only)" default:"public" json:"schema" yaml:"schema"`
+
 	// SSLMode enables support over ssl
 	SSLMode string `description:"SSL Mode (required by some DBMS)" default:"false" json:"ssl-mode" yaml:"ssl-mode"`
 

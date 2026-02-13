@@ -11,7 +11,9 @@ import (
 
 func (m *MySQLDialect) AcquireMigrationLock(db *gorm.DB) error {
 	var result int
-	db.Raw("SELECT GET_LOCK('schema_migration_lock', 120)").Scan(&result)
+	if err := db.Raw("SELECT GET_LOCK('schema_migration_lock', 120)").Scan(&result).Error; err != nil {
+		return fmt.Errorf("failed to execute GET_LOCK: %w", err)
+	}
 	if result != 1 {
 		return fmt.Errorf("failed to acquire migration lock (GET_LOCK returned %d)", result)
 	}
@@ -20,7 +22,7 @@ func (m *MySQLDialect) AcquireMigrationLock(db *gorm.DB) error {
 
 func (m *MySQLDialect) ReleaseMigrationLock(db *gorm.DB) {
 	if err := db.Exec("SELECT RELEASE_LOCK('schema_migration_lock')").Error; err != nil {
-		log.Error("failed to release migration lock: ", err)
+		log.Error("failed to release migration lock", "error", err)
 	}
 }
 
@@ -48,7 +50,10 @@ func (m *MySQLDialect) Quote(name string) string {
 
 func (m *MySQLDialect) GetCurrentDatabase(db *gorm.DB) string {
 	var database string
-	db.Raw("SELECT DATABASE();").Scan(&database)
+	if err := db.Raw("SELECT DATABASE();").Scan(&database).Error; err != nil {
+		log.Error("failed to get current database", "error", err)
+		return ""
+	}
 	return database
 }
 
@@ -58,7 +63,10 @@ func (m *MySQLDialect) GenerateMigration(db *gorm.DB, database string, stmts []*
 
 func (m *MySQLDialect) GetTableVersion(db *gorm.DB, database, tableName string) string {
 	var comment string
-	db.Raw("SELECT table_comment FROM INFORMATION_SCHEMA.TABLES WHERE table_schema=? AND table_name=?", database, tableName).Scan(&comment)
+	if err := db.Raw("SELECT table_comment FROM INFORMATION_SCHEMA.TABLES WHERE table_schema=? AND table_name=?", database, tableName).Scan(&comment).Error; err != nil {
+		log.Error("failed to get table version", "error", err, "table", tableName)
+		return ""
+	}
 	return comment
 }
 

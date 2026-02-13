@@ -74,7 +74,7 @@ func (r *Request) URL() *URL {
 		r.url.QueryString = ""
 	} else {
 		r.url.Path = parts[0]
-		r.url.Query, _ = url.ParseQuery(strings.Join(parts[1:], "?"))
+		r.url.Query, _ = url.ParseQuery(strings.Join(parts[1:], "&"))
 		r.url.QueryString = parts[1]
 	}
 	return r.url

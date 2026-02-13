@@ -519,7 +519,7 @@ func getConstraintsQuery(local ddlTable, constraints []remoteConstraint, is remo
 			}
 
 			if referencedTable == "" || referencedCol == "" {
-				log.Warning("foreign key on ", local.Name, ".", field.Name, " references '", field.ForeignKey, "' but target table not found, skipping constraint")
+				log.Warning("foreign key target table not found, skipping constraint", "table", local.Name, "field", field.Name, "references", field.ForeignKey)
 				continue
 			}
 

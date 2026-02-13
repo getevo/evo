@@ -42,7 +42,7 @@ type UserInterface interface {
 }
 
 func (d DefaultUserInterface) HasPermission(permission string) bool {
-	return true
+	return false
 }
 
 func (d DefaultUserInterface) GetFirstName() string {

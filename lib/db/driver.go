@@ -18,6 +18,7 @@ type DriverConfig struct {
 	Username string
 	Password string
 	Database string
+	Schema   string // PostgreSQL schema name (defaults to 'public')
 	SSLMode  string
 	Params   string
 }

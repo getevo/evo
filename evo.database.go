@@ -1,6 +1,7 @@
 package evo
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -17,14 +18,15 @@ import (
 
 var db *gorm.DB
 
-func setupDatabase() {
+func setupDatabase() error {
 	var err error
 	var config = DatabaseConfig{}
 
 	settings.Register("Database", &config)
 	settings.Get("Database").Cast(&config)
+
 	if !config.Enabled {
-		return
+		return nil
 	}
 	var logLevel logger.LogLevel
 
@@ -53,30 +55,44 @@ func setupDatabase() {
 
 	driver := dbpkg.GetDriver()
 	if driver == nil {
-		log.Fatal("no database driver registered")
-		return
+		return fmt.Errorf("no database driver registered")
 	}
 	driverCfg := dbpkg.DriverConfig{
 		Server:   config.Server,
 		Username: config.Username,
 		Password: config.Password,
 		Database: config.Database,
+		Schema:   config.Schema,
 		SSLMode:  config.SSLMode,
 		Params:   config.Params,
 	}
 	db, err = driver.Open(driverCfg, cfg)
 	if err != nil {
-		log.Fatal("unable to connect to database", "error", err)
-		return
+		return fmt.Errorf("unable to connect to database: %w", err)
 	}
+	return nil
 }
 
 // GetDBO return database object instance
+// Deprecated: Use GetDB with context instead for better context propagation
 func GetDBO() *gorm.DB {
 	if db == nil {
-		setupDatabase()
+		if err := setupDatabase(); err != nil {
+			evolog.Fatal("failed to setup database", "error", err)
+		}
 	}
 	return db
+}
+
+// GetDB returns a database instance with context for proper context propagation.
+// This is the preferred method for obtaining database connections.
+func GetDB(ctx context.Context) *gorm.DB {
+	if db == nil {
+		if err := setupDatabase(); err != nil {
+			evolog.Fatal("failed to setup database", "error", err)
+		}
+	}
+	return db.WithContext(ctx)
 }
 
 type Model struct {
@@ -104,7 +120,7 @@ func DoMigration() error {
 			}
 			continue
 		}
-		if e := db.Debug().Exec(query).Error; e != nil {
+		if e := db.Exec(query).Error; e != nil {
 			evolog.Error(e)
 			err = e
 		}

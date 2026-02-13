@@ -16,7 +16,7 @@ type Driver struct{}
 func (Driver) Name() string { return "postgres" }
 
 func (Driver) Open(config dbpkg.DriverConfig, gormConfig *gorm.Config) (*gorm.DB, error) {
-	schema.RegisterDialect("postgres", &PGDialect{})
+	schema.RegisterDialect("postgres", NewPGDialect(config.Schema))
 	pgHost := config.Server
 	pgPort := "5432"
 	if idx := strings.LastIndex(config.Server, ":"); idx > 0 {

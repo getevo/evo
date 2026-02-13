@@ -21,6 +21,11 @@ func Register(obj *gorm.DB) {
 	db = obj
 }
 
+// GetInstance returns the global database instance, or nil if not initialized
+func GetInstance() *gorm.DB {
+	return db
+}
+
 func TriggerOnBeforeMigration() {
 	for _, fn := range schema.OnBeforeMigration {
 		fn(db)

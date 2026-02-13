@@ -59,7 +59,7 @@ func GetMigrationScript(db *gorm.DB) []string {
 		var stmt = db.Model(el).Statement
 		var err = stmt.Parse(el)
 		if err != nil {
-			log.Error("failed to parse model ", reflect.TypeOf(el), ": ", err)
+			log.Error("failed to parse model", "model", reflect.TypeOf(el), "error", err)
 			continue
 		}
 
@@ -70,7 +70,7 @@ func GetMigrationScript(db *gorm.DB) []string {
 		}
 
 		if stmt.Schema == nil {
-			log.Error("invalid schema for ", reflect.TypeOf(el))
+			log.Error("invalid schema", "model", reflect.TypeOf(el))
 			continue
 		}
 
@@ -231,7 +231,7 @@ func recordMigration(db *gorm.DB, hash, status string, executedQueries int, erro
 			hash, status, executedQueries, errMsg, now).Error
 	}
 	if err != nil {
-		log.Error("failed to record migration history: ", err)
+		log.Error("failed to record migration history", "error", err)
 	}
 }
 
@@ -243,13 +243,13 @@ func DoMigration(db *gorm.DB) error {
 
 	// Bootstrap the history table
 	if err := d.BootstrapHistoryTable(db); err != nil {
-		log.Error("failed to bootstrap schema_migration table: ", err)
+		log.Error("failed to bootstrap schema_migration table", "error", err)
 		return err
 	}
 
 	// Acquire advisory lock
 	if err := d.AcquireMigrationLock(db); err != nil {
-		log.Error("failed to acquire migration lock: ", err)
+		log.Error("failed to acquire migration lock", "error", err)
 		return err
 	}
 	defer d.ReleaseMigrationLock(db)
@@ -340,7 +340,7 @@ func DumpSchema(db *gorm.DB) []string {
 
 		stmt := db.Model(el).Statement
 		if err := stmt.Parse(el); err != nil {
-			log.Error("failed to parse model: ", err)
+			log.Error("failed to parse model", "error", err)
 			continue
 		}
 		if obj, ok := stmt.Model.(interface{ TableName() string }); ok {

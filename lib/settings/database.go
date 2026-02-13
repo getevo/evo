@@ -1,6 +1,7 @@
 package settings
 
 import (
+	"fmt"
 	"github.com/getevo/evo/v2/lib/db"
 	"time"
 )
@@ -44,10 +45,8 @@ func (Setting) TableName() string {
 	return "settings"
 }
 
-func InitDatabaseSettings() {
-	db.UseModel(Setting{}, SettingDomain{})
-}
-
+// LoadDatabaseSettings loads settings from the database.
+// Settings are organized by domains and loaded with their full hierarchical path.
 func LoadDatabaseSettings() error {
 	var settings []Setting
 	var domains []SettingDomain
@@ -80,13 +79,96 @@ func LoadDatabaseSettings() error {
 		return path
 	}
 
-	// Populate the nested map with settings
+	// Populate settings with full hierarchical paths
 	for _, setting := range settings {
 		setting.SettingsDomain = domainMap[setting.DomainID]
 		domainPath := getFullDomainPath(setting.SettingsDomain)
 		fullKey := domainPath + "." + setting.Name
-		//data[normalizeKey(fullKey)] = setting.Value
 		setData(fullKey, setting.Value)
+	}
+
+	return nil
+}
+
+// saveSingleSetting saves a single setting to the database.
+// Creates or updates the setting in the default domain.
+func saveSingleSetting(key string, value any) error {
+	// Ensure default domain exists (cached after first call)
+	var defaultDomain SettingDomain
+	err := db.Where("domain = ?", "default").FirstOrCreate(&defaultDomain, SettingDomain{
+		Domain:      "default",
+		Title:       "Default Settings",
+		Description: "Default settings domain",
+		ReadOnly:    false,
+		Visible:     true,
+	}).Error
+	if err != nil {
+		return fmt.Errorf("failed to create default domain: %w", err)
+	}
+
+	// Convert value to string for storage
+	valueStr := fmt.Sprint(value)
+
+	// Find or create the setting
+	var setting Setting
+	err = db.Where("domain_id = ? AND name = ?", defaultDomain.SettingsDomainID, key).
+		FirstOrCreate(&setting, Setting{
+			DomainID: defaultDomain.SettingsDomainID,
+			Name:     key,
+		}).Error
+	if err != nil {
+		return fmt.Errorf("failed to create/find setting %s: %w", key, err)
+	}
+
+	// Update value if changed
+	if setting.Value != valueStr {
+		setting.Value = valueStr
+		if err := db.Save(&setting).Error; err != nil {
+			return fmt.Errorf("failed to save setting %s: %w", key, err)
+		}
+	}
+
+	return nil
+}
+
+// saveDatabaseSettings saves multiple settings to the database.
+// Creates or updates settings in the default domain (domain_id = 1).
+func saveDatabaseSettings(flattenedData map[string]any) error {
+	// Ensure default domain exists
+	var defaultDomain SettingDomain
+	err := db.Where("domain = ?", "default").FirstOrCreate(&defaultDomain, SettingDomain{
+		Domain:      "default",
+		Title:       "Default Settings",
+		Description: "Default settings domain",
+		ReadOnly:    false,
+		Visible:     true,
+	}).Error
+	if err != nil {
+		return fmt.Errorf("failed to create default domain: %w", err)
+	}
+
+	// Save or update each setting
+	for key, value := range flattenedData {
+		// Convert value to string for storage
+		valueStr := fmt.Sprint(value)
+
+		var setting Setting
+		err := db.Where("domain_id = ? AND name = ?", defaultDomain.SettingsDomainID, key).
+			FirstOrCreate(&setting, Setting{
+				DomainID: defaultDomain.SettingsDomainID,
+				Name:     key,
+			}).Error
+		if err != nil {
+			return fmt.Errorf("failed to create/find setting %s: %w", key, err)
+		}
+
+		// Update value if changed
+		if setting.Value != valueStr {
+			setting.Value = valueStr
+			if err := db.Save(&setting).Error; err != nil {
+				return fmt.Errorf("failed to save setting %s: %w", key, err)
+			}
+		}
 	}
 
 	return nil

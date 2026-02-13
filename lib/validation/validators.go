@@ -21,12 +21,19 @@ import (
 )
 
 var DBValidators = map[*regexp.Regexp]func(match []string, value *generic.Value, stmt *gorm.Statement, field *schema.Field) error{
-	regexp.MustCompile("^unique$"):          uniqueValidator,
-	regexp.MustCompile("^unique:(.+)$"):     uniqueColumnsValidator,
-	regexp.MustCompile("^fk$"):              foreignKeyValidator,
-	regexp.MustCompile("^enum$"):            enumValidator,
-	regexp.MustCompile(`^before\((\w+)\)$`): beforeValidator,
-	regexp.MustCompile(`^after\((\w+)\)$`):  afterValidator,
+	regexp.MustCompile("^unique$"):                uniqueValidator,
+	regexp.MustCompile("^unique:(.+)$"):           uniqueColumnsValidator,
+	regexp.MustCompile("^fk$"):                    foreignKeyValidator,
+	regexp.MustCompile("^enum$"):                  enumValidator,
+	regexp.MustCompile(`^before\((\w+)\)$`):       beforeValidator,
+	regexp.MustCompile(`^after\((\w+)\)$`):        afterValidator,
+	regexp.MustCompile(`^confirmed$`):             confirmedValidator,
+	regexp.MustCompile(`^same\((\w+)\)$`):         sameValidator,
+	regexp.MustCompile(`^different\((\w+)\)$`):    differentValidator,
+	regexp.MustCompile(`^gt[-_]?field\((\w+)\)$`): gtFieldValidator,
+	regexp.MustCompile(`^gte[-_]?field\((\w+)\)$`): gteFieldValidator,
+	regexp.MustCompile(`^lt[-_]?field\((\w+)\)$`):  ltFieldValidator,
+	regexp.MustCompile(`^lte[-_]?field\((\w+)\)$`): lteFieldValidator,
 }
 
 func uniqueColumnsValidator(match []string, value *generic.Value, stmt *gorm.Statement, field *schema.Field) error {
@@ -88,7 +95,7 @@ var Validators = map[*regexp.Regexp]func(match []string, value *generic.Value) e
 	regexp.MustCompile(`(?i)^ISBN$`):                              isbnValidator,
 	regexp.MustCompile(`(?i)^ISBN10$`):                            isbn10Validator,
 	regexp.MustCompile(`(?i)^ISBN13$`):                            isbn13Validator,
-	regexp.MustCompile(`(?i)^[credit[-_]?card$`):                  creditCardValidator,
+	regexp.MustCompile(`(?i)^credit[-_]?card$`):                   creditCardValidator,
 	regexp.MustCompile(`(?i)^uuid$`):                              uuidValidator,
 	regexp.MustCompile(`(?i)^upperCase$`):                         upperCaseValidator,
 	regexp.MustCompile(`(?i)^lowerCase$`):                         lowerCaseValidator,
@@ -109,6 +116,21 @@ var Validators = map[*regexp.Regexp]func(match []string, value *generic.Value) e
 	regexp.MustCompile(`(?i)^safe[-_]?html`):                      safeHTMLValidator,
 	regexp.MustCompile(`(?i)^no[-_]?html$`):                       noHTMLValidator,
 	regexp.MustCompile(`(?i)^phone$`):                             phoneValidator,
+	regexp.MustCompile(`(?i)^in\((.+)\)$`):                       inValidator,
+	regexp.MustCompile(`(?i)^not[-_]?in\((.+)\)$`):               notInValidator,
+	regexp.MustCompile(`(?i)^contains\((.+)\)$`):                 containsValidator,
+	regexp.MustCompile(`(?i)^not[-_]?contains\((.+)\)$`):         notContainsValidator,
+	regexp.MustCompile(`(?i)^starts[-_]?with\((.+)\)$`):          startsWithValidator,
+	regexp.MustCompile(`(?i)^ends[-_]?with\((.+)\)$`):            endsWithValidator,
+	regexp.MustCompile(`(?i)^min[-_]?items\((\d+)\)$`):           minItemsValidator,
+	regexp.MustCompile(`(?i)^max[-_]?items\((\d+)\)$`):           maxItemsValidator,
+	regexp.MustCompile(`(?i)^unique[-_]?items$`):                 uniqueItemsValidator,
+	regexp.MustCompile(`(?i)^ascii$`):                            asciiValidator,
+	regexp.MustCompile(`(?i)^printable$`):                        printableValidator,
+	regexp.MustCompile(`(?i)^before[-_]?now$`):                   beforeNowValidator,
+	regexp.MustCompile(`(?i)^after[-_]?now$`):                    afterNowValidator,
+	regexp.MustCompile(`(?i)^date[-_]?format\((.+)\)$`):          dateFormatValidator,
+	regexp.MustCompile(`(?i)^iban$`):                             ibanValidator,
 }
 
 func slugValidator(match []string, value *generic.Value) error {
@@ -324,7 +346,7 @@ func _CountryAlpha2Validator(match []string, value *generic.Value) error {
 	if v == "" || v == "<nil>" {
 		return nil
 	}
-	if !is.ISO3166Alpha3(v) {
+	if !is.ISO3166Alpha2(v) {
 		return fmt.Errorf("value must be a valid ISO3166 Alpha 2 Format")
 	}
 	return nil
@@ -467,8 +489,9 @@ func portValidator(match []string, value *generic.Value) error {
 	if v == "" || v == "<nil>" {
 		return nil
 	}
-	if !is.ISBN13(v) {
-		return fmt.Errorf("value must be valid port number")
+	port, err := strconv.Atoi(v)
+	if err != nil || port < 1 || port > 65535 {
+		return fmt.Errorf("value must be valid port number (1-65535)")
 	}
 	return nil
 }
@@ -478,8 +501,9 @@ func latitudeValidator(match []string, value *generic.Value) error {
 	if v == "" || v == "<nil>" {
 		return nil
 	}
-	if !is.ISBN13(v) {
-		return fmt.Errorf("value must be valid latitude")
+	lat, err := strconv.ParseFloat(v, 64)
+	if err != nil || lat < -90 || lat > 90 {
+		return fmt.Errorf("value must be valid latitude (-90 to 90)")
 	}
 	return nil
 }
@@ -489,8 +513,9 @@ func longitudeValidator(match []string, value *generic.Value) error {
 	if v == "" || v == "<nil>" {
 		return nil
 	}
-	if !is.ISBN13(v) {
-		return fmt.Errorf("value must be valid longitude")
+	lng, err := strconv.ParseFloat(v, 64)
+	if err != nil || lng < -180 || lng > 180 {
+		return fmt.Errorf("value must be valid longitude (-180 to 180)")
 	}
 	return nil
 }
@@ -686,7 +711,7 @@ func passwordValidator(match []string, value *generic.Value) error {
 			letter = true
 		} else if unicode.IsUpper(c) {
 			upper = true
-		} else if unicode.IsSymbol(c) {
+		} else if unicode.IsSymbol(c) || unicode.IsPunct(c) {
 			symbol = true
 		}
 	}
@@ -708,21 +733,21 @@ func passwordValidator(match []string, value *generic.Value) error {
 		return nil
 	case "easy":
 		if len(v) < 6 {
-			return fmt.Errorf("password must be at least 8 characters long")
-		}
-	case "medium":
-		if len(v) < 6 {
 			return fmt.Errorf("password must be at least 6 characters long")
 		}
-		if complexity < 3 {
-			return fmt.Errorf("password is not complex enough")
-		}
-	case "hard":
+	case "medium":
 		if len(v) < 8 {
 			return fmt.Errorf("password must be at least 8 characters long")
 		}
-		if complexity < 5 {
-			return fmt.Errorf("password is not complex enough")
+		if complexity < 3 {
+			return fmt.Errorf("password must contain at least 3 of: uppercase, lowercase, digits, symbols")
+		}
+	case "hard":
+		if len(v) < 12 {
+			return fmt.Errorf("password must be at least 12 characters long")
+		}
+		if complexity < 4 {
+			return fmt.Errorf("password must contain uppercase, lowercase, digits, and symbols")
 		}
 	}
 	return nil
@@ -794,8 +819,8 @@ func numericalValidator(match []string, value *generic.Value) error {
 			return fmt.Errorf("is not equal to %f", limit)
 		}
 	case "!=", "<>":
-		if v != limit {
-			return fmt.Errorf("is  equal to %f", limit)
+		if v == limit {
+			return fmt.Errorf("is equal to %f", limit)
 		}
 	}
 	return nil
@@ -916,6 +941,304 @@ func dateValidator(match []string, value *generic.Value) error {
 	_, err := value.Time()
 	if err != nil {
 		return fmt.Errorf("invalid date, date expected be in RFC3339 format")
+	}
+	return nil
+}
+
+// New String Validators
+
+func inValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	values := strings.Split(match[1], ",")
+	for _, val := range values {
+		if strings.TrimSpace(val) == v {
+			return nil
+		}
+	}
+	return fmt.Errorf("value must be one of: %s", match[1])
+}
+
+func notInValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	values := strings.Split(match[1], ",")
+	for _, val := range values {
+		if strings.TrimSpace(val) == v {
+			return fmt.Errorf("value must not be one of: %s", match[1])
+		}
+	}
+	return nil
+}
+
+func containsValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	if !strings.Contains(v, match[1]) {
+		return fmt.Errorf("value must contain '%s'", match[1])
+	}
+	return nil
+}
+
+func notContainsValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	if strings.Contains(v, match[1]) {
+		return fmt.Errorf("value must not contain '%s'", match[1])
+	}
+	return nil
+}
+
+func startsWithValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	if !strings.HasPrefix(v, match[1]) {
+		return fmt.Errorf("value must start with '%s'", match[1])
+	}
+	return nil
+}
+
+func endsWithValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	if !strings.HasSuffix(v, match[1]) {
+		return fmt.Errorf("value must end with '%s'", match[1])
+	}
+	return nil
+}
+
+func asciiValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	for _, r := range v {
+		if r > unicode.MaxASCII {
+			return fmt.Errorf("value must contain only ASCII characters")
+		}
+	}
+	return nil
+}
+
+func printableValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	for _, r := range v {
+		if !unicode.IsPrint(r) {
+			return fmt.Errorf("value must contain only printable characters")
+		}
+	}
+	return nil
+}
+
+// Array/Slice Validators
+
+func minItemsValidator(match []string, value *generic.Value) error {
+	val := reflect.ValueOf(value.Input)
+	if val.Kind() != reflect.Slice && val.Kind() != reflect.Array {
+		return nil
+	}
+	min, _ := strconv.Atoi(match[1])
+	if val.Len() < min {
+		return fmt.Errorf("must have at least %d items", min)
+	}
+	return nil
+}
+
+func maxItemsValidator(match []string, value *generic.Value) error {
+	val := reflect.ValueOf(value.Input)
+	if val.Kind() != reflect.Slice && val.Kind() != reflect.Array {
+		return nil
+	}
+	max, _ := strconv.Atoi(match[1])
+	if val.Len() > max {
+		return fmt.Errorf("must have at most %d items", max)
+	}
+	return nil
+}
+
+func uniqueItemsValidator(match []string, value *generic.Value) error {
+	val := reflect.ValueOf(value.Input)
+	if val.Kind() != reflect.Slice && val.Kind() != reflect.Array {
+		return nil
+	}
+	seen := make(map[interface{}]bool)
+	for i := 0; i < val.Len(); i++ {
+		item := val.Index(i).Interface()
+		if seen[item] {
+			return fmt.Errorf("all items must be unique")
+		}
+		seen[item] = true
+	}
+	return nil
+}
+
+// Date/Time Validators
+
+func beforeNowValidator(match []string, value *generic.Value) error {
+	var t = value.String()
+	if t == "" || strings.HasPrefix("0000-00-00", t) {
+		return nil
+	}
+	dateVal, err := value.Time()
+	if err != nil {
+		return fmt.Errorf("invalid date format")
+	}
+	if !dateVal.Before(time.Now()) {
+		return fmt.Errorf("date must be in the past")
+	}
+	return nil
+}
+
+func afterNowValidator(match []string, value *generic.Value) error {
+	var t = value.String()
+	if t == "" || strings.HasPrefix("0000-00-00", t) {
+		return nil
+	}
+	dateVal, err := value.Time()
+	if err != nil {
+		return fmt.Errorf("invalid date format")
+	}
+	if !dateVal.After(time.Now()) {
+		return fmt.Errorf("date must be in the future")
+	}
+	return nil
+}
+
+func dateFormatValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	_, err := time.Parse(match[1], v)
+	if err != nil {
+		return fmt.Errorf("date must be in format: %s", match[1])
+	}
+	return nil
+}
+
+// Financial Validators
+
+func ibanValidator(match []string, value *generic.Value) error {
+	var v = value.String()
+	if v == "" || v == "<nil>" {
+		return nil
+	}
+	// Basic IBAN validation (2 letter country code + 2 check digits + up to 30 alphanumeric)
+	// IBAN must be uppercase
+	re := regexp.MustCompile(`^[A-Z]{2}\d{2}[A-Z0-9]{1,30}$`)
+	if !re.MatchString(v) {
+		return fmt.Errorf("value must be a valid IBAN")
+	}
+	return nil
+}
+
+// Cross-Field Validators (DB validators with access to other fields)
+
+func confirmedValidator(match []string, value *generic.Value, stmt *gorm.Statement, field *schema.Field) error {
+	// Looks for field_confirmation field
+	confirmFieldName := field.Name + "Confirmation"
+	confirmField, ok := stmt.Schema.FieldsByName[confirmFieldName]
+	if !ok {
+		return fmt.Errorf("confirmation field '%s' not found", confirmFieldName)
+	}
+
+	originalValue, _ := field.ValueOf(context.Background(), reflect.ValueOf(stmt.Model))
+	confirmValue, _ := confirmField.ValueOf(context.Background(), reflect.ValueOf(stmt.Model))
+
+	if originalValue != confirmValue {
+		return fmt.Errorf("confirmation does not match")
+	}
+	return nil
+}
+
+func sameValidator(match []string, value *generic.Value, stmt *gorm.Statement, field *schema.Field) error {
+	otherField, ok := stmt.Schema.FieldsByName[match[1]]
+	if !ok {
+		return fmt.Errorf("field %s not found", match[1])
+	}
+
+	thisValue, _ := field.ValueOf(context.Background(), reflect.ValueOf(stmt.Model))
+	otherValue, _ := otherField.ValueOf(context.Background(), reflect.ValueOf(stmt.Model))
+
+	if thisValue != otherValue {
+		return fmt.Errorf("must be same as %s", match[1])
+	}
+	return nil
+}
+
+func differentValidator(match []string, value *generic.Value, stmt *gorm.Statement, field *schema.Field) error {
+	otherField, ok := stmt.Schema.FieldsByName[match[1]]
+	if !ok {
+		return fmt.Errorf("field %s not found", match[1])
+	}
+
+	thisValue, _ := field.ValueOf(context.Background(), reflect.ValueOf(stmt.Model))
+	otherValue, _ := otherField.ValueOf(context.Background(), reflect.ValueOf(stmt.Model))
+
+	if thisValue == otherValue {
+		return fmt.Errorf("must be different from %s", match[1])
+	}
+	return nil
+}
+
+func gtFieldValidator(match []string, value *generic.Value, stmt *gorm.Statement, field *schema.Field) error {
+	return compareFields(value, stmt, field, match[1], ">")
+}
+
+func gteFieldValidator(match []string, value *generic.Value, stmt *gorm.Statement, field *schema.Field) error {
+	return compareFields(value, stmt, field, match[1], ">=")
+}
+
+func ltFieldValidator(match []string, value *generic.Value, stmt *gorm.Statement, field *schema.Field) error {
+	return compareFields(value, stmt, field, match[1], "<")
+}
+
+func lteFieldValidator(match []string, value *generic.Value, stmt *gorm.Statement, field *schema.Field) error {
+	return compareFields(value, stmt, field, match[1], "<=")
+}
+
+func compareFields(value *generic.Value, stmt *gorm.Statement, field *schema.Field, otherFieldName, operator string) error {
+	otherField, ok := stmt.Schema.FieldsByName[otherFieldName]
+	if !ok {
+		return fmt.Errorf("field %s not found", otherFieldName)
+	}
+
+	thisVal := value.Float64()
+	otherValue, _ := otherField.ValueOf(context.Background(), reflect.ValueOf(stmt.Model))
+	otherVal := reflect.ValueOf(otherValue).Float()
+
+	switch operator {
+	case ">":
+		if thisVal <= otherVal {
+			return fmt.Errorf("must be greater than %s", otherFieldName)
+		}
+	case ">=":
+		if thisVal < otherVal {
+			return fmt.Errorf("must be greater than or equal to %s", otherFieldName)
+		}
+	case "<":
+		if thisVal >= otherVal {
+			return fmt.Errorf("must be less than %s", otherFieldName)
+		}
+	case "<=":
+		if thisVal > otherVal {
+			return fmt.Errorf("must be less than or equal to %s", otherFieldName)
+		}
 	}
 	return nil
 }

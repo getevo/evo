@@ -240,7 +240,7 @@ func (r *Request) Form() (url.Values, error) {
 }
 
 func parsePostForm(r *Request) (vs url.Values, err error) {
-	if r.Body == nil {
+	if len(r.Body()) == 0 {
 		err = errors.New("missing form body")
 		return
 	}
@@ -292,7 +292,11 @@ func (r *Request) Get(key string) generic.Value {
 			return generic.Parse(val)
 		}
 	} else if strings.HasPrefix(ctype, MIMEApplicationJSON) {
-		return generic.Parse(gjson.Parse(string(r.Context.Body())).Get(key).String())
+		if r.jsonParsedBody == nil {
+			var t = gjson.Parse(string(r.Context.Body()))
+			r.jsonParsedBody = &t
+		}
+		return generic.Parse(r.jsonParsedBody.Get(key).String())
 	}
 
 	return generic.Parse(nil)
@@ -532,7 +536,7 @@ func (r *Request) Write(body any) {
 		data = []byte(strconv.FormatBool(body))
 	case io.Reader:
 		r.Context.Context().Response.SetBodyStream(body, -1)
-		r.Context.Set(HeaderContentLength, strconv.Itoa(len(r.Context.Context().Response.Body())))
+		return
 	default:
 		data = []byte(fmt.Sprintf("%v", body))
 	}

@@ -1,15 +1,21 @@
 package settings
 
 import (
-	"github.com/getevo/evo/v2/lib/dot"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
 )
 
+// LoadOSArgs loads settings from command-line arguments.
+// Supports two formats:
+//   - KEY=value (e.g., DATABASE.HOST=localhost)
+//   - --KEY value (e.g., --DATABASE.PORT 3306)
+//
+// Command-line arguments have the highest priority and will override
+// all other configuration sources.
 func LoadOSArgs() {
-	//parse X.Y=value
+	// Parse KEY=value format
 	re := regexp.MustCompile(`^([a-zA-Z0-9_.]+)=(.*)$`)
 	for _, arg := range os.Args {
 		if matches := re.FindStringSubmatch(arg); matches != nil {
@@ -19,17 +25,16 @@ func LoadOSArgs() {
 			// Handle quoted values
 			value = unquote(value)
 
-			data[strings.ToUpper(key)] = value
-			_ = dot.Set(&data, key, value)
+			setData(key, value)
 		}
 	}
 
-	// parse -X.Y value
+	// Parse --KEY value format
 	for idx, arg := range os.Args {
 		if strings.HasPrefix(arg, "--") {
-
 			if len(os.Args) > idx+1 {
 				v := os.Args[idx+1]
+				// Skip if next arg is also a flag
 				if strings.HasPrefix(v, "--") {
 					v = ""
 				}
@@ -37,8 +42,6 @@ func LoadOSArgs() {
 				v = unquote(v)
 				arg = strings.TrimPrefix(arg, "--")
 				setData(arg, v)
-				//data[normalizeKey(arg)] = v
-				_ = dot.Set(&data, arg, v)
 			}
 		}
 	}
