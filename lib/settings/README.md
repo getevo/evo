@@ -65,18 +65,18 @@ settings.OnReload(func() {
 })
 
 // Watch for specific setting changes
-settings.OnChange("DATABASE.HOST", func(key string, oldValue, newValue any) {
+settings.Track("DATABASE.HOST", func(key string, oldValue, newValue any) {
     log.Info("Database host changed:", oldValue, "->", newValue)
 })
 
 // Watch all database settings (wildcard)
-settings.OnChange("DATABASE.*", func(key string, oldValue, newValue any) {
+settings.Track("DATABASE.*", func(key string, oldValue, newValue any) {
     log.Info("Database setting changed:", key, "from", oldValue, "to", newValue)
     db.Reconnect() // Reconnect on any DB config change
 })
 
 // Watch all settings
-settings.OnChange("*", func(key string, oldValue, newValue any) {
+settings.Track("*", func(key string, oldValue, newValue any) {
     log.Info("Config changed:", key, "=", newValue)
 })
 ```

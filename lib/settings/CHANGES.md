@@ -139,7 +139,7 @@ settings.SaveToYAML("./config.yml")
 func OnReload(callback func())
 
 // Called when specific setting changes (supports wildcards)
-func OnChange(key string, callback ChangeCallback)
+func Track(key string, callback ChangeCallback)
 
 type ChangeCallback func(key string, oldValue, newValue any)
 ```
@@ -148,18 +148,18 @@ type ChangeCallback func(key string, oldValue, newValue any)
 
 ```go
 // Watch specific setting
-settings.OnChange("DATABASE.HOST", func(key string, old, new any) {
+settings.Track("DATABASE.HOST", func(key string, old, new any) {
     log.Info("DB host changed:", old, "->", new)
 })
 
 // Watch all database settings (wildcard)
-settings.OnChange("DATABASE.*", func(key string, old, new any) {
+settings.Track("DATABASE.*", func(key string, old, new any) {
     log.Info("Database config changed:", key)
     db.Reconnect() // Reconnect on any DB setting change
 })
 
 // Watch all settings (global wildcard)
-settings.OnChange("*", func(key string, old, new any) {
+settings.Track("*", func(key string, old, new any) {
     log.Info("Config changed:", key, "=", new)
 })
 
@@ -211,7 +211,7 @@ settings.OnReload(func() {
 - `SaveToYAML(filename string) error`
 - `SaveToDB() error`
 - `OnReload(callback func())`
-- `OnChange(key string, callback ChangeCallback)`
+- `Track(key string, callback ChangeCallback)`
 
 ### Behavioral Changes
 
@@ -252,7 +252,7 @@ settings.Set("KEY", "value")
 // Register - removed, delete this line
 
 // New features:
-settings.OnChange("KEY", func(k string, old, new any) {
+settings.Track("KEY", func(k string, old, new any) {
     log.Info("Changed:", old, "->", new)
 })
 
@@ -339,7 +339,7 @@ Potential improvements for future versions:
 
 1. **Wildcard Change Callbacks**
    ```go
-   settings.OnChange("DATABASE.*", callback)  // Watch all DB settings
+   settings.Track("DATABASE.*", callback)  // Watch all DB settings
    ```
 
 2. **Setting Validation**

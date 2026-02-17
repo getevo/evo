@@ -5,8 +5,8 @@ import (
 	"testing"
 )
 
-// TestOnChangeWildcard tests wildcard pattern matching in callbacks
-func TestOnChangeWildcard(t *testing.T) {
+// TestTrackWildcard tests wildcard pattern matching in callbacks
+func TestTrackWildcard(t *testing.T) {
 	// Reset callbacks for clean test
 	mu.Lock()
 	changeCallbacks = []callbackEntry{}
@@ -19,14 +19,14 @@ func TestOnChangeWildcard(t *testing.T) {
 	allCalls := []string{}
 
 	// Register exact match callback
-	OnChange("DATABASE.HOST", func() {
+	Track("DATABASE.HOST", func() {
 		callbacksMu.Lock()
 		exactCalls = append(exactCalls, "DATABASE_HOST")
 		callbacksMu.Unlock()
 	})
 
 	// Register prefix wildcard callback
-	OnChange("DATABASE.*", func() {
+	Track("DATABASE.*", func() {
 		callbacksMu.Lock()
 		// Track that callback was called (can't know which key without params)
 		prefixCalls = append(prefixCalls, "called")
@@ -34,7 +34,7 @@ func TestOnChangeWildcard(t *testing.T) {
 	})
 
 	// Register global wildcard callback
-	OnChange("*", func() {
+	Track("*", func() {
 		callbacksMu.Lock()
 		allCalls = append(allCalls, "called")
 		callbacksMu.Unlock()
@@ -90,8 +90,8 @@ func TestOnChangeWildcard(t *testing.T) {
 	callbacksMu.Unlock()
 }
 
-// TestOnChangeMultipleWildcards tests multiple wildcard patterns
-func TestOnChangeMultipleWildcards(t *testing.T) {
+// TestTrackMultipleWildcards tests multiple wildcard patterns
+func TestTrackMultipleWildcards(t *testing.T) {
 	// Reset callbacks and data
 	mu.Lock()
 	changeCallbacks = []callbackEntry{}
@@ -103,7 +103,7 @@ func TestOnChangeMultipleWildcards(t *testing.T) {
 	cacheCalls := 0
 
 	// Watch DATABASE.*
-	OnChange("DATABASE.*", func() {
+	Track("DATABASE.*", func() {
 		mu1.Lock()
 		dbCalls++
 		t.Logf("DATABASE.* callback triggered")
@@ -111,7 +111,7 @@ func TestOnChangeMultipleWildcards(t *testing.T) {
 	})
 
 	// Watch CACHE.*
-	OnChange("CACHE.*", func() {
+	Track("CACHE.*", func() {
 		mu1.Lock()
 		cacheCalls++
 		t.Logf("CACHE.* callback triggered")
@@ -136,13 +136,13 @@ func TestOnChangeMultipleWildcards(t *testing.T) {
 	mu1.Unlock()
 }
 
-// BenchmarkOnChangeExact benchmarks exact match callbacks
-func BenchmarkOnChangeExact(b *testing.B) {
+// BenchmarkTrackExact benchmarks exact match callbacks
+func BenchmarkTrackExact(b *testing.B) {
 	mu.Lock()
 	changeCallbacks = []callbackEntry{}
 	mu.Unlock()
 
-	OnChange("TEST.KEY", func() {})
+	Track("TEST.KEY", func() {})
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -150,13 +150,13 @@ func BenchmarkOnChangeExact(b *testing.B) {
 	}
 }
 
-// BenchmarkOnChangeWildcard benchmarks wildcard match callbacks
-func BenchmarkOnChangeWildcard(b *testing.B) {
+// BenchmarkTrackWildcard benchmarks wildcard match callbacks
+func BenchmarkTrackWildcard(b *testing.B) {
 	mu.Lock()
 	changeCallbacks = []callbackEntry{}
 	mu.Unlock()
 
-	OnChange("TEST.*", func() {})
+	Track("TEST.*", func() {})
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -164,13 +164,13 @@ func BenchmarkOnChangeWildcard(b *testing.B) {
 	}
 }
 
-// BenchmarkOnChangeGlobal benchmarks global wildcard callbacks
-func BenchmarkOnChangeGlobal(b *testing.B) {
+// BenchmarkTrackGlobal benchmarks global wildcard callbacks
+func BenchmarkTrackGlobal(b *testing.B) {
 	mu.Lock()
 	changeCallbacks = []callbackEntry{}
 	mu.Unlock()
 
-	OnChange("*", func() {})
+	Track("*", func() {})
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

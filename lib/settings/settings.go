@@ -24,19 +24,19 @@
 //	})
 //
 //	// Watch specific setting
-//	settings.OnChange("DATABASE.HOST", func() {
+//	settings.Track("DATABASE.HOST", func() {
 //	    log.Info("Database host changed - reconnecting...")
 //	    db.Reconnect()
 //	})
 //
 //	// Watch all database settings (wildcard)
-//	settings.OnChange("DATABASE.*", func() {
+//	settings.Track("DATABASE.*", func() {
 //	    log.Info("Database setting changed - reconnecting...")
 //	    db.Reconnect()
 //	})
 //
 //	// Watch all settings
-//	settings.OnChange("*", func() {
+//	settings.Track("*", func() {
 //	    log.Info("Configuration changed - reloading...")
 //	    app.ReloadConfig()
 //	})
@@ -280,7 +280,7 @@ func OnReload(callback func()) {
 	mu.Unlock()
 }
 
-// OnChange registers a callback to be called when a setting changes.
+// Track registers a callback to be called when a setting changes.
 // Supports exact matches and wildcard patterns:
 //   - Exact: "DATABASE.HOST" - matches only DATABASE.HOST
 //   - Prefix wildcard: "DATABASE.*" - matches DATABASE.HOST, DATABASE.PORT, etc.
@@ -292,20 +292,20 @@ func OnReload(callback func()) {
 // Examples:
 //
 //	// Watch specific setting and reconnect
-//	settings.OnChange("DATABASE.HOST", func() {
+//	settings.Track("DATABASE.HOST", func() {
 //	    db.Reconnect()
 //	})
 //
 //	// Watch all database settings
-//	settings.OnChange("DATABASE.*", func() {
+//	settings.Track("DATABASE.*", func() {
 //	    db.Reconnect()
 //	})
 //
 //	// Watch all settings
-//	settings.OnChange("*", func() {
+//	settings.Track("*", func() {
 //	    app.ReloadConfig()
 //	})
-func OnChange(key string, callback ChangeCallback) {
+func Track(key string, callback ChangeCallback) {
 	// Preserve wildcards before normalization
 	hasWildcard := strings.Contains(key, "*")
 

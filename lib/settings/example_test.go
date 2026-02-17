@@ -23,10 +23,10 @@ func Example() {
 	// Output will vary based on actual config
 }
 
-// ExampleOnChange demonstrates watching for setting changes
-func ExampleOnChange() {
+// ExampleTrack demonstrates watching for setting changes
+func ExampleTrack() {
 	// Register callback before setting value
-	settings.OnChange("DATABASE.HOST", func() {
+	settings.Track("DATABASE.HOST", func() {
 		fmt.Println("Database host changed - reconnecting...")
 	})
 
@@ -37,10 +37,10 @@ func ExampleOnChange() {
 	// Database host changed - reconnecting...
 }
 
-// ExampleOnChange_wildcard demonstrates wildcard pattern matching
-func ExampleOnChange_wildcard() {
+// ExampleTrack_wildcard demonstrates wildcard pattern matching
+func ExampleTrack_wildcard() {
 	// Watch all database settings
-	settings.OnChange("DATABASE.*", func() {
+	settings.Track("DATABASE.*", func() {
 		fmt.Println("Database config changed - reconnecting...")
 	})
 
@@ -56,10 +56,10 @@ func ExampleOnChange_wildcard() {
 	// Database config changed - reconnecting...
 }
 
-// ExampleOnChange_all demonstrates watching all settings
-func ExampleOnChange_all() {
+// ExampleTrack_all demonstrates watching all settings
+func ExampleTrack_all() {
 	// Watch all settings changes
-	settings.OnChange("*", func() {
+	settings.Track("*", func() {
 		fmt.Println("Configuration changed")
 	})
 
