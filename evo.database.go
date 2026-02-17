@@ -74,25 +74,22 @@ func setupDatabase() error {
 }
 
 // GetDBO return database object instance
-// Deprecated: Use GetDB with context instead for better context propagation
-func GetDBO() *gorm.DB {
+func GetDBO(ctx ...context.Context) *gorm.DB {
 	if db == nil {
 		if err := setupDatabase(); err != nil {
 			evolog.Fatal("failed to setup database", "error", err)
 		}
+	}
+	if len(ctx) > 0 {
+		return db.WithContext(ctx[0])
 	}
 	return db
 }
 
 // GetDB returns a database instance with context for proper context propagation.
 // This is the preferred method for obtaining database connections.
-func GetDB(ctx context.Context) *gorm.DB {
-	if db == nil {
-		if err := setupDatabase(); err != nil {
-			evolog.Fatal("failed to setup database", "error", err)
-		}
-	}
-	return db.WithContext(ctx)
+func GetDB(ctx ...context.Context) *gorm.DB {
+	return GetDBO(ctx...)
 }
 
 type Model struct {

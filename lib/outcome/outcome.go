@@ -18,7 +18,7 @@ type HTTPSerializer interface {
 // Response represents an HTTP response with all its components
 type Response struct {
 	ContentType string
-	Data        []byte
+	Data        interface{} // Accepts []byte or string, automatically converted to []byte when needed
 	StatusCode  int
 	Headers     map[string]string
 	RedirectURL string
@@ -212,7 +212,7 @@ func (response *Response) Error(value any, code ...int) *Response {
 	response.Errors = append(response.Errors, errMsg)
 
 	// If no data set yet, use the error message as response body
-	if len(response.Data) == 0 {
+	if response.Data == nil || len(response.GetData()) == 0 {
 		response.Data = []byte(errMsg)
 	}
 	return response
@@ -231,6 +231,25 @@ func (response *Response) Filename(filename string) *Response {
 // ResponseSerializer returns the response itself (implements HTTPSerializer interface)
 func (response *Response) ResponseSerializer() *Response {
 	return response
+}
+
+// GetData returns the response data as []byte, automatically converting string to []byte if needed
+func (response *Response) GetData() []byte {
+	switch v := response.Data.(type) {
+	case []byte:
+		return v
+	case string:
+		return []byte(v)
+	case nil:
+		return nil
+	default:
+		// For other types, try to marshal as JSON
+		data, err := json.Marshal(v)
+		if err != nil {
+			return []byte(fmt.Sprint(v))
+		}
+		return data
+	}
 }
 
 // SetCacheControl sets the Cache-Control header with max-age and optional directives
