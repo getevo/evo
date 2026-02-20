@@ -3,15 +3,19 @@ package validation
 import (
 	"context"
 	"fmt"
+	"log"
 	"regexp"
 	"sync"
 
 	"github.com/getevo/evo/v2/lib/db"
 	"github.com/getevo/evo/v2/lib/generic"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
 	"reflect"
 )
+
+var silentLogger = logger.New(log.New(log.Writer(), "", 0), logger.Config{LogLevel: logger.Silent})
 
 // CustomValidators allows registration of custom validators
 var CustomValidators = make(map[*regexp.Regexp]func(match []string, value *generic.Value) error)
@@ -60,7 +64,7 @@ func StructWithContext(ctx context.Context, input interface{}, fields ...string)
 		return []error{fmt.Errorf("database not initialized - only non-DB validators available")}
 	}
 
-	var stmt = dbInstance.Model(input).Statement
+	var stmt = dbInstance.Session(&gorm.Session{Logger: silentLogger}).Model(input).Statement
 	if err := stmt.Parse(input); err != nil {
 		return []error{fmt.Errorf("failed to parse model: %w", err)}
 	}
@@ -104,7 +108,7 @@ func StructNonZeroFieldsWithContext(ctx context.Context, input interface{}, fiel
 		return []error{fmt.Errorf("database not initialized - only non-DB validators available")}
 	}
 
-	var stmt = dbInstance.Model(input).Statement
+	var stmt = dbInstance.Session(&gorm.Session{Logger: silentLogger}).Model(input).Statement
 	if err := stmt.Parse(input); err != nil {
 		return []error{fmt.Errorf("failed to parse model: %w", err)}
 	}
@@ -137,7 +141,7 @@ func validateFieldWithContext(ctx context.Context, g *generic.Value, field *sche
 			// Skip DB validators if database is not available
 			return validateFieldWithoutDB(g, field)
 		}
-		var s = dbInstance.Model(g.Input).Statement
+		var s = dbInstance.Session(&gorm.Session{Logger: silentLogger}).Model(g.Input).Statement
 		var err = s.Parse(g.Input)
 		if err != nil {
 			return err
