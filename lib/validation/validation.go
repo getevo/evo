@@ -3,19 +3,17 @@ package validation
 import (
 	"context"
 	"fmt"
-	"log"
 	"regexp"
 	"sync"
 
 	"github.com/getevo/evo/v2/lib/db"
 	"github.com/getevo/evo/v2/lib/generic"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
 	"reflect"
 )
 
-var silentLogger = logger.New(log.New(log.Writer(), "", 0), logger.Config{LogLevel: logger.Silent})
+var schemaCache sync.Map
 
 // CustomValidators allows registration of custom validators
 var CustomValidators = make(map[*regexp.Regexp]func(match []string, value *generic.Value) error)
@@ -39,6 +37,28 @@ func RegisterDBValidator(pattern string, fn func(match []string, value *generic.
 	CustomDBValidators[regexp.MustCompile(pattern)] = fn
 }
 
+func getNamingStrategy() schema.Namer {
+	dbInstance := db.GetInstance()
+	if dbInstance != nil {
+		return dbInstance.NamingStrategy
+	}
+	return schema.NamingStrategy{}
+}
+
+func parseInputSchema(input interface{}) (*schema.Schema, error) {
+	return schema.Parse(input, &schemaCache, getNamingStrategy())
+}
+
+func getStatement(input interface{}) *gorm.Statement {
+	dbInstance := db.GetInstance()
+	if dbInstance == nil {
+		return nil
+	}
+	var stmt = dbInstance.Model(input).Statement
+	stmt.Parse(input)
+	return stmt
+}
+
 // Struct validates a struct with all fields
 // Deprecated: Use StructWithContext for better context support
 func Struct(input interface{}, fields ...string) []error {
@@ -59,20 +79,15 @@ func StructWithContext(ctx context.Context, input interface{}, fields ...string)
 
 	var g = generic.Parse(input)
 
-	dbInstance := db.GetInstance()
-	if dbInstance == nil {
-		return []error{fmt.Errorf("database not initialized - only non-DB validators available")}
+	s, err := parseInputSchema(input)
+	if err != nil {
+		return nil
 	}
 
-	var stmt = dbInstance.Session(&gorm.Session{Logger: silentLogger}).Model(input).Statement
-	if err := stmt.Parse(input); err != nil {
-		return []error{fmt.Errorf("failed to parse model: %w", err)}
-	}
-
-	for idx, _ := range stmt.Schema.Fields {
-		field := stmt.Schema.Fields[idx]
+	for idx, _ := range s.Fields {
+		field := s.Fields[idx]
 		if field.Tag.Get("validation") != "" {
-			var err = validateFieldWithContext(ctx, &g, field, stmt)
+			var err = validateFieldWithContext(ctx, &g, field, nil)
 			if err != nil {
 				errors = append(errors, err)
 			}
@@ -103,23 +118,18 @@ func StructNonZeroFieldsWithContext(ctx context.Context, input interface{}, fiel
 
 	var g = generic.Parse(input)
 
-	dbInstance := db.GetInstance()
-	if dbInstance == nil {
-		return []error{fmt.Errorf("database not initialized - only non-DB validators available")}
-	}
-
-	var stmt = dbInstance.Session(&gorm.Session{Logger: silentLogger}).Model(input).Statement
-	if err := stmt.Parse(input); err != nil {
-		return []error{fmt.Errorf("failed to parse model: %w", err)}
+	s, err := parseInputSchema(input)
+	if err != nil {
+		return nil
 	}
 
 	ref = reflect.ValueOf(input)
-	for idx, _ := range stmt.Schema.Fields {
-		field := stmt.Schema.Fields[idx]
+	for idx, _ := range s.Fields {
+		field := s.Fields[idx]
 		_, zero := field.ValueOf(ctx, ref)
 
 		if !zero && field.Tag.Get("validation") != "" {
-			var err = validateFieldWithContext(ctx, &g, field, stmt)
+			var err = validateFieldWithContext(ctx, &g, field, nil)
 			if err != nil {
 				errors = append(errors, err)
 			}
@@ -135,20 +145,6 @@ func validateField(g *generic.Value, field *schema.Field) error {
 }
 
 func validateFieldWithContext(ctx context.Context, g *generic.Value, field *schema.Field, stmt *gorm.Statement) error {
-	if stmt == nil {
-		dbInstance := db.GetInstance()
-		if dbInstance == nil {
-			// Skip DB validators if database is not available
-			return validateFieldWithoutDB(g, field)
-		}
-		var s = dbInstance.Session(&gorm.Session{Logger: silentLogger}).Model(g.Input).Statement
-		var err = s.Parse(g.Input)
-		if err != nil {
-			return err
-		}
-		stmt = s
-	}
-
 	var value = g.Prop(field.Name)
 	validators := parseValidators(field.Tag.Get("validation"))
 	for _, validator := range validators {
@@ -159,6 +155,13 @@ func validateFieldWithContext(ctx context.Context, g *generic.Value, field *sche
 		for r, fn := range CustomDBValidators {
 			if match := r.FindStringSubmatch(validator); len(match) > 0 {
 				found = true
+				if stmt == nil {
+					stmt = getStatement(g.Input)
+				}
+				if stmt == nil {
+					customDBValidatorsMutex.RUnlock()
+					goto nextValidator
+				}
 				err := fn(match, &value, stmt, stmt.Schema.FieldsByName[field.Name])
 				customDBValidatorsMutex.RUnlock()
 				tag := field.Tag.Get("json")
@@ -177,6 +180,12 @@ func validateFieldWithContext(ctx context.Context, g *generic.Value, field *sche
 		for r, fn := range DBValidators {
 			if match := r.FindStringSubmatch(validator); len(match) > 0 {
 				found = true
+				if stmt == nil {
+					stmt = getStatement(g.Input)
+				}
+				if stmt == nil {
+					goto nextValidator
+				}
 				err := fn(match, &value, stmt, stmt.Schema.FieldsByName[field.Name])
 				tag := field.Tag.Get("json")
 				if tag == "" {
@@ -228,7 +237,7 @@ func validateFieldWithContext(ctx context.Context, g *generic.Value, field *sche
 			return fmt.Errorf("validator %s not found for %s.%s", validator, g.IndirectType().Name(), field.Name)
 		}
 
-		nextValidator:
+	nextValidator:
 	}
 	return nil
 }
@@ -296,7 +305,7 @@ func validateFieldWithoutDB(g *generic.Value, field *schema.Field) error {
 			return fmt.Errorf("validator %s not found for %s.%s", validator, g.IndirectType().Name(), field.Name)
 		}
 
-		nextValidatorNoDB:
+	nextValidatorNoDB:
 	}
 	return nil
 }
@@ -382,7 +391,7 @@ func ValueWithContext(ctx context.Context, input interface{}, validation string)
 			return fmt.Errorf("validator %s not found", validator)
 		}
 
-		nextValueValidator:
+	nextValueValidator:
 	}
 	return nil
 }
