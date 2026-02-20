@@ -44,6 +44,15 @@ func Struct(input interface{}, fields ...string) []error {
 // StructWithContext validates a struct with context support
 func StructWithContext(ctx context.Context, input interface{}, fields ...string) []error {
 	var errors []error
+
+	ref := reflect.ValueOf(input)
+	for ref.Kind() == reflect.Ptr {
+		ref = ref.Elem()
+	}
+	if ref.Kind() != reflect.Struct {
+		return nil
+	}
+
 	var g = generic.Parse(input)
 
 	dbInstance := db.GetInstance()
@@ -79,6 +88,15 @@ func StructNonZeroFields(input interface{}, fields ...string) []error {
 // StructNonZeroFieldsWithContext validates only non-zero fields with context support
 func StructNonZeroFieldsWithContext(ctx context.Context, input interface{}, fields ...string) []error {
 	var errors []error
+
+	ref := reflect.ValueOf(input)
+	for ref.Kind() == reflect.Ptr {
+		ref = ref.Elem()
+	}
+	if ref.Kind() != reflect.Struct {
+		return nil
+	}
+
 	var g = generic.Parse(input)
 
 	dbInstance := db.GetInstance()
@@ -91,7 +109,7 @@ func StructNonZeroFieldsWithContext(ctx context.Context, input interface{}, fiel
 		return []error{fmt.Errorf("failed to parse model: %w", err)}
 	}
 
-	var ref = reflect.ValueOf(input)
+	ref = reflect.ValueOf(input)
 	for idx, _ := range stmt.Schema.Fields {
 		field := stmt.Schema.Fields[idx]
 		_, zero := field.ValueOf(ctx, ref)
