@@ -7,7 +7,7 @@ import (
 // CreatedAt represents the timestamp of when an entity or object was created.
 // It uses GORM's autoCreateTime for automatic timestamp management.
 type CreatedAt struct {
-	CreatedAt time.Time `gorm:"column:created_at;default:CURRENT_TIMESTAMP()" json:"created_at"`
+	CreatedAt time.Time `gorm:"column:created_at" json:"created_at"`
 }
 
 // Time returns the underlying time.Time value
@@ -73,7 +73,7 @@ func NowCreatedAt() CreatedAt {
 // UpdatedAt represents the timestamp when an entity was last updated.
 // It uses GORM's autoUpdateTime for automatic timestamp management.
 type UpdatedAt struct {
-	UpdatedAt time.Time `gorm:"column:updated_at;default:CURRENT_TIMESTAMP();ON_UPDATE:CURRENT_TIMESTAMP()" json:"updated_at"`
+	UpdatedAt time.Time `gorm:"column:updated_at" json:"updated_at"`
 }
 
 // Time returns the underlying time.Time value
