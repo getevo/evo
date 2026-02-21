@@ -1,7 +1,7 @@
 package async
 
 import (
-	"fmt"
+	"errors"
 	"sync"
 )
 
@@ -55,7 +55,7 @@ func (m Mapper[T, R]) MapErr(input []T, f func(*T) (R, error)) ([]R, error) {
 		res[i], err = f(t)
 		if err != nil {
 			errMux.Lock()
-			errs = fmt.Errorf("%s, %s", errs, err)
+			errs = errors.Join(errs, err)
 			errMux.Unlock()
 		}
 	})

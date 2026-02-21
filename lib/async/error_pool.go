@@ -2,7 +2,7 @@ package async
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"sync"
 )
 
@@ -89,7 +89,7 @@ func (p *ErrorPool) addErr(err error) {
 				p.errs = err
 			}
 		} else {
-			p.errs = fmt.Errorf("%s, %s", p.errs, err)
+			p.errs = errors.Join(p.errs, err)
 		}
 		p.mu.Unlock()
 	}
