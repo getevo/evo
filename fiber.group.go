@@ -1,14 +1,15 @@
 package evo
 
 import (
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/static"
 )
 
 // Get ...
 func (grp *group) Get(path string, handlers ...Handler) fiber.Router {
 	var route fiber.Router
 
-	route = (*grp.app).Get(path, func(ctx *fiber.Ctx) error {
+	route = (*grp.app).Get(path, func(ctx fiber.Ctx) error {
 		return handle(ctx, handlers)
 	})
 
@@ -18,7 +19,7 @@ func (grp *group) Get(path string, handlers ...Handler) fiber.Router {
 // Head ...
 func (grp *group) Head(path string, handlers ...Handler) fiber.Router {
 	var route fiber.Router
-	route = (*grp.app).Head(path, func(ctx *fiber.Ctx) error {
+	route = (*grp.app).Head(path, func(ctx fiber.Ctx) error {
 		return handle(ctx, handlers)
 	})
 
@@ -28,7 +29,7 @@ func (grp *group) Head(path string, handlers ...Handler) fiber.Router {
 // Post ...
 func (grp *group) Post(path string, handlers ...Handler) fiber.Router {
 	var route fiber.Router
-	route = (*grp.app).Post(path, func(ctx *fiber.Ctx) error {
+	route = (*grp.app).Post(path, func(ctx fiber.Ctx) error {
 		return handle(ctx, handlers)
 	})
 	return route
@@ -37,7 +38,7 @@ func (grp *group) Post(path string, handlers ...Handler) fiber.Router {
 // Put ...
 func (grp *group) Put(path string, handlers ...Handler) fiber.Router {
 	var route fiber.Router
-	route = (*grp.app).Put(path, func(ctx *fiber.Ctx) error {
+	route = (*grp.app).Put(path, func(ctx fiber.Ctx) error {
 		return handle(ctx, handlers)
 	})
 	return route
@@ -46,7 +47,7 @@ func (grp *group) Put(path string, handlers ...Handler) fiber.Router {
 // Delete ...
 func (grp *group) Delete(path string, handlers ...Handler) fiber.Router {
 	var route fiber.Router
-	route = (*grp.app).Delete(path, func(ctx *fiber.Ctx) error {
+	route = (*grp.app).Delete(path, func(ctx fiber.Ctx) error {
 		return handle(ctx, handlers)
 	})
 	return route
@@ -55,7 +56,7 @@ func (grp *group) Delete(path string, handlers ...Handler) fiber.Router {
 // Connect ...
 func (grp *group) Connect(path string, handlers ...Handler) fiber.Router {
 	var route fiber.Router
-	route = (*grp.app).Connect(path, func(ctx *fiber.Ctx) error {
+	route = (*grp.app).Connect(path, func(ctx fiber.Ctx) error {
 		return handle(ctx, handlers)
 	})
 	return route
@@ -64,7 +65,7 @@ func (grp *group) Connect(path string, handlers ...Handler) fiber.Router {
 // Options ...
 func (grp *group) Options(path string, handlers ...Handler) fiber.Router {
 	var route fiber.Router
-	route = (*grp.app).Options(path, func(ctx *fiber.Ctx) error {
+	route = (*grp.app).Options(path, func(ctx fiber.Ctx) error {
 		return handle(ctx, handlers)
 	})
 
@@ -75,7 +76,7 @@ func (grp *group) Options(path string, handlers ...Handler) fiber.Router {
 func (grp *group) Trace(path string, handlers ...Handler) fiber.Router {
 	var route fiber.Router
 
-	route = (*grp.app).Trace(path, func(ctx *fiber.Ctx) error {
+	route = (*grp.app).Trace(path, func(ctx fiber.Ctx) error {
 		return handle(ctx, handlers)
 	})
 	return route
@@ -84,7 +85,7 @@ func (grp *group) Trace(path string, handlers ...Handler) fiber.Router {
 // Patch ...
 func (grp *group) Patch(path string, handlers ...Handler) fiber.Router {
 	var route fiber.Router
-	route = (*grp.app).Patch(path, func(ctx *fiber.Ctx) error {
+	route = (*grp.app).Patch(path, func(ctx fiber.Ctx) error {
 		return handle(ctx, handlers)
 	})
 
@@ -94,7 +95,7 @@ func (grp *group) Patch(path string, handlers ...Handler) fiber.Router {
 // All ...
 func (grp *group) All(path string, handlers ...Handler) {
 
-	(*grp.app).All(path, func(ctx *fiber.Ctx) error {
+	(*grp.app).All(path, func(ctx fiber.Ctx) error {
 		return handle(ctx, handlers)
 	})
 
@@ -104,7 +105,7 @@ func (grp *group) All(path string, handlers ...Handler) {
 func (grp *group) Group(prefix string, handlers ...Handler) group {
 	var route fiber.Router
 	if len(handlers) > 0 {
-		route = (*grp.app).Group(prefix, func(ctx *fiber.Ctx) error {
+		route = (*grp.app).Group(prefix, func(ctx fiber.Ctx) error {
 			return handle(ctx, handlers)
 		})
 	} else {
@@ -117,14 +118,16 @@ func (grp *group) Group(prefix string, handlers ...Handler) group {
 }
 
 // Static serves files from the file system
-func (grp *group) Static(path string, dir string, config ...fiber.Static) group {
+func (grp *group) Static(path string, dir string, config ...static.Config) group {
 	if app == nil {
 		panic("Access object before call Setup()")
 	}
-	var route fiber.Router
-	route = (*grp.app).Static(path, dir, config...)
-	gp := group{
-		app: &route,
+	var cfg static.Config
+	if len(config) > 0 {
+		cfg = config[0]
 	}
-	return gp
+	cfg.FS = nil
+	var route fiber.Router
+	route = (*grp.app).Use(path, static.New(dir, cfg))
+	return group{app: &route}
 }

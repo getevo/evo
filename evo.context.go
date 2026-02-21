@@ -10,7 +10,7 @@ import (
 
 	"github.com/getevo/evo/v2/lib/generic"
 	"github.com/getevo/evo/v2/lib/outcome"
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/tidwall/gjson"
 )
 
@@ -24,7 +24,7 @@ type CacheControl struct {
 }
 
 type Request struct {
-	Context        *fiber.Ctx
+	Context        fiber.Ctx
 	Response       Response
 	CacheControl   *CacheControl
 	beforeResponse func(body []byte) []byte
@@ -87,7 +87,7 @@ func (u *URL) String() string {
 	return u.Path + "?" + u.Query.Encode()
 }
 
-func Upgrade(ctx *fiber.Ctx) *Request {
+func Upgrade(ctx fiber.Ctx) *Request {
 	r := Request{}
 	r.Context = ctx
 	r.Response = Response{Success: true}

@@ -2,7 +2,8 @@ package evo
 
 import (
 	"github.com/getevo/evo/v2/lib/shutdown"
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/static"
 )
 
 type Handler func(request *Request) any
@@ -26,7 +27,7 @@ func Group(path string, handlers ...Middleware) *group {
 
 	var route fiber.Router
 	if len(handlers) > 0 {
-		route = app.Group(path, func(ctx *fiber.Ctx) error {
+		route = app.Group(path, func(ctx fiber.Ctx) error {
 			r := Upgrade(ctx)
 			for _, handler := range handlers {
 				var err = handler(r)
@@ -61,7 +62,7 @@ func Use(path string, middleware Middleware) fiber.Router {
 		panic("Access object before call Setup()")
 	}
 	var route fiber.Router
-	route = app.Use(path, func(ctx *fiber.Ctx) error {
+	route = app.Use(path, func(ctx fiber.Ctx) error {
 		r := Upgrade(ctx)
 		if err := middleware(r); err != nil {
 			return err
@@ -79,7 +80,7 @@ func Connect(path string, handlers ...Handler) fiber.Router {
 		panic("Access object before call Setup()")
 	}
 	var route fiber.Router
-	route = app.Connect(path, func(ctx *fiber.Ctx) error {
+	route = app.Connect(path, func(ctx fiber.Ctx) error {
 		return handle(ctx, handlers)
 	})
 
@@ -92,7 +93,7 @@ func Put(path string, handlers ...Handler) fiber.Router {
 		panic("Access object before call Setup()")
 	}
 	var route fiber.Router
-	route = app.Put(path, func(ctx *fiber.Ctx) error {
+	route = app.Put(path, func(ctx fiber.Ctx) error {
 		return handle(ctx, handlers)
 	})
 
@@ -105,14 +106,14 @@ func Post(path string, handlers ...Handler) fiber.Router {
 		panic("Access object before call Setup()")
 	}
 	var route fiber.Router
-	route = app.Post(path, func(ctx *fiber.Ctx) error {
+	route = app.Post(path, func(ctx fiber.Ctx) error {
 		return handle(ctx, handlers)
 	})
 
 	return route
 }
 
-func handle(ctx *fiber.Ctx, handlers []Handler) error {
+func handle(ctx fiber.Ctx, handlers []Handler) error {
 	r := Upgrade(ctx)
 	for _, handler := range handlers {
 		var resp = handler(r)
@@ -133,7 +134,7 @@ func Delete(path string, handlers ...Handler) fiber.Router {
 		panic("Access object before call Setup()")
 	}
 	var route fiber.Router
-	route = app.Delete(path, func(ctx *fiber.Ctx) error {
+	route = app.Delete(path, func(ctx fiber.Ctx) error {
 		return handle(ctx, handlers)
 	})
 
@@ -146,7 +147,7 @@ func Head(path string, handlers ...Handler) fiber.Router {
 		panic("Access object before call Setup()")
 	}
 	var route fiber.Router
-	route = app.Head(path, func(ctx *fiber.Ctx) error {
+	route = app.Head(path, func(ctx fiber.Ctx) error {
 		return handle(ctx, handlers)
 	})
 
@@ -159,7 +160,7 @@ func Patch(path string, handlers ...Handler) fiber.Router {
 		panic("Access object before call Setup()")
 	}
 	var route fiber.Router
-	route = app.Patch(path, func(ctx *fiber.Ctx) error {
+	route = app.Patch(path, func(ctx fiber.Ctx) error {
 		return handle(ctx, handlers)
 	})
 
@@ -172,7 +173,7 @@ func Options(path string, handlers ...Handler) fiber.Router {
 		panic("Access object before call Setup()")
 	}
 	var route fiber.Router
-	route = app.Options(path, func(ctx *fiber.Ctx) error {
+	route = app.Options(path, func(ctx fiber.Ctx) error {
 		return handle(ctx, handlers)
 	})
 
@@ -185,7 +186,7 @@ func Trace(path string, handlers ...Handler) fiber.Router {
 		panic("Access object before call Setup()")
 	}
 	var route fiber.Router
-	route = app.Trace(path, func(ctx *fiber.Ctx) error {
+	route = app.Trace(path, func(ctx fiber.Ctx) error {
 		return handle(ctx, handlers)
 	})
 
@@ -198,7 +199,7 @@ func Get(path string, handlers ...Handler) fiber.Router {
 		panic("Access object before call Setup()")
 	}
 	var route fiber.Router
-	route = app.Get(path, func(ctx *fiber.Ctx) error {
+	route = app.Get(path, func(ctx fiber.Ctx) error {
 		return handle(ctx, handlers)
 	})
 
@@ -211,7 +212,7 @@ func All(path string, handlers ...Handler) {
 		panic("Access object before call Setup()")
 	}
 
-	app.All(path, func(ctx *fiber.Ctx) error {
+	app.All(path, func(ctx fiber.Ctx) error {
 		return handle(ctx, handlers)
 	})
 
@@ -241,8 +242,8 @@ func Redirect(path, to string, code ...int) {
 	if len(code) > 0 {
 		redirectCode = code[0]
 	}
-	app.All(path, func(ctx *fiber.Ctx) error {
-		return ctx.Redirect(to, redirectCode)
+	app.All(path, func(ctx fiber.Ctx) error {
+		return ctx.Redirect().Status(redirectCode).To(to)
 	})
 }
 
@@ -257,11 +258,14 @@ func RedirectTemporary(path, to string) {
 }
 
 // Static serves files from the file system
-func Static(path string, dir string, config ...fiber.Static) fiber.Router {
+func Static(path string, dir string, config ...static.Config) fiber.Router {
 	if app == nil {
 		panic("Access object before call Setup()")
 	}
-	var route fiber.Router
-	route = app.Static(path, dir, config...)
-	return route
+	var cfg static.Config
+	if len(config) > 0 {
+		cfg = config[0]
+	}
+	cfg.FS = nil
+	return app.Use(path, static.New(dir, cfg))
 }

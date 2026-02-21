@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 // HTTPSerializer is an interface for types that can serialize to HTTP responses

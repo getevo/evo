@@ -9,7 +9,7 @@ import (
 	"github.com/getevo/evo/v2/lib/generic"
 	"github.com/getevo/evo/v2/lib/outcome"
 	"github.com/getevo/json"
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/utils/v2"
 	"github.com/tidwall/gjson"
 	"github.com/valyala/fasthttp"
@@ -76,9 +76,9 @@ func (r *Request) BodyParser(out any) error {
 	ctype := r.ContentType()
 
 	if strings.HasPrefix(ctype, MIMEApplicationJSON) {
-		return json.Unmarshal(r.Context.Context().Request.Body(), out)
+		return json.Unmarshal(r.Context.Request().Body(), out)
 	} else if strings.HasPrefix(ctype, MIMETextXML) || strings.HasPrefix(ctype, MIMEApplicationXML) {
-		return xml.Unmarshal(r.Context.Context().Request.Body(), out)
+		return xml.Unmarshal(r.Context.Request().Body(), out)
 	} else if strings.HasPrefix(ctype, MIMEApplicationForm) || strings.HasPrefix(ctype, MIMEMultipartForm) {
 		dec := frm.NewDecoder(&frm.DecoderOptions{
 			TagName:           "json",
@@ -96,7 +96,7 @@ func (r *Request) BodyParser(out any) error {
 
 // ContentType returns request content type
 func (r *Request) ContentType() string {
-	return string(r.Context.Context().Request.Header.ContentType())
+	return string(r.Context.Request().Header.ContentType())
 }
 
 // UserAgent returns request useragent
@@ -145,7 +145,7 @@ func (r *Request) SetRawCookie(cookie *outcome.Cookie) {
 		fcookie.SetSameSite(fasthttp.CookieSameSiteLaxMode)
 	}
 
-	r.Context.Context().Response.Header.SetCookie(fcookie)
+	r.Context.Response().Header.SetCookie(fcookie)
 	fasthttp.ReleaseCookie(fcookie)
 }
 
@@ -272,10 +272,10 @@ func (r *Request) Get(key string) generic.Value {
 	// It doesn't return POST'ed arguments - use PostArgs() for this.
 	//
 	// See also PostArgs, FormValue and FormFile.
-	if r.Context.Context().QueryArgs().Has(key) {
+	if r.Context.Request().URI().QueryArgs().Has(key) {
 		return r.Query(key)
 	}
-	if len(r.Context.Context().Request.Header.Peek(key)) > 0 {
+	if len(r.Context.Request().Header.Peek(key)) > 0 {
 		return generic.Parse(r.Header(key))
 	}
 	var val = r.Header(key)
@@ -283,7 +283,7 @@ func (r *Request) Get(key string) generic.Value {
 		return generic.Parse(val)
 	}
 
-	ctype := utils.ToLower(string(r.Context.Context().Request.Header.ContentType()))
+	ctype := utils.ToLower(string(r.Context.Request().Header.ContentType()))
 	ctype = utils.ParseVendorSpecificContentType(ctype)
 
 	if strings.HasPrefix(ctype, MIMEApplicationForm) {
@@ -362,7 +362,7 @@ func (r *Request) JSON(data any) error {
 		return err
 	}
 	// Set http headers
-	r.Context.Context().Response.Header.SetContentType(MIMEApplicationJSON)
+	r.Context.Response().Header.SetContentType(MIMEApplicationJSON)
 	r.Write(raw)
 
 	return nil
@@ -438,7 +438,11 @@ func (r *Request) Query(key string) (value generic.Value) {
 // Redirect to the URL derived from the specified path, with specified status.
 // If status is not specified, status defaults to 302 Found
 func (r *Request) Redirect(path string, status ...int) error {
-	return r.Context.Redirect(path, status...)
+	rd := r.Context.Redirect()
+	if len(status) > 0 {
+		rd = rd.Status(status[0])
+	}
+	return rd.To(path)
 }
 
 // SaveFile saves any multipart file to disk.
@@ -469,10 +473,9 @@ func (r *Request) SendBytes(body []byte) error {
 }
 
 // SendFile transfers the file from the given path.
-// The file is compressed by default
 // Sets the Content-Type response HTTP header field based on the filenames extension.
-func (r *Request) SendFile(file string, noCompression ...bool) error {
-	return r.Context.SendFile(file, noCompression...)
+func (r *Request) SendFile(file string, cfg ...fiber.SendFile) error {
+	return r.Context.SendFile(file, cfg...)
 }
 
 // SendStatus sets the HTTP status code and if the response body is empty,
@@ -535,7 +538,7 @@ func (r *Request) Write(body any) {
 	case bool:
 		data = []byte(strconv.FormatBool(body))
 	case io.Reader:
-		r.Context.Context().Response.SetBodyStream(body, -1)
+		r.Context.Response().SetBodyStream(body, -1)
 		return
 	default:
 		data = []byte(fmt.Sprintf("%v", body))
@@ -546,7 +549,7 @@ func (r *Request) Write(body any) {
 	if r.beforeResponse != nil {
 		r.beforeResponse(data)
 	}
-	r.Context.Context().Response.SetBody(data)
+	r.Context.Response().SetBody(data)
 }
 
 // XHR returns a Boolean property, that is true, if the request’s X-Requested-With header field is XMLHttpRequest,
@@ -589,7 +592,11 @@ func (r *Request) SetCookie(key string, val any, params ...any) {
 
 // Params return map of parameters in url
 func (r *Request) Params() map[string]string {
-	return r.Context.AllParams()
+	result := make(map[string]string)
+	for _, key := range r.Context.Route().Params {
+		result[key] = r.Context.Params(key)
+	}
+	return result
 }
 
 // Route generate route for named routes

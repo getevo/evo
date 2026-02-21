@@ -15,7 +15,7 @@ import (
 	dbo "github.com/getevo/evo/v2/lib/db"
 	"github.com/getevo/evo/v2/lib/generic"
 	"github.com/getevo/evo/v2/lib/memo"
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 var (
@@ -118,7 +118,7 @@ func Run() error {
 	registerHealthCheckEndpoints()
 
 	if Any != nil {
-		app.Use(func(ctx *fiber.Ctx) error {
+		app.Use(func(ctx fiber.Ctx) error {
 			r := Upgrade(ctx)
 			if err := Any(r); err != nil {
 				return err
@@ -127,7 +127,7 @@ func Run() error {
 		})
 	} else {
 		// Last middleware to match anything
-		app.Use(func(c *fiber.Ctx) error {
+		app.Use(func(c fiber.Ctx) error {
 			return c.SendStatus(404)
 		})
 	}

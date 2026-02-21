@@ -173,9 +173,9 @@ func (d *driver) Register() error {
 	prefix = settings.Get("CACHE.REDIS_PREFIX").String()
 	password := settings.Get("CACHE.REDIS_PASSWORD").String()
 	db := settings.Get("CACHE.REDIS_DB", 0).Int()
-	dialTimeout := settings.Get("CACHE.REDIS_DIAL_TIMEOUT", "5s").Duration()
-	readTimeout := settings.Get("CACHE.REDIS_READ_TIMEOUT", "3s").Duration()
-	writeTimeout := settings.Get("CACHE.REDIS_WRITE_TIMEOUT", "3s").Duration()
+	dialTimeout, _ := settings.Get("CACHE.REDIS_DIAL_TIMEOUT", "5s").Duration()
+	readTimeout, _ := settings.Get("CACHE.REDIS_READ_TIMEOUT", "3s").Duration()
+	writeTimeout, _ := settings.Get("CACHE.REDIS_WRITE_TIMEOUT", "3s").Duration()
 
 	rawAddrs := strings.Split(settings.Get("CACHE.REDIS_ADDRESS").String(), ",")
 	var addrs []string
