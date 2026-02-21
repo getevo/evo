@@ -66,20 +66,13 @@ func getProperty(obj any, prop string) (any, error) {
 		val := reflect.ValueOf(obj)
 
 		valueOf := val.MapIndex(reflect.ValueOf(prop))
-
-		if valueOf == reflect.Zero(reflect.ValueOf(prop).Type()) {
+		if !valueOf.IsValid() {
 			return nil, nil
 		}
-
-		idx := val.MapIndex(reflect.ValueOf(prop))
-
-		if !idx.IsValid() {
-			return nil, nil
-		}
-		return idx.Interface(), nil
+		return valueOf.Interface(), nil
 	}
 
-	prop = strings.Title(prop)
+	prop = cases.Title(language.English, cases.NoLower).String(prop)
 	return reflections.GetField(obj, prop)
 }
 
