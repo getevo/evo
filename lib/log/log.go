@@ -429,3 +429,124 @@ func PanicF(message any, params ...any) {
 	msgf(message, CriticalLevel, params...)
 	panic(fmt.Sprintf(fmt.Sprint(message), params...))
 }
+
+// --- Scoped logger ---
+
+// Logger is a scoped logger with pre-attached fields.
+// Use WithField or WithFields to create one, then chain further calls or call a log-level method.
+type Logger struct {
+	fields []Field
+}
+
+// WithField returns a Logger with a single key-value field pre-attached.
+// The returned Logger can be chained with additional WithField / WithFields calls.
+func WithField(key string, value any) *Logger {
+	return &Logger{fields: []Field{{Key: key, Value: value}}}
+}
+
+// WithFields returns a Logger with all entries from the given map pre-attached as fields.
+func WithFields(fields map[string]any) *Logger {
+	f := make([]Field, 0, len(fields))
+	for k, v := range fields {
+		f = append(f, Field{Key: k, Value: v})
+	}
+	return &Logger{fields: f}
+}
+
+// WithField returns a new Logger with an additional key-value field merged in.
+func (l *Logger) WithField(key string, value any) *Logger {
+	fields := make([]Field, len(l.fields)+1)
+	copy(fields, l.fields)
+	fields[len(l.fields)] = Field{Key: key, Value: value}
+	return &Logger{fields: fields}
+}
+
+// WithFields returns a new Logger with additional map fields merged in.
+func (l *Logger) WithFields(fields map[string]any) *Logger {
+	merged := make([]Field, len(l.fields), len(l.fields)+len(fields))
+	copy(merged, l.fields)
+	for k, v := range fields {
+		merged = append(merged, Field{Key: k, Value: v})
+	}
+	return &Logger{fields: merged}
+}
+
+// lMsg is the shared structured helper.
+// Call chain: public method → lMsg → doLog  (skip=3 puts Caller at the public method's caller).
+func (l *Logger) lMsg(lvl Level, ctx context.Context, message any, params []any) {
+	if message == nil {
+		return
+	}
+	extra := parseFields(params)
+	all := make([]Field, 0, len(l.fields)+len(extra))
+	all = append(all, l.fields...)
+	all = append(all, extra...)
+	doLog(lvl, 3, ctx, fmt.Sprint(message), all)
+}
+
+// lMsgf is the shared printf helper.
+func (l *Logger) lMsgf(lvl Level, message any, params []any) {
+	if message == nil {
+		return
+	}
+	doLog(lvl, 3, nil, fmt.Sprintf(fmt.Sprint(message), params...), l.fields)
+}
+
+func (l *Logger) Critical(message any, params ...any) { l.lMsg(CriticalLevel, nil, message, params) }
+func (l *Logger) Criticalf(message any, params ...any) { l.lMsgf(CriticalLevel, message, params) }
+func (l *Logger) CriticalF(message any, params ...any)  { l.lMsgf(CriticalLevel, message, params) }
+func (l *Logger) CriticalContext(ctx context.Context, message any, params ...any) {
+	l.lMsg(CriticalLevel, ctx, message, params)
+}
+
+func (l *Logger) Error(message any, params ...any) { l.lMsg(ErrorLevel, nil, message, params) }
+func (l *Logger) Errorf(message any, params ...any) { l.lMsgf(ErrorLevel, message, params) }
+func (l *Logger) ErrorF(message any, params ...any)  { l.lMsgf(ErrorLevel, message, params) }
+func (l *Logger) ErrorContext(ctx context.Context, message any, params ...any) {
+	l.lMsg(ErrorLevel, ctx, message, params)
+}
+
+func (l *Logger) Warning(message any, params ...any) { l.lMsg(WarningLevel, nil, message, params) }
+func (l *Logger) Warningf(message any, params ...any) { l.lMsgf(WarningLevel, message, params) }
+func (l *Logger) WarningF(message any, params ...any)  { l.lMsgf(WarningLevel, message, params) }
+func (l *Logger) WarningContext(ctx context.Context, message any, params ...any) {
+	l.lMsg(WarningLevel, ctx, message, params)
+}
+
+func (l *Logger) Notice(message any, params ...any) { l.lMsg(NoticeLevel, nil, message, params) }
+func (l *Logger) Noticef(message any, params ...any) { l.lMsgf(NoticeLevel, message, params) }
+func (l *Logger) NoticeF(message any, params ...any)  { l.lMsgf(NoticeLevel, message, params) }
+func (l *Logger) NoticeContext(ctx context.Context, message any, params ...any) {
+	l.lMsg(NoticeLevel, ctx, message, params)
+}
+
+func (l *Logger) Info(message any, params ...any) { l.lMsg(InfoLevel, nil, message, params) }
+func (l *Logger) Infof(message any, params ...any) { l.lMsgf(InfoLevel, message, params) }
+func (l *Logger) InfoF(message any, params ...any)  { l.lMsgf(InfoLevel, message, params) }
+func (l *Logger) InfoContext(ctx context.Context, message any, params ...any) {
+	l.lMsg(InfoLevel, ctx, message, params)
+}
+
+func (l *Logger) Debug(message any, params ...any) { l.lMsg(DebugLevel, nil, message, params) }
+func (l *Logger) Debugf(message any, params ...any) { l.lMsgf(DebugLevel, message, params) }
+func (l *Logger) DebugF(message any, params ...any)  { l.lMsgf(DebugLevel, message, params) }
+func (l *Logger) DebugContext(ctx context.Context, message any, params ...any) {
+	l.lMsg(DebugLevel, ctx, message, params)
+}
+
+func (l *Logger) Fatal(message any, params ...any) {
+	l.lMsg(CriticalLevel, nil, message, params)
+	os.Exit(1)
+}
+func (l *Logger) Fatalf(message any, params ...any) {
+	l.lMsgf(CriticalLevel, message, params)
+	os.Exit(1)
+}
+func (l *Logger) Panic(message any, params ...any) {
+	l.lMsg(CriticalLevel, nil, message, params)
+	panic(fmt.Sprint(message))
+}
+func (l *Logger) Panicf(message any, params ...any) {
+	l.lMsgf(CriticalLevel, message, params)
+	panic(fmt.Sprintf(fmt.Sprint(message), params...))
+}
