@@ -1,8 +1,11 @@
 package tpl
 
 import (
+	"encoding/json"
 	"fmt"
+	htmlpkg "html"
 	"io"
+	neturlpkg "net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -33,12 +36,43 @@ func SetCacheSize(n int) {
 	}
 }
 
+// Func is the signature for custom template functions.
+// It receives the resolved variable value (or nil for standalone / modifier-on-empty calls)
+// and must return the string to insert into the output.
+type Func func(v any) string
+
+var (
+	funcsMu sync.RWMutex
+	funcs   = map[string]Func{}
+)
+
+// RegisterFunc registers a named function for use in templates.
+// A registered function can be used in two ways:
+//
+//   - modifier:   $var|name  — receives the variable's typed value
+//   - standalone: $name      — receives nil when "name" is not found in params
+//
+// Built-in transform names (upper, lower, title, html, url, trim, json) are
+// reserved and always take precedence over registered functions.
+func RegisterFunc(name string, fn Func) {
+	funcsMu.Lock()
+	funcs[name] = fn
+	funcsMu.Unlock()
+}
+
+func lookupFunc(name string) (Func, bool) {
+	funcsMu.RLock()
+	fn, ok := funcs[name]
+	funcsMu.RUnlock()
+	return fn, ok
+}
+
 // segment is one piece of a compiled template: either a literal string or a
 // variable reference (with optional modifier).
 type segment struct {
 	literal  string
 	path     string
-	modifier string // transform name ("upper","lower","title") or default value
+	modifier string // built-in transform, registered function name, or default value
 	isVar    bool
 }
 
@@ -167,30 +201,54 @@ func (t *Template) writeTo(w io.Writer, params []any) {
 			_, _ = io.WriteString(w, seg.literal)
 			continue
 		}
+
 		val, found := resolve(seg.path, params)
 		out := ""
 		if found {
 			out = stringify(val)
 		}
+
 		switch {
 		case out != "":
-			if seg.modifier != "" && isTransform(seg.modifier) {
-				out = applyTransform(out, seg.modifier)
+			// We have a string value — apply modifier if it is a known transform or function.
+			if seg.modifier != "" {
+				if result, ok := applyModifier(out, val, seg.modifier); ok {
+					out = result
+				}
+				// else: modifier is a default value string — ignore since we already have a value.
 			}
 			_, _ = io.WriteString(w, out)
-		case seg.modifier != "" && !isTransform(seg.modifier):
-			// value missing or empty and modifier is a default — use it
-			_, _ = io.WriteString(w, seg.modifier)
-		case !found:
-			// variable not found, no usable default — keep original placeholder
-			_, _ = io.WriteString(w, "$")
-			_, _ = io.WriteString(w, seg.path)
-			if seg.modifier != "" {
+
+		case seg.modifier != "":
+			// No string value, but there is a modifier.
+			if fn, ok := lookupFunc(seg.modifier); ok {
+				// Registered function — call with nil (no value available).
+				_, _ = io.WriteString(w, fn(nil))
+			} else if isBuiltinTransform(seg.modifier) {
+				// Built-in transform on a missing variable — keep the placeholder.
+				_, _ = io.WriteString(w, "$")
+				_, _ = io.WriteString(w, seg.path)
 				_, _ = io.WriteString(w, "|")
 				_, _ = io.WriteString(w, seg.modifier)
+			} else {
+				// Unknown modifier — treat as a default value.
+				_, _ = io.WriteString(w, seg.modifier)
+			}
+
+		case !found:
+			// Variable not found and no modifier — try the path as a standalone function.
+			if fn, ok := lookupFunc(seg.path); ok {
+				_, _ = io.WriteString(w, fn(nil))
+			} else {
+				// Keep the original placeholder unchanged.
+				_, _ = io.WriteString(w, "$")
+				_, _ = io.WriteString(w, seg.path)
+				if seg.modifier != "" {
+					_, _ = io.WriteString(w, "|")
+					_, _ = io.WriteString(w, seg.modifier)
+				}
 			}
 		}
-		// found but stringifies to "" with a transform → output nothing
 	}
 }
 
@@ -229,24 +287,40 @@ func resolve(path string, params []any) (any, bool) {
 
 var titleCaser = cases.Title(language.English, cases.NoLower)
 
-// applyTransform applies the named string transform to s.
-func applyTransform(s, transform string) string {
-	switch strings.ToLower(transform) {
+// applyModifier applies a modifier to a value.
+// Returns (result, true) when the modifier is a built-in transform or a registered function.
+// Returns ("", false) when the modifier should be treated as a default value string.
+func applyModifier(str string, val any, mod string) (string, bool) {
+	switch strings.ToLower(mod) {
 	case "upper":
-		return strings.ToUpper(s)
+		return strings.ToUpper(str), true
 	case "lower":
-		return strings.ToLower(s)
+		return strings.ToLower(str), true
 	case "title":
-		return titleCaser.String(s)
-	default:
-		return s
+		return titleCaser.String(str), true
+	case "html":
+		return htmlpkg.EscapeString(str), true
+	case "url":
+		return neturlpkg.QueryEscape(str), true
+	case "trim":
+		return strings.TrimSpace(str), true
+	case "json":
+		b, err := json.Marshal(val)
+		if err != nil {
+			return str, true
+		}
+		return string(b), true
 	}
+	if fn, ok := lookupFunc(mod); ok {
+		return fn(val), true
+	}
+	return "", false
 }
 
-// isTransform reports whether m is a known transform name.
-func isTransform(m string) bool {
-	switch strings.ToLower(m) {
-	case "upper", "lower", "title":
+// isBuiltinTransform reports whether mod is a reserved built-in transform name.
+func isBuiltinTransform(mod string) bool {
+	switch strings.ToLower(mod) {
+	case "upper", "lower", "title", "html", "url", "trim", "json":
 		return true
 	}
 	return false
