@@ -77,15 +77,11 @@ func (t Date) Value() (driver.Value, error) {
 }
 
 // GormValue implements GormValuerInterface for dialect-aware date handling.
-// PostgreSQL rejects "0000-00-00" as an invalid date, so we return NULL instead.
+// Zero dates (year < 1000) are stored as NULL to avoid invalid date errors in
+// strict-mode databases (PostgreSQL, MySQL 5.7+ with STRICT_TRANS_TABLES).
 func (t Date) GormValue(ctx context.Context, db *gorm.DB) clause.Expr {
 	if t.Year() < 1000 {
-		switch db.Dialector.Name() {
-		case "postgres":
-			return gorm.Expr("NULL")
-		default:
-			return gorm.Expr("?", "0000-00-00")
-		}
+		return gorm.Expr("NULL")
 	}
 	return gorm.Expr("?", fmt.Sprintf("%d-%02d-%02d", t.Year(), t.Month(), t.Day()))
 }

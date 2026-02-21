@@ -219,6 +219,22 @@ func (m *Map[K, V]) Scan(src any) error {
 	if err := json.Unmarshal(bytes, &all); err != nil {
 		return err
 	}
+	// Initialize shards if the map was created as a zero value (e.g. loaded by GORM).
+	if m.shards == nil {
+		m.shards = make([]*ConcurrentMapShared[K, V], SHARD_COUNT)
+		for i := range m.shards {
+			m.shards[i] = &ConcurrentMapShared[K, V]{items: make(map[K]V)}
+		}
+		// Default sharding: fmt.Sprintf hash (safe for any comparable K).
+		m.sharding = func(key K) uint32 {
+			h := uint32(2166136261)
+			for _, c := range fmt.Sprintf("%v", key) {
+				h ^= uint32(c)
+				h *= 16777619
+			}
+			return h
+		}
+	}
 	m.MSet(all)
 	return nil
 }
