@@ -1,339 +1,523 @@
-# Validation Library
+# Validation
 
-This library provides a flexible and extensible validation framework for Go structs and values. It allows you to define validation rules through struct tags, validate structs or single values, and even extend the existing set of validators with your own custom logic.
+EVO provides a comprehensive validation system via `lib/validation`. Validators are defined using struct tags and support both standalone (no DB required) and database-aware rules.
 
-## Table of Contents
-1. [Defining Validation Tags](#defining-validation-tags)
-    - [Basic Usage](#basic-usage)
-    - [Multiple Validators](#multiple-validators)
-2. [Built-in Validators](#built-in-validators)
-    - [Non-Database Validators (Validators)](#non-database-validators-validators)
-    - [Database-Related Validators (DBValidators)](#database-related-validators-dbvalidators)
-3. [Validating Values](#validating-values)
-    - [Validating Structs](#validating-structs)
-    - [Validating Structs with Non-Zero Fields](#validating-structs-with-non-zero-fields)
-    - [Validating Single Values](#validating-single-values)
-4. [Extending Validators](#extending-validators)
-    - [Adding a Simple Validator](#adding-a-simple-validator)
-5. [Possible Error Messages](#possible-error-messages)
----
-
-## Defining Validation Tags
-
-The validation rules for struct fields are defined using the `validation` tag. Each field can have one or more validators separated by commas. For example:
-
-```go
-type User struct {
-    Email string `validation:"required,email"`
-    Age   int    `validation:">=18"`
-}
-```
-
-Here, `Email` must be `required` and a valid `email`, and `Age` must be greater than or equal to `18`.
-
-### Basic Usage
-
-```go
-type Product struct {
-    Name  string `validation:"required,alpha"`
-    Price string `validation:"+float"`
-}
-```
-
-- `Name` must be non-empty and contain only letters.
-- `Price` must be a positive float.
-
-### Multiple Validators
-
-You can chain multiple validators using commas:
-
-```go
-type Account struct {
-    Username string `validation:"required,alphanumeric,len>=6"`
-}
-```
-
-This means `Username` must be:
-- `required` (cannot be empty),
-- `alphanumeric` (only letters and digits),
-- and have a length `>= 6` characters.
-
----
-
-## Built-in Validators
-
-### Non-Database Validators (Validators)
-
-These validators do not interact with the database. They only check the value in memory.
-
-| Validator                             | Description                                                             | Example Usage                   |
-|---------------------------------------|-------------------------------------------------------------------------|---------------------------------|
-| `text`                                | Ensures string contains no HTML tags.                                   | `validation:"text"`             |
-| `slug`                                | slug can contain only lowercase letters, numbers, hyphens, underscores, and must be between 1 and 200 characters long.                                   | `validation:"slug"`                |
-| `name`                                | Checks if the value is a valid name (letters, spaces, etc.).            | `validation:"name"`             |
-| `alpha`                               | Only alphabetical characters allowed.                                   | `validation:"alpha"`            |
-| `latin`                               | Only Unicode letters are allowed.                                       | `validation:"latin"`            |
-| `digit`                               | Only digits [0-9] allowed.                                              | `validation:"digit"`            |
-| `alphanumeric`                        | Letters, digits, and spaces allowed.                                     | `validation:"alphanumeric"`     |
-| `required`                            | Value cannot be empty.                                                  | `validation:"required"`         |
-| `email`                               | Checks for a valid email format.                                         | `validation:"email"`            |
-| `regex(...)`                          | Matches value against a custom regex.                                    | `validation:"regex([a-z]{2,})"` |
-| `len<`, `len>`, etc.                  | Compares string length. Supports `<`, `>`, `<=`, `>=`, `==`, `!=`.       | `validation:"len==10"`          |
-| Numeric comparisons                   | Compares numeric value (`>`, `<`, `>=`, `<=`, etc.) with a given number.| `validation:">=18"`             |
-| `int`, `+int`, `-int`                 | Checks if value is integer (`+` for positive, `-` for negative).         | `validation:"+int"`             |
-| `float`, `+float`, `-float`           | Checks if value is float (`+` for positive, `-` for negative).     | `validation:"-float"`           |
-| `password(...)`                       | Checks complexity (`none`, `easy`, `medium`, `hard`).                  | `validation:"password(medium)"` |
-| `domain`                              | Valid domain format.                                                    | `validation:"domain"`           |
-| `url`                                 | Valid URL format.                                                       | `validation:"url"`              |
-| `ip`, `ip4`, `ip6`                    | Valid IP address (IPv4 or IPv6).                                        | `validation:"ip"`               |
-| `cidr`                                | Valid CIDR notation.                                                    | `validation:"cidr"`             |
-| `mac`                                 | Valid MAC address.                                                      | `validation:"mac"`              |
-| `date`                                | Valid date in RFC3339 format.                                           | `validation:"date"`             |
-| `longitude`                           | Valid longitude.                                                        | `validation:"longitude"`        |
-| `latitude`                            | Valid latitude.                                                         | `validation:"latitude"`         |
-| `port`                                | Valid port number.                                                      | `validation:"port"`             |
-| `json`                                | Valid JSON format.                                                      | `validation:"json"`             |
-| `ISBN`, `ISBN10`, `ISBN13`            | Checks if value is a valid ISBN.                                     | `validation:"ISBN13"`           |
-| `creditcard`                          | Checks if the value is a valid credit card number.                      | `validation:"creditcard"`       |
-| `uuid`                                | Checks if the value is a valid UUID.                                    | `validation:"uuid"`             |
-| `uppercase`                           | Checks if string is uppercase.                                          | `validation:"uppercase"`        |
-| `lowercase`                           | Checks if string is lowercase.                                          | `validation:"lowercase"`        |
-| `rgbcolor`, `rgba`, `hexcolor`, `hex` | Validates various color formats.                          | `validation:"hexcolor"`         |
-| `countryalpha2`, `countryalpha3`      | Valid ISO country code formats.                                | `validation:"countryalpha2"`    |
-| `btcaddress`, `ethaddress`            | Checks if value is a valid Bitcoin or Ethereum address.              | `validation:"btcaddress"`       |
-| `cron`                                | Valid CRON expression.                                                  | `validation:"cron"`             |
-| `duration`                            | Valid Go duration format.                                               | `validation:"duration"`         |
-| `time`                                | Valid RFC3339 timestamp.                                                | `validation:"time"`             |
-| `unixTimestamp`                       | Valid unix timestamp.                                                   | `validation:"unixTimestamp"`    |
-| `timezone`                            | Valid timezone string.                                                  | `validation:"timezone"`         |
-| `e164`                                | Valid E164 phone number format.                                         | `validation:"e164"`             |
-| `safeHTML`                            | Checks string for possible XSS patterns.                                | `validation:"safeHTML"`         |
-| `noHTML`                              | Ensures string does not contain HTML tags.                              | `validation:"noHTML"`           |
-| `phone`                               | Checks if string is a valid phone number.                               | `validation:"phone"`            |
-
-### Database-Related Validators (DBValidators)
-
-These validators require database access and use GORM’s statement to validate against the DB.
-
-| Validator           | Description                                                                | Example Usage                          |
-|---------------------|----------------------------------------------------------------------------|----------------------------------------|
-| `unique`            | Ensures the field value is unique in the table.                             | `validation:"unique"`                  |
-| `unique:col1\|col2` | Ensures a combination of columns is unique.                                 | `validation:"unique:country,vat_number"` |
-| `fk`                | Checks the field references a valid foreign key in another table.           | `validation:"fk"`                      |
-| `enum`              | Checks that the value matches one of the allowed ENUM values in the schema. | `validation:"enum"`                    |
-| `before(field)`     | Checks the timestamp is before another field’s timestamp.                   | `validation:"before(CreatedAt)"`       |
-| `after(field)`      | Checks the timestamp is after another field’s timestamp.                    | `validation:"after(UpdatedAt)"`        |
-
----
-
-## Validating Values
-
-### Validating Structs
+## Import
 
 ```go
 import "github.com/getevo/evo/v2/lib/validation"
+```
 
-type User struct {
-    Email string `validation:"required,email"`
-    Age   int    `validation:">=18"`
+## Basic usage
+
+Add a `validation` tag to struct fields, then call `validation.Struct`:
+
+```go
+type CreateUserInput struct {
+    Name     string `json:"name"     validation:"required,name,len>=2,len<=100"`
+    Email    string `json:"email"    validation:"required,email"`
+    Password string `json:"password" validation:"required,password(medium)"`
+    Age      int    `json:"age"      validation:">=18,<=120"`
 }
 
-user := User{Email: "john@example.com", Age: 20}
-errs := validation.Struct(user)
-if len(errs) > 0 {
-    // Handle validation errors
+input := CreateUserInput{
+    Name:     "Alice",
+    Email:    "alice@example.com",
+    Password: "MyPass1!",
+    Age:      25,
+}
+
+if errs := validation.Struct(input); len(errs) > 0 {
+    for _, e := range errs {
+        fmt.Println(e)
+    }
 }
 ```
 
-If any field fails validation, you will receive errors describing the issues.
-
-### Validating Structs with Non-Zero Fields
-
-`StructNonZeroFields` only validates fields that are not at their zero value, useful for partial updates:
+### Validate only non-zero fields (partial update)
 
 ```go
-partialUser := User{Age: 25} // Email is zero value
-errs := validation.StructNonZeroFields(partialUser)
+// Only validates fields that have a non-zero value
+errs := validation.StructNonZeroFields(input)
 ```
 
-Only `Age` will be validated in this case.
-
-### Validating Single Values
-
-You can validate a standalone value:
+### Validate a single value
 
 ```go
-err := validation.Value("john@example.com", "required,email")
+err := validation.Value("alice@example.com", "required,email")
 if err != nil {
-    // Handle validation error
+    fmt.Println(err)
 }
 ```
 
----
+### Context-aware validation (with timeout)
 
-## Extending Validators
+```go
+ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+defer cancel()
 
-### Adding a Simple Validator
+errs := validation.StructWithContext(ctx, input)
+errs2 := validation.StructNonZeroFieldsWithContext(ctx, input)
+```
 
-You can easily add a custom validator. For example, to add a `country` validator:
+## In HTTP handlers
+
+```go
+evo.Post("/api/users", func(r *evo.Request) any {
+    var input CreateUserInput
+    r.BodyParser(&input)
+
+    if errs := validation.Struct(input); len(errs) > 0 {
+        return outcome.UnprocessableEntity(errs)
+    }
+
+    return outcome.Created(createUser(input))
+})
+```
+
+## Built-in validators
+
+Multiple validators are combined with commas: `validation:"required,email,len<=255"`
+
+### String validators
+
+| Validator | Description |
+|---|---|
+| `required` | Field must be non-empty |
+| `text` | No HTML tags allowed |
+| `alpha` | Letters and spaces only |
+| `alphanumeric` | Letters, digits, and spaces only |
+| `latin` | Unicode letters only |
+| `digit` | Digits only (`0-9`) |
+| `slug` | Lowercase letters, digits, hyphens, underscores (1–200 chars) |
+| `name` | Valid personal name (`letters, spaces, . ' -`) |
+| `ascii` | ASCII characters only |
+| `printable` | Printable characters only |
+| `upperCase` | Must be all uppercase |
+| `lowerCase` | Must be all lowercase |
+| `no_html` | Must not contain HTML tags |
+| `safe_html` | Must not contain XSS-dangerous HTML |
+
+```go
+type Post struct {
+    Slug    string `validation:"required,slug"`
+    Title   string `validation:"required,text,len>=3,len<=200"`
+    Content string `validation:"safe_html"`
+}
+```
+
+### Length validators
+
+| Validator | Description |
+|---|---|
+| `len>N` | Length strictly greater than N |
+| `len>=N` | Length greater than or equal to N |
+| `len<N` | Length strictly less than N |
+| `len<=N` | Length less than or equal to N |
+| `len==N` | Exact length N |
+| `len!=N` | Length not equal to N |
+
+Length is measured in Unicode runes (not bytes).
+
+```go
+type Input struct {
+    Username string `validation:"len>=3,len<=20"`
+    Bio      string `validation:"len<=500"`
+    Code     string `validation:"len==6"`
+}
+```
+
+### Numerical validators
+
+| Validator | Description |
+|---|---|
+| `>N` | Greater than N |
+| `>=N` | Greater than or equal to N |
+| `<N` | Less than N |
+| `<=N` | Less than or equal to N |
+| `==N` | Equal to N |
+| `!=N` | Not equal to N |
+| `int` | Valid integer |
+| `+int` | Positive integer |
+| `-int` | Negative integer |
+| `float` | Valid float |
+| `+float` | Positive float |
+| `-float` | Negative float |
+
+```go
+type Product struct {
+    Price    float64 `validation:">0"`
+    Quantity int     `validation:">=0,<=10000"`
+    Rating   int     `validation:">=1,<=5"`
+}
+```
+
+### Internet / network validators
+
+| Validator | Description |
+|---|---|
+| `email` | Valid email address |
+| `url` | Valid URL |
+| `domain` | Valid domain name |
+| `ip` or `ipv4` | Valid IPv4 address |
+| `ipv6` | Valid IPv6 address |
+| `cidr` | Valid CIDR notation (`192.168.1.0/24`) |
+| `mac` | Valid MAC address (`AA:BB:CC:DD:EE:FF`) |
+| `port` | Valid port number (1–65535) |
+| `phone` | Valid phone number |
+| `e164` | Valid E.164 phone number (`+15551234567`) |
+
+```go
+type Server struct {
+    IP      string `validation:"required,ipv4"`
+    Port    int    `validation:"required,port"`
+    Email   string `validation:"required,email"`
+    Website string `validation:"url"`
+}
+```
+
+### Date / time validators
+
+| Validator | Description |
+|---|---|
+| `date` | Valid RFC3339 date/time |
+| `time` | Valid RFC3339 timestamp |
+| `unix_timestamp` | Valid Unix timestamp integer |
+| `duration` | Valid Go duration string (`1h30m`, `500ms`) |
+| `timezone` | Valid IANA timezone (`America/New_York`) |
+| `before_now` | Date must be in the past |
+| `after_now` | Date must be in the future |
+| `date_format(layout)` | Date matches the Go layout string |
+
+```go
+type Event struct {
+    StartAt    string `validation:"required,date,after_now"`
+    EndAt      string `validation:"required,date"`
+    Duration   string `validation:"duration"`
+    Timezone   string `validation:"timezone"`
+    BirthDate  string `validation:"before_now"`
+    ReportDate string `validation:"date_format(2006-01-02)"`
+}
+```
+
+### Password validator
+
+| Validator | Requirement |
+|---|---|
+| `password(none)` | No requirements |
+| `password(easy)` | Minimum 6 characters |
+| `password(medium)` | Min 8 chars, at least 3 of: uppercase, lowercase, digits, symbols |
+| `password(hard)` | Min 12 chars, all 4: uppercase, lowercase, digits, symbols |
+
+```go
+type Registration struct {
+    Password string `validation:"required,password(medium)"`
+}
+```
+
+### Regex validator
+
+```go
+type Input struct {
+    Code     string `validation:"regex([A-Z]{2}[0-9]{4})"`
+    PostCode string `validation:"regex(^[0-9]{5}(-[0-9]{4})?$)"`
+}
+```
+
+### Inclusion / exclusion validators
+
+| Validator | Description |
+|---|---|
+| `in(a,b,c)` | Value must be one of the listed values |
+| `not_in(a,b,c)` | Value must not be any of the listed values |
+| `contains(str)` | Value must contain the substring |
+| `not_contains(str)` | Value must not contain the substring |
+| `starts_with(str)` | Value must start with the prefix |
+| `ends_with(str)` | Value must end with the suffix |
+
+```go
+type Order struct {
+    Status    string `validation:"in(pending,processing,shipped,delivered)"`
+    Priority  string `validation:"not_in(low,none)"`
+    Reference string `validation:"starts_with(ORD-)"`
+    Extension string `validation:"ends_with(.pdf)"`
+    Notes     string `validation:"not_contains(spam)"`
+}
+```
+
+### Array / slice validators
+
+| Validator | Description |
+|---|---|
+| `min_items(N)` | Slice must have at least N elements |
+| `max_items(N)` | Slice must have at most N elements |
+| `unique_items` | All slice elements must be unique |
+
+```go
+type Form struct {
+    Tags       []string `validation:"min_items(1),max_items(10),unique_items"`
+    Recipients []string `validation:"min_items(1),max_items(50)"`
+}
+```
+
+### Format validators
+
+| Validator | Description |
+|---|---|
+| `json` | Valid JSON string |
+| `uuid` | Valid UUID |
+| `hex` | Valid hexadecimal string |
+| `hex_color` | Valid hex color (`#RRGGBB`) |
+| `rgb_color` | Valid RGB color (`rgb(r,g,b)`) |
+| `rgba_color` | Valid RGBA color (`rgba(r,g,b,a)`) |
+| `isbn` | Valid ISBN (10 digit) |
+| `isbn10` | Valid ISBN-10 |
+| `isbn13` | Valid ISBN-13 |
+| `credit_card` | Valid credit card number (Luhn check) |
+| `iban` | Valid IBAN format |
+| `btc_address` | Valid Bitcoin address |
+| `eth_address` | Valid Ethereum address |
+| `country_alpha2` | Valid ISO 3166-1 alpha-2 country code |
+| `country_alpha3` | Valid ISO 3166-1 alpha-3 country code |
+| `cron` | Valid cron expression |
+| `latitude` | Valid latitude (-90 to 90) |
+| `longitude` | Valid longitude (-180 to 180) |
+
+```go
+type Payment struct {
+    CardNumber string `validation:"required,credit_card"`
+    IBAN       string `validation:"iban"`
+    Currency   string `validation:"required,in(USD,EUR,GBP)"`
+}
+
+type Location struct {
+    Lat float64 `validation:"latitude"`
+    Lng float64 `validation:"longitude"`
+}
+```
+
+## Database validators
+
+These validators require a database connection. They are skipped silently when no database is configured.
+
+| Validator | Description |
+|---|---|
+| `unique` | Value must be unique in the table column |
+| `unique:col1\|col2` | Combination of columns must be unique |
+| `fk` | Value must exist in the referenced table (via `gorm:"fk:table"` tag) |
+| `enum` | Value must match enum values in the `gorm` tag |
+
+```go
+type User struct {
+    ID    uint   `gorm:"primaryKey"`
+    Email string `gorm:"uniqueIndex" validation:"required,email,unique"`
+    Role  string `gorm:"type:enum('admin','user','guest')" validation:"required,enum"`
+}
+
+type Order struct {
+    ID        uint `gorm:"primaryKey"`
+    UserID    uint `gorm:"fk:users"    validation:"required,fk"`
+    ProductID uint `gorm:"fk:products" validation:"required,fk"`
+}
+```
+
+### Unique with composite columns
+
+```go
+type TeamMember struct {
+    ID     uint `gorm:"primaryKey"`
+    TeamID uint
+    UserID uint `validation:"unique:team_id|user_id"` // unique together
+}
+```
+
+## Cross-field validators (DB)
+
+These compare fields within the same struct and require a database connection.
+
+| Validator | Description |
+|---|---|
+| `confirmed` | Must match `{FieldName}Confirmation` field |
+| `same(Field)` | Must equal the named field |
+| `different(Field)` | Must differ from the named field |
+| `before(Field)` | Time must be before the named field |
+| `after(Field)` | Time must be after the named field |
+| `gt_field(Field)` | Numeric: must be greater than the named field |
+| `gte_field(Field)` | Numeric: must be ≥ the named field |
+| `lt_field(Field)` | Numeric: must be less than the named field |
+| `lte_field(Field)` | Numeric: must be ≤ the named field |
+
+```go
+type ChangePassword struct {
+    Password             string `validation:"required,password(medium)"`
+    PasswordConfirmation string // auto-checked by "confirmed"
+    OldPassword          string `validation:"different(Password)"`
+}
+
+type DateRange struct {
+    StartDate string `validation:"required,date"`
+    EndDate   string `validation:"required,date,after(StartDate)"`
+}
+
+type PriceRange struct {
+    MinPrice float64 `validation:"required,>0"`
+    MaxPrice float64 `validation:"required,gt_field(MinPrice)"`
+}
+```
+
+## Custom validators
+
+### Register a custom validator
 
 ```go
 import (
     "fmt"
-    "regexp"
+    "strings"
     "github.com/getevo/evo/v2/lib/validation"
     "github.com/getevo/evo/v2/lib/generic"
 )
 
-var CountryMap = map[string]string{
-    "US": "United States",
-    "CA": "Canada",
-    // ...other countries
+func init() {
+    validation.RegisterValidator(`^uppercase_required$`, func(match []string, value *generic.Value) error {
+        v := value.String()
+        if v != strings.ToUpper(v) {
+            return fmt.Errorf("must be uppercase")
+        }
+        return nil
+    })
 }
 
-// Register a new validator
-validation.Validators[regexp.MustCompile("^country$")] = countryValidator
-
-func countryValidator(match []string, value *generic.Value) error {
-    var v = value.String()
-    if value.Input == nil || v == "" || v == "<nil>" {
-        return nil
-    }
-    if _, ok := CountryMap[v]; !ok {
-        return fmt.Errorf("invalid country %s", v)
-    }
-    return nil
+type Config struct {
+    Region string `validation:"required,uppercase_required"`
 }
 ```
 
-Now you can use `validation:"country"` in your struct tags or `validation.Value()` calls.
-
-
-### Extending DBValidators
-
-To extend `DBValidators` for custom database-related validations, you can add a new entry to the `DBValidators` map. Here's an example of adding a custom validator that ensures a field value exists in a specific database table:
+### Custom validator with parameters
 
 ```go
+// matches: divisible_by(10), divisible_by(5), etc.
+validation.RegisterValidator(`^divisible_by\((\d+)\)$`, func(match []string, value *generic.Value) error {
+    n, _ := strconv.Atoi(match[1])
+    if n == 0 {
+        return fmt.Errorf("divisor cannot be zero")
+    }
+    if value.Int()%n != 0 {
+        return fmt.Errorf("must be divisible by %d", n)
+    }
+    return nil
+})
+
+type Batch struct {
+    Count int `validation:"divisible_by(10)"`
+}
+```
+
+### Custom DB validator
+
+```go
+import (
+    "github.com/getevo/evo/v2/lib/validation"
+    "github.com/getevo/evo/v2/lib/db"
+    "gorm.io/gorm"
+    "gorm.io/gorm/schema"
+)
+
+validation.RegisterDBValidator(
+    `^active_user$`,
+    func(match []string, value *generic.Value, stmt *gorm.Statement, field *schema.Field) error {
+        var count int64
+        db.Table("users").Where("id = ? AND active = ?", value.Input, true).Count(&count)
+        if count == 0 {
+            return fmt.Errorf("user must be active")
+        }
+        return nil
+    },
+)
+
+type Post struct {
+    AuthorID uint `validation:"required,fk,active_user"`
+}
+```
+
+## Error format
+
+Errors are returned as `[]error`. Each message includes the field name (from the `json` tag or struct field name) and the reason:
+
+```
+email invalid email
+password password must contain at least 3 of: uppercase, lowercase, digits, symbols
+age is smaller than or equal to 18
+tags must have at least 1 items
+```
+
+## Full example
+
+```go
+package main
+
 import (
     "context"
     "fmt"
-    "regexp"
+    "time"
     "github.com/getevo/evo/v2/lib/validation"
-    "github.com/getevo/evo/v2/lib/generic"
-    "gorm.io/gorm"
 )
 
-// Register a new DBValidator
-validation.DBValidators[regexp.MustCompile("^exists:(.+)$")] = existsValidator
+type RegisterRequest struct {
+    Username             string   `json:"username"   validation:"required,slug,len>=3,len<=30"`
+    Email                string   `json:"email"      validation:"required,email,unique"`
+    Password             string   `json:"password"   validation:"required,password(medium)"`
+    PasswordConfirmation string   `json:"password_confirmation"`
+    Age                  int      `json:"age"        validation:"required,>=13,<=120"`
+    Country              string   `json:"country"    validation:"required,country_alpha2"`
+    Website              string   `json:"website"    validation:"url"`
+    Tags                 []string `json:"tags"       validation:"max_items(5),unique_items"`
+    BirthDate            string   `json:"birth_date" validation:"date,before_now"`
+}
 
-func existsValidator(match []string, value *generic.Value, stmt *gorm.Statement, field *schema.Field) error {
-    tableName := match[1] // Extract table name from validator, e.g., "exists:users"
-    var count int64
-    if err := stmt.DB.Table(tableName).Where(fmt.Sprintf("%s = ?", field.DBName), value.Input).Count(&count).Error; err != nil {
-        return fmt.Errorf("database error: %s", err)
+func main() {
+    req := RegisterRequest{
+        Username:             "alice_dev",
+        Email:               "alice@example.com",
+        Password:            "MyPass1!",
+        PasswordConfirmation: "MyPass1!",
+        Age:                 25,
+        Country:             "US",
+        Website:             "https://alice.dev",
+        Tags:                []string{"go", "backend"},
+        BirthDate:           "1999-06-15T00:00:00Z",
     }
-    if count == 0 {
-        return fmt.Errorf("value does not exist in table %s", tableName)
+
+    if errs := validation.Struct(req); len(errs) > 0 {
+        for _, e := range errs {
+            fmt.Println("Error:", e)
+        }
+        return
     }
-    return nil
+    fmt.Println("Validation passed!")
+
+    // Partial update — only validate non-zero fields
+    partial := RegisterRequest{Email: "new@example.com"}
+    if errs := validation.StructNonZeroFields(partial); len(errs) > 0 {
+        for _, e := range errs {
+            fmt.Println("Error:", e)
+        }
+    }
+
+    // Single value
+    if err := validation.Value("+15551234567", "e164"); err != nil {
+        fmt.Println(err)
+    }
+
+    // With context timeout (for DB validators)
+    ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+    defer cancel()
+    errs := validation.StructWithContext(ctx, req)
+    _ = errs
 }
 ```
 
-### Usage Example:
+## See Also
 
-```go
-type User struct {
-    RoleID int `validation:"exists:roles"`
-}
-```
-
-In this example, the `RoleID` field must reference an existing ID in the `roles` table.
-
---- 
-
-
-## Possible Error Messages
-
-Below is a list of possible error messages returned by validators:
-
-### Non-Database Validators (Validators)
-
-| Validator            | Description                                    | Error Message                                         |
-|----------------------|------------------------------------------------|---------------------------------------------------------------|
-| `text`               | Ensures string contains no HTML tags.          | `the text cannot contains html fields`                       |
-| `name`               | Checks if the value is a valid name.           | `is not valid name`                                          |
-| `alpha`              | Only alphabetical characters allowed.          | `is not alpha`                                               |
-| `latin`              | Only Unicode letters allowed.                  | `is not latin`                                               |
-| `digit`              | Only digits [0-9] allowed.                     | `invalid digit value`                                        |
-| `alphanumeric`       | Letters, digits, and spaces allowed.           | `is not alpha`                                               |
-| `required`           | Value cannot be empty.                         | `is required`                                                |
-| `email`              | Checks for valid email format.                 | `invalid email`                                              |
-| `regex(...)`         | Matches value against a regex pattern.         | `format is not valid`                                        |
-| `len<, len>, ...`    | Ensures string length within constraints.      | `is too short` / `is too long` / `is not equal to <length>`  |
-| Numeric comparisons  | Compares numeric values (`>`, `<`, etc.).      | `is bigger than ...` / `is smaller than ...`                 |
-| `int`, `+int`, `-int`| Checks if the value is integer.                | `invalid integer`                                            |
-| `float`, `+float`, `-float` | Checks if the value is float.          | `invalid integer`                                            |
-| `password(...)`      | Checks password complexity.                    | `password is not complex enough`                             |
-| `domain`             | Valid domain format.                           | `invalid domain`                                             |
-| `url`                | Valid URL format.                              | `invalid URL`                                                |
-| `ip`, `ip4`, `ip6`   | Valid IP address (IPv4 or IPv6).               | `value must be valid IPv4/IPv6 address`                      |
-| `cidr`               | Valid CIDR notation.                           | `value must be valid CIDR notation`                          |
-| `mac`                | Valid MAC address.                             | `value must be valid MAC address`                            |
-| `date`               | Valid RFC3339 date.                            | `invalid date, date expected be in RFC3339 format`           |
-| `longitude`          | Valid longitude.                               | `value must be valid longitude`                              |
-| `latitude`           | Valid latitude.                                | `value must be valid latitude`                               |
-| `port`               | Valid port number.                             | `value must be valid port number`                            |
-| `json`               | Valid JSON format.                             | `value must be valid JSON format`                            |
-| `ISBN`, `ISBN10`, `ISBN13` | Valid ISBN format.                      | `value must be ISBN-10 format` / `value must be ISBN-13 format` |
-| `creditcard`         | Valid credit card number.                      | `value must be credit card number`                           |
-| `uuid`               | Valid UUID.                                    | `value must be valid uuid`                                   |
-| `uppercase`          | Ensures string is uppercase.                   | `value must be in upper case`                                |
-| `lowercase`          | Ensures string is lowercase.                   | `value must be in lower case`                                |
-| `rgbcolor`, `rgba`, `hexcolor`, `hex` | Validates color formats.      | `value must be HEX color` / `value must be RGB color`        |
-| `countryalpha2`, `countryalpha3` | Valid ISO country codes.           | `value must be a valid ISO3166 Alpha 2/3 Format`             |
-| `btcaddress`         | Valid Bitcoin address.                         | `value must be a valid Bitcoin address`                      |
-| `ethaddress`         | Valid Ethereum address.                        | `value must be a valid ETH address`                          |
-| `cron`               | Valid CRON expression.                         | `value must be a valid CRON format`                          |
-| `duration`           | Valid Go duration format.                      | `value must be a valid duration format`                      |
-| `time`               | Valid RFC3339 timestamp.                       | `value must be a valid RFC3339 timestamp`                    |
-| `unixTimestamp`      | Valid Unix timestamp.                          | `value must be a valid unix timestamp`                       |
-| `timezone`           | Valid timezone string.                         | `value must be a valid timezone`                             |
-| `e164`               | Valid E164 phone number.                       | `value must be a valid E164 phone number`                    |
-| `safeHTML`           | Ensures string does not contain XSS tokens.    | `value must not contain any possible XSS tokens`             |
-| `noHTML`             | Ensures string does not contain HTML tags.     | `value must not contain any html tags`                       |
-| `phone`              | Valid phone number format.                     | `value must be valid phone number`                           |
-
----
-
-## Database-Related Validators
-
-These validators validate input against database constraints.
-
-| Validator           | Description                                           | Possible Error Message                                    |
-|---------------------|-------------------------------------------------------|----------------------------------------------------------|
-| `unique`            | Ensures the field value is unique in the table.       | `duplicate entry`                                       |
-| `unique:col1\|col2` | Ensures a combination of columns is unique.           | `duplicate value for <columns>`                         |
-| `fk`                | Validates foreign key references another table.       | `value does not match foreign key`                      |
-| `enum`              | Ensures value matches an allowed ENUM value.          | `invalid value, expected values are: ...`               |
-| `before(field)`     | Ensures timestamp is before another field’s value.    | `<field> must be before <other field>`                  |
-| `after(field)`      | Ensures timestamp is after another field’s value.     | `<field> must be after <other field>`                   |
-
-
-## Best Practices
-
-1. **Use Appropriate Validators**: Choose validators that match your data requirements. Combine multiple validators when necessary.
-
-2. **Validate Early**: Validate input data as early as possible in your application flow to prevent invalid data from propagating.
-
-3. **Provide Clear Error Messages**: Use custom error messages to provide clear guidance to users about validation failures.
-
-4. **Group Related Validations**: For complex validation scenarios, consider creating custom validators that encapsulate related validation rules.
-
-5. **Test Edge Cases**: Ensure your validation logic handles edge cases correctly, such as empty strings, zero values, and special characters.
-
-6. **Consider Performance**: For high-volume applications, be mindful of the performance impact of database validators.
-
-7. **Use Conditional Validation**: Apply validators conditionally based on other field values to create flexible validation rules.
-
----
-#### [< Table of Contents](https://github.com/getevo/evo#table-of-contents)
+- [Web Server](webserver.md)
+- [Outcome](outcome.md)
+- [Database](database.md)

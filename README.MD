@@ -15,7 +15,11 @@ With EVO Framework, you can focus on your programming logic and rapidly develop 
 - [Getting Started](#getting-started)
 - [Configuration and Settings](docs/configuration.md)
 - [Database](docs/database.md)
-- [Database Migration](docs/migration.md)
+  - [MySQL Driver](docs/mysql.md)
+  - [PostgreSQL Driver](docs/pgsql.md)
+  - [Database Migration](docs/migration.md)
+- [Health Checks](docs/health-checks.md)
+- [HTTP Responses (Outcome)](docs/outcome.md)
 - [Modules](#libraries)
 - [Web Server](docs/webserver.md)
 - [Storage Interface](lib/storage/README.md)
@@ -130,20 +134,34 @@ HTTP:
 
 ```
 3. Initialize the EVO Framework and start building your application:
+
+**MySQL:**
 ```go
 package main
 
 import (
-   "github.com/getevo/evo/v2"
+    "github.com/getevo/evo/v2"
+    "github.com/getevo/evo/v2/lib/mysql"
 )
 
 func main() {
-    // initialize evo
-    evo.Setup()
-	
-    //your code goes here ...
+    evo.Setup(mysql.Driver{})
     evo.Run()
 }
+```
 
+**PostgreSQL:**
+```go
+package main
+
+import (
+    "github.com/getevo/evo/v2"
+    "github.com/getevo/evo/v2/lib/pgsql"
+)
+
+func main() {
+    evo.Setup(pgsql.Driver{})
+    evo.Run()
+}
 ```
 

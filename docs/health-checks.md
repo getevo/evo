@@ -1,13 +1,15 @@
-# Health Check API
+# Health Checks
 
-EVO provides built-in health check and readiness check endpoints for monitoring application health and Kubernetes integration.
+EVO provides built-in health check and readiness endpoints for monitoring and Kubernetes integration, plus a database health library for detailed connection diagnostics.
 
 ## Overview
 
-The health check API exposes two endpoints:
+Two HTTP endpoints are registered automatically when `evo.Run()` is called:
 
-- **`GET /health`** - Liveness probe - checks if the application is alive and running
-- **`GET /ready`** - Readiness probe - checks if the application is ready to serve traffic
+| Endpoint | Purpose | Kubernetes use |
+|---|---|---|
+| `GET /health` | Liveness probe — is the app alive? | Restart container on failure |
+| `GET /ready` | Readiness probe — is the app ready for traffic? | Remove from load balancer on failure |
 
 ## Quick Start
 
@@ -15,82 +17,40 @@ The health check API exposes two endpoints:
 package main
 
 import (
+    "context"
     "fmt"
     "github.com/getevo/evo/v2"
     "github.com/getevo/evo/v2/lib/db"
+    "github.com/getevo/evo/v2/lib/pgsql"
 )
 
-type App struct{}
-
-func (App) Name() string { return "myapp" }
-
-func (App) Register() error {
-    // Register health checks
-    evo.OnHealthCheck(func() error {
-        // Check database connection
-        if db.IsEnabled() {
-            sqlDB, _ := db.DB().DB()
-            if err := sqlDB.Ping(); err != nil {
-                return fmt.Errorf("database unhealthy: %w", err)
-            }
-        }
-        return nil
-    })
-
-    // Register readiness checks
-    evo.OnReadyCheck(func() error {
-        // Check if migrations are complete
-        // Check if cache is warmed up
-        // Check if external services are reachable
-        return nil
-    })
-
-    return nil
-}
-
-func (App) Router() error { return nil }
-
 func main() {
-    evo.Setup()
-    evo.Register(&App{})
+    evo.Setup(pgsql.Driver{})
+
+    // Liveness: check database ping
+    evo.OnHealthCheck(func() error {
+        return db.Ping(context.Background(), db.GetInstance())
+    })
+
+    // Readiness: wait for DB, check migrations done
+    evo.OnReadyCheck(func() error {
+        return db.WaitForDB(context.Background(), db.GetInstance(), 3, time.Second)
+    })
+
     evo.Run()
 }
 ```
 
-## Health vs Readiness
-
-### Health Check (Liveness)
-- **Purpose**: Determine if the application is alive
-- **Use case**: Kubernetes liveness probe
-- **Action on failure**: Restart the container
-- **Examples**:
-  - Basic process check (always returns nil)
-  - Database connection ping
-  - Memory/resource checks
-  - Critical service availability
-
-### Readiness Check
-- **Purpose**: Determine if the application is ready to serve traffic
-- **Use case**: Kubernetes readiness probe, load balancer health checks
-- **Action on failure**: Remove from service temporarily
-- **Examples**:
-  - Database migrations complete
-  - Cache warmed up
-  - External dependencies available
-  - Configuration loaded
-
-## API Reference
+## Application health check API
 
 ### `evo.OnHealthCheck(fn HealthCheckFunc)`
 
-Registers a health check function.
+Registers a liveness check. Return `nil` for healthy, a non-nil error if unhealthy.
 
 ```go
 type HealthCheckFunc func() error
 
 evo.OnHealthCheck(func() error {
-    // Return nil if healthy
-    // Return error if unhealthy
     if isHealthy() {
         return nil
     }
@@ -98,143 +58,246 @@ evo.OnHealthCheck(func() error {
 })
 ```
 
-**Thread-safe**: Multiple goroutines can register checks concurrently.
+Multiple checks can be registered — all must pass for the endpoint to return 200.
+
+**Thread-safe**: safe to call from multiple goroutines.
 
 ### `evo.OnReadyCheck(fn HealthCheckFunc)`
 
-Registers a readiness check function.
+Registers a readiness check. Return `nil` if ready, error if not.
 
 ```go
 evo.OnReadyCheck(func() error {
-    // Return nil if ready
-    // Return error if not ready
-    if isReady() {
+    if migrationsComplete && cacheWarmedUp {
         return nil
     }
-    return fmt.Errorf("not ready: reason")
+    return fmt.Errorf("not ready yet")
 })
 ```
 
-**Thread-safe**: Multiple goroutines can register checks concurrently.
+## HTTP endpoints
 
-## HTTP Endpoints
+### `GET /health`
 
-### GET /health
-
-Returns the health status of the application.
-
-**Success Response (200 OK):**
+**Success (200 OK):**
 ```json
-{
-  "status": "ok"
-}
+{"status": "ok"}
 ```
 
-**Failure Response (503 Service Unavailable):**
+**Failure (503 Service Unavailable):**
 ```json
-{
-  "status": "unhealthy",
-  "error": "database ping failed: connection refused"
-}
+{"status": "unhealthy", "error": "database ping failed: connection refused"}
 ```
 
-### GET /ready
+### `GET /ready`
 
-Returns the readiness status of the application.
-
-**Success Response (200 OK):**
+**Success (200 OK):**
 ```json
-{
-  "status": "ok"
-}
+{"status": "ok"}
 ```
 
-**Failure Response (503 Service Unavailable):**
+**Failure (503 Service Unavailable):**
 ```json
-{
-  "status": "not ready",
-  "error": "cache not initialized"
-}
+{"status": "not ready", "error": "cache not initialized"}
 ```
 
-## Examples
+## Database health library
 
-### Database Health Check
+`lib/db` provides functions for detailed database health checking.
+
+### `db.Ping(ctx, db) error`
+
+Fast liveness check — sends a ping to the database.
 
 ```go
-evo.OnHealthCheck(func() error {
-    if !db.IsEnabled() {
+import (
+    "context"
+    "github.com/getevo/evo/v2/lib/db"
+)
+
+err := db.Ping(context.Background(), db.GetInstance())
+if err != nil {
+    log.Error("database unreachable", "error", err)
+}
+```
+
+### `db.HealthCheck(ctx, db) HealthCheckResult`
+
+Comprehensive health check with connection pool statistics.
+
+```go
+type HealthCheckResult struct {
+    Healthy          bool          `json:"healthy"`
+    ResponseTime     time.Duration `json:"response_time"`
+    ConnectionsOpen  int           `json:"connections_open"`
+    ConnectionsInUse int           `json:"connections_in_use"`
+    ConnectionsIdle  int           `json:"connections_idle"`
+    MaxOpenConns     int           `json:"max_open_conns"`
+    Error            string        `json:"error,omitempty"`
+}
+```
+
+```go
+result := db.HealthCheck(context.Background(), db.GetInstance())
+if !result.Healthy {
+    log.Error("db unhealthy", "error", result.Error)
+    return
+}
+log.Info("db healthy",
+    "response_time", result.ResponseTime,
+    "open_conns",    result.ConnectionsOpen,
+    "in_use",        result.ConnectionsInUse,
+)
+```
+
+### `db.WaitForDB(ctx, db, maxRetries, retryInterval) error`
+
+Blocks until the database is reachable or retries are exhausted. Useful during application startup when the database may not be ready immediately (e.g., Docker Compose startup order).
+
+```go
+// Retry 10 times with 2-second intervals
+err := db.WaitForDB(
+    context.Background(),
+    db.GetInstance(),
+    10,
+    2*time.Second,
+)
+if err != nil {
+    log.Fatal("database never became available", "error", err)
+}
+```
+
+With context timeout:
+
+```go
+ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+defer cancel()
+
+if err := db.WaitForDB(ctx, db.GetInstance(), 15, 2*time.Second); err != nil {
+    log.Fatal("database not ready after 30s")
+}
+```
+
+### `db.GetConnectionStats(db) (sql.DBStats, error)`
+
+Returns raw Go `sql.DBStats` for the connection pool.
+
+```go
+stats, err := db.GetConnectionStats(db.GetInstance())
+if err != nil {
+    return err
+}
+fmt.Printf("open=%d in_use=%d idle=%d wait=%d\n",
+    stats.OpenConnections,
+    stats.InUse,
+    stats.Idle,
+    stats.WaitCount,
+)
+```
+
+### `db.CloseConnection(db) error`
+
+Gracefully closes the database connection pool.
+
+```go
+if err := db.CloseConnection(db.GetInstance()); err != nil {
+    log.Error("error closing db", "error", err)
+}
+```
+
+## Complete example with all checks
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "runtime"
+    "time"
+
+    "github.com/getevo/evo/v2"
+    "github.com/getevo/evo/v2/lib/db"
+    "github.com/getevo/evo/v2/lib/pgsql"
+)
+
+func main() {
+    evo.Setup(pgsql.Driver{})
+
+    // --- Liveness checks ---
+
+    // 1. Database ping (fast)
+    evo.OnHealthCheck(func() error {
+        ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+        defer cancel()
+        return db.Ping(ctx, db.GetInstance())
+    })
+
+    // 2. Memory check
+    evo.OnHealthCheck(func() error {
+        var m runtime.MemStats
+        runtime.ReadMemStats(&m)
+        maxBytes := uint64(2 * 1024 * 1024 * 1024) // 2 GB
+        if m.Alloc > maxBytes {
+            return fmt.Errorf("memory usage critical: %d MB", m.Alloc/1024/1024)
+        }
         return nil
-    }
+    })
 
-    sqlDB, err := db.DB().DB()
-    if err != nil {
-        return fmt.Errorf("database unavailable: %w", err)
-    }
+    // --- Readiness checks ---
 
-    if err := sqlDB.Ping(); err != nil {
-        return fmt.Errorf("database ping failed: %w", err)
-    }
+    // 1. Wait for database on startup
+    evo.OnReadyCheck(func() error {
+        return db.WaitForDB(context.Background(), db.GetInstance(), 5, time.Second)
+    })
 
+    // 2. Check external API
+    evo.OnReadyCheck(func() error {
+        ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+        defer cancel()
+        return checkExternalService(ctx)
+    })
+
+    evo.Run()
+}
+
+func checkExternalService(ctx context.Context) error {
+    // implement your check
     return nil
-})
+}
 ```
 
-### External Service Check
+## Expose health result as JSON endpoint
 
 ```go
-evo.OnReadyCheck(func() error {
-    client := http.Client{Timeout: 2 * time.Second}
-    resp, err := client.Get("https://api.example.com/health")
-    if err != nil {
-        return fmt.Errorf("external service unreachable: %w", err)
-    }
-    defer resp.Body.Close()
-
-    if resp.StatusCode != 200 {
-        return fmt.Errorf("external service unhealthy: status %d", resp.StatusCode)
-    }
-
-    return nil
+evo.Get("/health/detail", func(r *evo.Request) any {
+    result := db.HealthCheck(context.Background(), db.GetInstance())
+    return outcome.OK(result)
 })
 ```
 
-### Memory Usage Check
-
-```go
-evo.OnHealthCheck(func() error {
-    var m runtime.MemStats
-    runtime.ReadMemStats(&m)
-
-    // Fail if using more than 1GB
-    maxMemory := uint64(1024 * 1024 * 1024)
-    if m.Alloc > maxMemory {
-        return fmt.Errorf("memory usage too high: %d MB", m.Alloc/1024/1024)
-    }
-
-    return nil
-})
+Response:
+```json
+{
+    "healthy": true,
+    "response_time": 1200000,
+    "connections_open": 5,
+    "connections_in_use": 2,
+    "connections_idle": 3,
+    "max_open_conns": 100
+}
 ```
 
-### Cache Warmup Check
+## Health vs Readiness
 
-```go
-evo.OnReadyCheck(func() error {
-    if !cache.IsInitialized() {
-        return fmt.Errorf("cache not initialized")
-    }
+| | Liveness (`/health`) | Readiness (`/ready`) |
+|---|---|---|
+| **Purpose** | App is alive | App can serve traffic |
+| **Failure action** | Restart container | Remove from load balancer |
+| **What to check** | DB ping, memory | Migrations done, cache ready, external APIs |
+| **Check speed** | Very fast (< 100ms) | Can be slightly slower |
 
-    if !cache.IsWarmedUp() {
-        return fmt.Errorf("cache warmup in progress")
-    }
-
-    return nil
-})
-```
-
-## Kubernetes Integration
-
-### Deployment YAML Example
+## Kubernetes integration
 
 ```yaml
 apiVersion: apps/v1
@@ -243,13 +306,7 @@ metadata:
   name: myapp
 spec:
   replicas: 3
-  selector:
-    matchLabels:
-      app: myapp
   template:
-    metadata:
-      labels:
-        app: myapp
     spec:
       containers:
       - name: myapp
@@ -257,7 +314,6 @@ spec:
         ports:
         - containerPort: 8080
 
-        # Liveness probe - restart if unhealthy
         livenessProbe:
           httpGet:
             path: /health
@@ -267,7 +323,6 @@ spec:
           timeoutSeconds: 5
           failureThreshold: 3
 
-        # Readiness probe - remove from service if not ready
         readinessProbe:
           httpGet:
             path: /ready
@@ -278,130 +333,75 @@ spec:
           failureThreshold: 3
 ```
 
-### Probe Configuration
+## Best practices
 
-**Liveness Probe:**
-- `initialDelaySeconds`: Wait before first check (app startup time)
-- `periodSeconds`: How often to check
-- `failureThreshold`: Failures before restart (usually 3)
+### Keep checks fast
 
-**Readiness Probe:**
-- `initialDelaySeconds`: Wait before first check (shorter than liveness)
-- `periodSeconds`: How often to check (more frequent)
-- `failureThreshold`: Failures before removing from service
-
-## Best Practices
-
-### 1. Keep Checks Fast
 ```go
-// Good - fast check
+// Good: fast ping
 evo.OnHealthCheck(func() error {
-    return db.Ping()
+    ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+    defer cancel()
+    return db.Ping(ctx, db.GetInstance())
 })
 
-// Bad - slow check
+// Bad: slow query in health check
 evo.OnHealthCheck(func() error {
-    return runComplexQuery() // Avoid!
+    return runComplexQuery() // avoid!
 })
 ```
 
-### 2. Don't Duplicate Checks
-```go
-// Register once during app initialization
-func (App) Register() error {
-    evo.OnHealthCheck(dbHealthCheck)
-    return nil
-}
+### Use context timeouts
 
-// Not in every request!
-```
-
-### 3. Fail Fast
 ```go
 evo.OnReadyCheck(func() error {
-    ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+    ctx, cancel := context.WithTimeout(context.Background(), time.Second)
     defer cancel()
-
-    return checkServiceWithContext(ctx)
+    return checkExternalService(ctx)
 })
 ```
 
-### 4. Meaningful Error Messages
+### Write meaningful error messages
+
 ```go
 // Good
-return fmt.Errorf("redis connection failed: %w", err)
+return fmt.Errorf("redis connection failed: host=%s err=%w", redisHost, err)
 
 // Bad
 return errors.New("error")
 ```
 
-### 5. Separate Health and Ready
+### Separate concerns
+
 ```go
-// Health - critical services only
+// Health — must work for app to function at all
 evo.OnHealthCheck(func() error {
-    return db.Ping() // App can't work without this
+    return db.Ping(ctx, db.GetInstance()) // app can't work without this
 })
 
-// Ready - nice-to-have services
+// Ready — nice-to-have, app might degrade without it
 evo.OnReadyCheck(func() error {
-    return cache.Ping() // App can work, but slower
+    return redis.Ping(ctx).Err() // app works, but slower
 })
-```
-
-## Monitoring
-
-### Prometheus Metrics (Future Enhancement)
-
-```go
-// TODO: Add metrics integration
-// health_check_total{status="success|failure",check="db"}
-// health_check_duration_seconds{check="db"}
-```
-
-### Logging
-
-Health check failures are automatically logged:
-```
-[ERROR] Health check failed: database ping failed: connection refused
-```
-
-## Testing
-
-```go
-func TestHealthChecks(t *testing.T) {
-    // Reset hooks
-    healthCheckHooks = nil
-
-    // Register test check
-    evo.OnHealthCheck(func() error {
-        return nil
-    })
-
-    // Verify registration
-    if len(healthCheckHooks) != 1 {
-        t.Fatal("health check not registered")
-    }
-}
 ```
 
 ## FAQ
 
-**Q: Can I register checks after evo.Run()?**
-A: Yes, but it's recommended to register during app initialization for clarity.
+**Q: What if no checks are registered?**
+Both endpoints return `200 OK` with `{"status":"ok"}`.
 
-**Q: What happens if no checks are registered?**
-A: Both endpoints return 200 OK with `{"status":"ok"}`.
+**Q: Can I register checks after `evo.Run()`?**
+Yes, the hooks slice is protected by a mutex and can be appended to at any time.
 
-**Q: Can I use async checks?**
-A: Yes, but ensure they complete quickly (< 1 second recommended).
+**Q: Can checks be async?**
+The check functions are called synchronously. Use a context with timeout to prevent hanging.
 
-**Q: How do I disable health checks?**
-A: Don't register any checks. The endpoints will still exist but always return OK.
-
-**Q: Can I customize the response format?**
-A: Not currently. Future versions may support custom response formats.
+**Q: How do I disable the endpoints?**
+You can't disable them, but if no checks are registered they always return OK.
 
 ## See Also
 
+- [Database](database.md)
+- [PostgreSQL Driver](pgsql.md)
+- [MySQL Driver](mysql.md)
 - [Kubernetes Liveness/Readiness Probes](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)
-- [Health Check API Pattern](https://microservices.io/patterns/observability/health-check-api.html)

@@ -1,84 +1,415 @@
 # Database
-By enabling the database in the **`config.yml`**, you can start using your database connection extensively in your applications. The EVO Framework currently supports the following database engines:
 
-- MySQL
-- TiDB
-- Microsoft SQL
-- SQLite
+EVO provides a unified database layer built on [GORM](https://gorm.io/docs). It supports MySQL/MariaDB and PostgreSQL through pluggable drivers, with built-in schema migration, health checks, and connection pool management.
 
-Here is an example of the database configuration with detailed settings:
+## Supported databases
+
+| Database | Driver package | Notes |
+|---|---|---|
+| MySQL 5.7+ | `lib/mysql` | Full support, auto-detects MariaDB |
+| MariaDB | `lib/mysql` | Detected automatically via `SELECT VERSION()` |
+| TiDB | `lib/mysql` | Wire-compatible with MySQL |
+| PostgreSQL 12+ | `lib/pgsql` | Full support, schema-aware |
+
+## Quick Start
+
+### MySQL
+
+```go
+package main
+
+import (
+    "github.com/getevo/evo/v2"
+    "github.com/getevo/evo/v2/lib/mysql"
+)
+
+func main() {
+    evo.Setup(mysql.Driver{})
+    evo.Run()
+}
+```
+
+### PostgreSQL
+
+```go
+package main
+
+import (
+    "github.com/getevo/evo/v2"
+    "github.com/getevo/evo/v2/lib/pgsql"
+)
+
+func main() {
+    evo.Setup(pgsql.Driver{})
+    evo.Run()
+}
+```
+
+## Configuration (`config.yml`)
+
+### MySQL / MariaDB / TiDB
 
 ```yaml
-#config.yml
 Database:
-    # If enabled, it will cache the constructed queries to save processing time
-    Cache: "false"
-
-    # Indicates the maximum duration for which a connection can remain idle without being closed by the server
-    ConnMaxLifTime: 1h
-
-    # Specifies the name of the database
-    Database: "service_test"
-
-    # Sets the verbosity level of the logging: 1:silent, 2:warn, 3:error, 4:info
-    Debug: 3
-
-    # Enables the database connection
-    Enabled: true
-
-    # Specifies the maximum number of idle connections allowed
-    MaxIdleConns: "10"
-
-    # Specifies the maximum number of concurrent connections allowed
-    MaxOpenConns: "100"
-
-    # Additional parameters to be included in the connection string
-    Params: "charset=utf8mb4&parseTime=True&loc=Local"
-
-    # Specifies the password for the database
-    Password: ""
-
-    # Enables support for SSL
-    SSLMode: "false"
-
-    # Specifies the server address or SQLite file path
-    Server: 127.0.01:3306
-
-    # Defines the threshold duration for query execution. If a query exceeds this duration, a warning will be issued.
-    SlowQueryThreshold: 500ms
-
-    # Specifies the type of database: mysql, mssql, sqlite
-    Type: mysql
-
-    # Specifies the username for the database
-    Username: root
+  Enabled: true
+  Type: mysql
+  Server: "127.0.0.1:3306"
+  Username: "root"
+  Password: "secret"
+  Database: "myapp"
+  SSLMode: "false"
+  Params: "charset=utf8mb4&parseTime=True&loc=Local"
+  Debug: 3
+  MaxOpenConns: "100"
+  MaxIdleConns: "10"
+  ConnMaxLifTime: "1h"
+  SlowQueryThreshold: "500ms"
 ```
 
-By configuring the database settings according to your requirements, you can utilize the database connection seamlessly within your EVO Framework applications.
+### PostgreSQL
 
-## Usage
+```yaml
+Database:
+  Enabled: true
+  Type: postgres
+  Server: "localhost:5432"
+  Username: "postgres"
+  Password: "secret"
+  Database: "myapp"
+  Schema: "public"       # PostgreSQL schema (default: public)
+  SSLMode: "disable"     # disable | require
+  Params: ""
+  Debug: 3
+  MaxOpenConns: "100"
+  MaxIdleConns: "10"
+  ConnMaxLifTime: "1h"
+  SlowQueryThreshold: "500ms"
+```
 
-To use this package, import it in your Go code:
+### Configuration reference
+
+| Key | Type | Description |
+|---|---|---|
+| `Enabled` | bool | Enable/disable the database connection |
+| `Type` | string | `mysql` or `postgres` |
+| `Server` | string | `host:port` |
+| `Username` | string | Database user |
+| `Password` | string | Database password |
+| `Database` | string | Database name |
+| `Schema` | string | PostgreSQL schema name (ignored for MySQL) |
+| `SSLMode` | string | SSL mode (`false`/`disable`, `true`/`require`) |
+| `Params` | string | Additional DSN parameters appended verbatim |
+| `Debug` | int | Log verbosity: 1=silent, 2=warn, 3=error, 4=info |
+| `MaxOpenConns` | int | Max concurrent connections |
+| `MaxIdleConns` | int | Max idle connections in pool |
+| `ConnMaxLifTime` | duration | Max connection lifetime |
+| `SlowQueryThreshold` | duration | Log queries slower than this |
+
+## Accessing the database
+
+### Via `db` package (recommended)
+
+```go
+import "github.com/getevo/evo/v2/lib/db"
+
+var users []User
+db.Where("active = ?", true).Find(&users)
+```
+
+### Via `evo.GetDBO()`
+
 ```go
 import "github.com/getevo/evo/v2"
+
+gormDB := evo.GetDBO()
+gormDB.Find(&users)
 ```
 
-### Accessing the database by creating a new instance
-To access the database, you can obtain a database object, which is an instance of **`gorm.DB`**, by requesting the database instance and saving it in a variable:
+### With context
 
 ```go
+import (
+    "context"
+    "github.com/getevo/evo/v2/lib/db"
+)
+
+ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+defer cancel()
+
 var user User
-var db = evo.GetDBO()
-db.Find(&user)
+db.WithContext(ctx).First(&user, id)
 ```
 
-### Accessing the database using the db library
-Alternatively, you can access the database object directly using the **db** library, which is a wrapper around the **gorm.DB** instance:
+## CRUD operations
+
+### Create
+
 ```go
-var user User
-db.Find(&user)
+user := User{Name: "Alice", Email: "alice@example.com"}
+result := db.Create(&user)
+if result.Error != nil {
+    // handle error
+}
+fmt.Println(user.ID) // auto-set after insert
 ```
 
-For further information on how to use **gorm**, you can refer to the **[gorm documentation](https://gorm.io/docs)**. The documentation provides detailed guidance on using the gorm library for database operations.
+### Read
 
+```go
+// By primary key
+var user User
+db.First(&user, 1)
 
+// With conditions
+var users []User
+db.Where("email LIKE ?", "%@example.com").
+    Order("created_at DESC").
+    Limit(10).
+    Find(&users)
+
+// Count
+var total int64
+db.Model(&User{}).Where("active = ?", true).Count(&total)
+```
+
+### Update
+
+```go
+// Update specific columns
+db.Model(&user).Update("name", "Alice Smith")
+
+// Update multiple columns
+db.Model(&user).Updates(User{Name: "Alice Smith", Active: true})
+
+// Update with map (zero values are also updated)
+db.Model(&user).Updates(map[string]any{
+    "name":   "Alice Smith",
+    "active": false,
+})
+```
+
+### Delete
+
+```go
+// Delete by value
+db.Delete(&user)
+
+// Delete by condition
+db.Where("created_at < ?", time.Now().AddDate(-1, 0, 0)).Delete(&User{})
+```
+
+## Transactions
+
+```go
+err := db.Transaction(func(tx *gorm.DB) error {
+    if err := tx.Create(&order).Error; err != nil {
+        return err // auto-rollback
+    }
+    if err := tx.Model(&product).Update("stock", gorm.Expr("stock - ?", 1)).Error; err != nil {
+        return err
+    }
+    return nil // auto-commit
+})
+```
+
+Manual transaction:
+
+```go
+tx := db.Begin()
+defer func() {
+    if r := recover(); r != nil {
+        tx.Rollback()
+    }
+}()
+
+if err := tx.Create(&record).Error; err != nil {
+    tx.Rollback()
+    return err
+}
+
+tx.Commit()
+```
+
+## Raw SQL
+
+```go
+// Execute
+db.Exec("UPDATE users SET active = ? WHERE last_login < ?", false, cutoff)
+
+// Query with scan
+type Result struct {
+    Name  string
+    Count int64
+}
+var results []Result
+db.Raw("SELECT name, COUNT(*) AS count FROM orders GROUP BY name").Scan(&results)
+```
+
+## Driver interface
+
+You can implement custom drivers by satisfying the `db.Driver` interface:
+
+```go
+// lib/db/driver.go
+type Driver interface {
+    Name() string
+    Open(config DriverConfig, gormConfig *gorm.Config) (*gorm.DB, error)
+    GetMigrationScript(db *gorm.DB) []string
+}
+
+type DriverConfig struct {
+    Server   string // host:port
+    Username string
+    Password string
+    Database string
+    Schema   string  // PostgreSQL schema name
+    SSLMode  string
+    Params   string  // extra DSN params
+}
+```
+
+Register and retrieve the driver:
+
+```go
+db.RegisterDriver(myDriver)
+driver := db.GetDriver()
+```
+
+## Connection management
+
+### Check if enabled
+
+```go
+if db.IsEnabled() {
+    // safe to use database
+}
+```
+
+### Get raw `*sql.DB` for pool management
+
+```go
+sqlDB, err := db.GetInstance().DB()
+if err != nil {
+    return err
+}
+
+// Set pool settings at runtime
+sqlDB.SetMaxOpenConns(50)
+sqlDB.SetMaxIdleConns(10)
+sqlDB.SetConnMaxLifetime(30 * time.Minute)
+```
+
+### Close connection gracefully
+
+```go
+import "github.com/getevo/evo/v2/lib/db"
+
+if err := db.CloseConnection(db.GetInstance()); err != nil {
+    log.Error("failed to close db", "error", err)
+}
+```
+
+## Health checks
+
+The `db` package provides functions for Kubernetes probes and startup checks.
+
+### `db.Ping` — liveness check
+
+```go
+err := db.Ping(context.Background(), db.GetInstance())
+```
+
+### `db.HealthCheck` — detailed stats
+
+```go
+result := db.HealthCheck(context.Background(), db.GetInstance())
+// result.Healthy          bool
+// result.ResponseTime     time.Duration
+// result.ConnectionsOpen  int
+// result.ConnectionsInUse int
+// result.ConnectionsIdle  int
+// result.MaxOpenConns     int
+// result.Error            string
+```
+
+### `db.WaitForDB` — startup retry loop
+
+```go
+// Retry up to 10 times with 2s interval
+err := db.WaitForDB(context.Background(), db.GetInstance(), 10, 2*time.Second)
+```
+
+### `db.GetConnectionStats`
+
+```go
+stats, err := db.GetConnectionStats(db.GetInstance())
+// stats is sql.DBStats with full pool info
+```
+
+### Integrating with EVO health system
+
+```go
+evo.OnHealthCheck(func() error {
+    return db.Ping(context.Background(), db.GetInstance())
+})
+
+evo.OnReadyCheck(func() error {
+    return db.WaitForDB(context.Background(), db.GetInstance(), 5, time.Second)
+})
+```
+
+## Migration hooks
+
+Register callbacks that run before and after schema migrations:
+
+```go
+db.OnBeforeMigration(func(gormDB *gorm.DB) {
+    log.Info("migration starting")
+})
+
+db.OnAfterMigration(func(gormDB *gorm.DB) {
+    log.Info("migration complete")
+    seedDatabase(gormDB)
+})
+```
+
+## Dialect helpers
+
+```go
+// Get dialect name: "mysql" or "postgres"
+name := db.DialectName()
+
+// Quote an identifier using the correct dialect syntax
+// MySQL: `tablename`  PostgreSQL: "tablename"
+quoted := db.QuoteIdent("tablename")
+
+// Get query SQL without executing (useful for debugging)
+sql := db.ToSQL(func(tx *gorm.DB) *gorm.DB {
+    return tx.Where("active = ?", true).Find(&User{})
+})
+```
+
+## Model registration
+
+Register GORM models for migration:
+
+```go
+import "github.com/getevo/evo/v2/lib/db/schema"
+
+schema.UseModels(&User{}, &Order{}, &Product{})
+```
+
+Retrieve registered models:
+
+```go
+models := evo.Models()          // []schema.Model
+model  := evo.GetModel("users") // *schema.Model by table name
+```
+
+## See Also
+
+- [MySQL Driver](mysql.md)
+- [PostgreSQL Driver](pgsql.md)
+- [Database Migration](migration.md)
+- [Health Checks](health-checks.md)
+- [GORM Documentation](https://gorm.io/docs)
