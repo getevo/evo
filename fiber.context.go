@@ -1,6 +1,8 @@
 package evo
 
 import (
+	"bufio"
+	"context"
 	"encoding/base64"
 	"encoding/xml"
 	"errors"
@@ -720,6 +722,130 @@ func (r *Request) AutoFormat(body any) error {
 func (r *Request) SendStream(stream io.Reader, size ...int) error {
 	return r.Context.SendStream(stream, size...)
 }
+
+// --- Fiber v3 — content-type / accept helpers ---
+
+// IsJSON reports whether the request Content-Type is application/json.
+func (r *Request) IsJSON() bool { return r.Context.IsJSON() }
+
+// IsForm reports whether the request Content-Type is application/x-www-form-urlencoded.
+func (r *Request) IsForm() bool { return r.Context.IsForm() }
+
+// IsMultipart reports whether the request Content-Type is multipart/form-data.
+func (r *Request) IsMultipart() bool { return r.Context.IsMultipart() }
+
+// AcceptsJSON reports whether the Accept header allows application/json.
+func (r *Request) AcceptsJSON() bool { return r.Context.AcceptsJSON() }
+
+// AcceptsHTML reports whether the Accept header allows text/html.
+func (r *Request) AcceptsHTML() bool { return r.Context.AcceptsHTML() }
+
+// AcceptsXML reports whether the Accept header allows application/xml or text/xml.
+func (r *Request) AcceptsXML() bool { return r.Context.AcceptsXML() }
+
+// AcceptsEventStream reports whether the Accept header allows text/event-stream.
+func (r *Request) AcceptsEventStream() bool { return r.Context.AcceptsEventStream() }
+
+// AcceptLanguage returns the single best-match value from the Accept-Language header.
+func (r *Request) AcceptLanguage() string { return r.Context.AcceptLanguage() }
+
+// AcceptEncoding returns the single best-match value from the Accept-Encoding header.
+func (r *Request) AcceptEncoding() string { return r.Context.AcceptEncoding() }
+
+// AcceptsLanguagesExtended checks if any of the offered languages is acceptable
+// using RFC 4647 extended filtering (subtag matching).
+func (r *Request) AcceptsLanguagesExtended(offers ...string) string {
+	return r.Context.AcceptsLanguagesExtended(offers...)
+}
+
+// --- Fiber v3 — request metadata ---
+
+// RequestID returns the unique request identifier from the X-Request-Id response
+// header (set by Fiber's RequestID middleware) or from the incoming request header.
+func (r *Request) RequestID() string { return r.Context.RequestID() }
+
+// Host returns the raw Host header value, including the port when present.
+// Use Hostname() to get only the host part without the port.
+func (r *Request) Host() string { return r.Context.Host() }
+
+// Scheme returns the request scheme: "http" or "https".
+// This is an alias for Protocol().
+func (r *Request) Scheme() string { return r.Context.Scheme() }
+
+// FullPath returns the matched route pattern including any group prefixes,
+// e.g. "/users/:id". Use Path() to get the actual request path.
+func (r *Request) FullPath() string { return r.Context.FullPath() }
+
+// OverrideParam overwrites the value of a named route parameter in-flight.
+// Useful in middleware that rewrites routing parameters.
+func (r *Request) OverrideParam(name, value string) { r.Context.OverrideParam(name, value) }
+
+// IsWebSocket returns true if the request contains a WebSocket upgrade handshake.
+func (r *Request) IsWebSocket() bool { return r.Context.IsWebSocket() }
+
+// IsPreflight returns true if the request is a CORS preflight (OPTIONS with
+// Origin and Access-Control-Request-Method headers).
+func (r *Request) IsPreflight() bool { return r.Context.IsPreflight() }
+
+// IsProxyTrusted reports whether the remote IP falls within the configured
+// trusted proxy ranges.
+func (r *Request) IsProxyTrusted() bool { return r.Context.IsProxyTrusted() }
+
+// Range parses the Range request header for partial-content responses.
+// size is the total length of the resource in bytes.
+func (r *Request) Range(size int64) (fiber.Range, error) { return r.Context.Range(size) }
+
+// SetContext replaces the request's context.Context. The new context is
+// propagated to all downstream handlers for this request.
+func (r *Request) SetContext(ctx context.Context) { r.Context.SetContext(ctx) }
+
+// --- Fiber v3 — response helpers ---
+
+// GetRespHeader returns the value of a response header that has already been set.
+// An optional defaultValue is returned when the header is absent.
+func (r *Request) GetRespHeader(key string, defaultValue ...string) string {
+	return r.Context.GetRespHeader(key, defaultValue...)
+}
+
+// SaveFileToStorage saves a multipart upload directly into a custom Storage
+// backend (any type that satisfies fiber.Storage).
+func (r *Request) SaveFileToStorage(fileheader *multipart.FileHeader, path string, storage fiber.Storage) error {
+	return r.Context.SaveFileToStorage(fileheader, path, storage)
+}
+
+// MsgPack serialises data to MessagePack binary format and sends it with
+// Content-Type application/msgpack.
+func (r *Request) MsgPack(data any, ctype ...string) error {
+	return r.Context.MsgPack(data, ctype...)
+}
+
+// CBOR serialises data to CBOR binary format and sends it with
+// Content-Type application/cbor.
+func (r *Request) CBOR(data any, ctype ...string) error {
+	return r.Context.CBOR(data, ctype...)
+}
+
+// SendEarlyHints sends an HTTP 103 Early Hints response with Link preload
+// headers so that the browser can begin fetching resources before the final
+// response is ready. hints is a slice of Link header values.
+func (r *Request) SendEarlyHints(hints []string) error {
+	return r.Context.SendEarlyHints(hints)
+}
+
+// SendStreamWriter sets the response body to the output of a buffered writer
+// function. The writer runs in the current goroutine; close when done.
+func (r *Request) SendStreamWriter(streamWriter func(*bufio.Writer)) error {
+	return r.Context.SendStreamWriter(streamWriter)
+}
+
+// End signals the end of an SSE (Server-Sent Events) stream.
+func (r *Request) End() error { return r.Context.End() }
+
+// Writef appends a formatted string to the response body (fmt.Fprintf style).
+func (r *Request) Writef(f string, a ...any) (int, error) { return r.Context.Writef(f, a...) }
+
+// WriteString appends a string to the response body (io.StringWriter interface).
+func (r *Request) WriteString(s string) (int, error) { return r.Context.WriteString(s) }
 
 func (r *Request) Debug() string {
 	var debug strings.Builder
