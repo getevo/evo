@@ -1,6 +1,7 @@
 package evo
 
 import (
+	"github.com/getevo/evo/v2/lib/shutdown"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -217,15 +218,16 @@ func All(path string, handlers ...Handler) {
 }
 
 // Shutdown gracefully shuts down the server without interrupting any active connections.
-// Shutdown works by first closing all open listeners and then waiting indefinitely for all connections to return to idle and then shut down.
+// It first runs all hooks registered via OnShutdown, then stops the HTTP server.
 //
 // When Shutdown is called, Serve, ListenAndServe, and ListenAndServeTLS immediately return nil.
 // Make sure the program doesn't exit and waits instead for Shutdown to return.
 //
 // Shutdown does not close keepalive connections so its recommended to set ReadTimeout to something else than 0.
 func Shutdown() error {
+	shutdown.Run()
 	if app == nil {
-		panic("Access object before call Setup()")
+		return nil
 	}
 	return app.Shutdown()
 }

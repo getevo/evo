@@ -22,6 +22,7 @@ require (
 	github.com/iancoleman/strcase v0.3.0
 	github.com/jlaffaye/ftp v0.1.0
 	github.com/kelindar/binary v1.0.19
+	github.com/kr/pretty v0.3.0
 	github.com/nats-io/nats.go v1.31.0
 	github.com/otiai10/copy v1.14.0
 	github.com/pkg/sftp v1.13.5
@@ -65,6 +66,7 @@ require (
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/klauspost/compress v1.17.9 // indirect
 	github.com/kr/fs v0.1.0 // indirect
+	github.com/kr/text v0.2.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect

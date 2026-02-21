@@ -3,7 +3,9 @@ package evo
 import (
 	"fmt"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 
 	"github.com/getevo/evo/v2/lib/application"
 	"github.com/getevo/evo/v2/lib/args"
@@ -130,13 +132,24 @@ func Run() error {
 		})
 	}
 
-	var err error
-	err = app.Listen(http.Host + ":" + http.Port)
+	serverErr := make(chan error, 1)
+	go func() {
+		serverErr <- app.Listen(http.Host + ":" + http.Port)
+	}()
 
-	if err != nil {
-		return fmt.Errorf("unable to start web server: %w", err)
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+	defer signal.Stop(quit)
+
+	select {
+	case err := <-serverErr:
+		if err != nil {
+			return fmt.Errorf("unable to start web server: %w", err)
+		}
+		return nil
+	case <-quit:
+		return Shutdown()
 	}
-	return nil
 }
 
 // GetFiber return fiber instance
