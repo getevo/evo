@@ -47,7 +47,14 @@ func (Setting) TableName() string {
 
 // LoadDatabaseSettings loads settings from the database.
 // Settings are organized by domains and loaded with their full hierarchical path.
+// If the settings or settings_domain tables do not exist yet, the function returns
+// silently without an error — the tables are optional and created during migration.
 func LoadDatabaseSettings() error {
+	migrator := db.GetInstance().Migrator()
+	if !migrator.HasTable(&Setting{}) || !migrator.HasTable(&SettingDomain{}) {
+		return nil
+	}
+
 	var settings []Setting
 	var domains []SettingDomain
 
