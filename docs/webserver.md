@@ -127,6 +127,12 @@ evo.Get("/a/:x/b/:y", func(r *evo.Request) any {
     params := r.Params() // map[string]string{"x":"...", "y":"..."}
     return params
 })
+
+// Override a param value in middleware (before the handler runs)
+evo.Use("/", func(r *evo.Request) error {
+    r.OverrideParam("id", "canonical-id")
+    return r.Next()
+})
 ```
 
 ---
@@ -155,12 +161,16 @@ evo.Get("/path", func(r *evo.Request) any {
     ct    := r.Header("Content-Type")
     token := r.Header("Authorization")
 
-    // Quick existence check (Fiber v3)
+    // Quick existence check
     if r.HasHeader("X-Request-ID") { ... }
+
+    // Unique request ID (set by Fiber's RequestID middleware)
+    id := r.RequestID()
 
     // All request headers
     headers := r.ReqHeaders() // map[string]string
 
+    _ = ct; _ = token; _ = id
     return nil
 })
 ```
@@ -252,7 +262,22 @@ evo.Post("/upload", func(r *evo.Request) any {
     if err != nil {
         return err
     }
+    // Save to local disk
     return r.SaveFile(file, "./uploads/"+file.Filename)
+})
+```
+
+### File upload to custom storage
+
+`SaveFileToStorage` writes the upload to any backend that satisfies the `fiber.Storage` interface (e.g. S3, Redis, in-memory):
+
+```go
+evo.Post("/upload", func(r *evo.Request) any {
+    file, err := r.FormFile("avatar")
+    if err != nil {
+        return err
+    }
+    return r.SaveFileToStorage(file, "avatars/"+file.Filename, myS3Storage)
 })
 ```
 
@@ -266,8 +291,10 @@ evo.Get("/info", func(r *evo.Request) any {
     base     := r.BaseURL()      // https://example.com
     path     := r.Path()         // /info
     original := r.OriginalURL()  // /info?x=1
-    host     := r.Hostname()     // example.com
+    host     := r.Hostname()     // example.com  (no port)
+    rawHost  := r.Host()         // example.com:8080  (includes port when present)
     proto    := r.Protocol()     // https
+    scheme   := r.Scheme()       // https  (alias for Protocol)
     port     := r.Port()         // 443
     method   := r.Method()       // GET
     secure   := r.IsSecure()     // true
@@ -276,10 +303,48 @@ evo.Get("/info", func(r *evo.Request) any {
     referer  := r.Referer()      // "https://other.com"
     ips      := r.IPs()          // []string
     ip       := r.IP()           // "203.0.113.5"
-    _ = full; _ = base; _ = path; _ = original; _ = host
-    _ = proto; _ = port; _ = method; _ = secure; _ = local
-    _ = xhr; _ = referer; _ = ips; _ = ip
+    fullPath := r.FullPath()     // "/info"  — matched route pattern (e.g. "/users/:id")
+    _ = full; _ = base; _ = path; _ = original; _ = host; _ = rawHost
+    _ = proto; _ = scheme; _ = port; _ = method; _ = secure; _ = local
+    _ = xhr; _ = referer; _ = ips; _ = ip; _ = fullPath
     return nil
+})
+```
+
+---
+
+## Request Inspection
+
+```go
+evo.Get("/ws", func(r *evo.Request) any {
+    if r.IsWebSocket() {
+        // handle WebSocket upgrade
+    }
+    if r.IsPreflight() {
+        // CORS preflight OPTIONS request
+        r.Set("Access-Control-Allow-Origin", "*")
+        return r.SendStatus(204)
+    }
+    if r.IsProxyTrusted() {
+        // request came from a trusted proxy range
+    }
+    return nil
+})
+```
+
+### Range requests (partial content)
+
+```go
+evo.Get("/video", func(r *evo.Request) any {
+    fileSize := int64(1_000_000)
+    rng, err := r.Range(fileSize)
+    if err != nil {
+        return r.SendStatus(416) // Range Not Satisfiable
+    }
+    // rng.Type  — "bytes"
+    // rng.Ranges — []fiber.RangeSet, each has Start and End offsets
+    r.Status(206)
+    return r.SendFile("./video.mp4")
 })
 ```
 
@@ -288,9 +353,36 @@ evo.Get("/info", func(r *evo.Request) any {
 ## Content-Type Helpers
 
 ```go
-mt  := r.MediaType()  // "application/json"
-cs  := r.Charset()    // "utf-8"
-ok  := r.Is("json")   // true if Content-Type is application/json
+mt  := r.MediaType()     // "application/json"
+cs  := r.Charset()       // "utf-8"
+ok  := r.Is("json")      // true if Content-Type is application/json
+
+// Quick boolean checks
+r.IsJSON()               // Content-Type: application/json
+r.IsForm()               // Content-Type: application/x-www-form-urlencoded
+r.IsMultipart()          // Content-Type: multipart/form-data
+```
+
+---
+
+## Accept Header Helpers
+
+```go
+// Boolean shortcuts
+r.AcceptsJSON()          // true when Accept allows application/json
+r.AcceptsHTML()          // true when Accept allows text/html
+r.AcceptsXML()           // true when Accept allows application/xml or text/xml
+r.AcceptsEventStream()   // true when Accept allows text/event-stream (SSE)
+
+// Single best-match values
+lang := r.AcceptLanguage()   // e.g. "en-US"
+enc  := r.AcceptEncoding()   // e.g. "gzip"
+
+// Multi-offer negotiation (returns the best match or "")
+best := r.AcceptsLanguages("en", "fr", "de")
+best  = r.AcceptsLanguagesExtended("en-US", "en", "fr") // RFC 4647 subtag matching
+best  = r.AcceptsCharsets("utf-8", "iso-8859-1")
+best  = r.AcceptsEncodings("gzip", "deflate", "identity")
 ```
 
 ---
@@ -343,9 +435,17 @@ r.SendFile("./report.pdf")
 r.Download("./report.pdf", "monthly-report.pdf")
 ```
 
+### Binary formats (MessagePack / CBOR)
+
+```go
+r.MsgPack(myStruct)            // Content-Type: application/msgpack
+r.CBOR(myStruct)               // Content-Type: application/cbor
+```
+
 ### Streaming
 
 ```go
+// io.Reader — Content-Length unknown
 evo.Get("/stream", func(r *evo.Request) any {
     pr, pw := io.Pipe()
     go func() {
@@ -356,6 +456,55 @@ evo.Get("/stream", func(r *evo.Request) any {
     }()
     return r.SendStream(pr)
 })
+
+// Buffered writer — more control over flushing
+evo.Get("/stream2", func(r *evo.Request) any {
+    return r.SendStreamWriter(func(w *bufio.Writer) {
+        for i := 0; i < 5; i++ {
+            fmt.Fprintf(w, "data: chunk %d\n\n", i)
+            w.Flush()
+        }
+    })
+})
+```
+
+### Server-Sent Events (SSE)
+
+```go
+evo.Get("/events", func(r *evo.Request) any {
+    r.Set("Content-Type", "text/event-stream")
+    r.Set("Cache-Control", "no-cache")
+    return r.SendStreamWriter(func(w *bufio.Writer) {
+        for i := 0; i < 10; i++ {
+            fmt.Fprintf(w, "data: event %d\n\n", i)
+            w.Flush()
+            time.Sleep(500 * time.Millisecond)
+        }
+        r.End() // terminate the stream
+    })
+})
+```
+
+### Early Hints (HTTP 103)
+
+Instruct the browser to preload resources before the final response:
+
+```go
+evo.Get("/page", func(r *evo.Request) any {
+    r.SendEarlyHints([]string{
+        "</style.css>; rel=preload; as=style",
+        "</app.js>; rel=preload; as=script",
+    })
+    // ... generate the actual response
+    return r.SendFile("./index.html")
+})
+```
+
+### Write helpers
+
+```go
+r.Writef("Hello, %s! You have %d messages.\n", name, count)
+r.WriteString("plain text append")
 ```
 
 ### Redirect
@@ -397,6 +546,10 @@ r.Type("json")             // sets Content-Type by extension
 r.Vary("Accept-Language")
 r.Links("http://api.example.com/users?page=2; rel=\"next\"")
 r.Attachment("report.pdf") // Content-Disposition: attachment
+
+// Read a single response header that was already set
+ct := r.GetRespHeader("Content-Type")           // "application/json"
+ct  = r.GetRespHeader("X-Missing", "fallback")  // "fallback"
 
 // All response headers
 headers := r.RespHeaders() // map[string]string
@@ -491,9 +644,17 @@ url := r.Route("users.show", "id", 42) // "/users/42"
 ## Request Context Propagation
 
 ```go
-// Attach values to a request for downstream handlers
+// Attach values via Locals (recommended for evo handlers)
 evo.Use("/", func(r *evo.Request) error {
     r.Context.Locals("requestID", uuid.New().String())
+    return r.Next()
+})
+
+// Replace the request's context.Context (e.g. to attach a deadline or tracing span)
+evo.Use("/", func(r *evo.Request) error {
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
+    r.SetContext(ctx)
     return r.Next()
 })
 ```
