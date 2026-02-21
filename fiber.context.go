@@ -634,6 +634,93 @@ func (r *Request) Break() {
 	r._break = true
 }
 
+// --- Fiber v3 additions ---
+
+// BodyRaw returns the raw (undecoded) request body bytes.
+// Unlike Body(), this skips decompression.
+func (r *Request) BodyRaw() []byte {
+	return r.Context.BodyRaw()
+}
+
+// Queries returns all query parameters as a flat map[string]string.
+func (r *Request) Queries() map[string]string {
+	return r.Context.Queries()
+}
+
+// FullURL returns the full request URL (protocol + host + path + query).
+func (r *Request) FullURL() string {
+	return r.Context.FullURL()
+}
+
+// HasBody returns true if the request declares a body via Content-Length,
+// Transfer-Encoding, or already-buffered payload data.
+func (r *Request) HasBody() bool {
+	return r.Context.HasBody()
+}
+
+// HasHeader reports whether the request includes a header with the given key.
+func (r *Request) HasHeader(key string) bool {
+	return r.Context.HasHeader(key)
+}
+
+// IsFromLocal returns true if the request originated from localhost.
+func (r *Request) IsFromLocal() bool {
+	return r.Context.IsFromLocal()
+}
+
+// Drop closes the underlying connection without sending any response headers
+// or body. Useful for DDoS mitigation.
+func (r *Request) Drop() error {
+	return r.Context.Drop()
+}
+
+// Port returns the remote port of the request.
+func (r *Request) Port() string {
+	return r.Context.Port()
+}
+
+// Referer returns the value of the Referer request header.
+func (r *Request) Referer() string {
+	return r.Context.Referer()
+}
+
+// MediaType returns the MIME type from the Content-Type header without parameters.
+func (r *Request) MediaType() string {
+	return r.Context.MediaType()
+}
+
+// Charset returns the charset parameter from the Content-Type header.
+func (r *Request) Charset() string {
+	return r.Context.Charset()
+}
+
+// Bind returns the Fiber v3 Bind helper for unified request binding.
+// Use it to bind body, query, headers, cookies, URI params into structs:
+//
+//	var body MyDTO
+//	if err := r.Bind().Body(&body); err != nil { ... }
+//	if err := r.Bind().Query(&q); err != nil { ... }
+func (r *Request) Bind() *fiber.Bind {
+	return r.Context.Bind()
+}
+
+// XML serialises data to XML and sends it with Content-Type application/xml.
+func (r *Request) XML(data any) error {
+	return r.Context.XML(data)
+}
+
+// AutoFormat performs content-negotiation on the Accept header and sends
+// the body in the best matching format (JSON, XML, text, etc.).
+func (r *Request) AutoFormat(body any) error {
+	return r.Context.AutoFormat(body)
+}
+
+// SendStream sets the response body to the given io.Reader stream.
+// The optional size argument sets the Content-Length header.
+func (r *Request) SendStream(stream io.Reader, size ...int) error {
+	return r.Context.SendStream(stream, size...)
+}
+
 func (r *Request) Debug() string {
 	var debug strings.Builder
 	

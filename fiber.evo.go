@@ -1,6 +1,9 @@
 package evo
 
 import (
+	"context"
+	"time"
+
 	"github.com/getevo/evo/v2/lib/shutdown"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/static"
@@ -206,16 +209,14 @@ func Get(path string, handlers ...Handler) fiber.Router {
 	return route
 }
 
-// All : https://fiber.wiki/application#http-methods
-func All(path string, handlers ...Handler) {
+// All registers handlers for all HTTP methods on the given path.
+func All(path string, handlers ...Handler) fiber.Router {
 	if app == nil {
 		panic("Access object before call Setup()")
 	}
-
-	app.All(path, func(ctx fiber.Ctx) error {
+	return app.All(path, func(ctx fiber.Ctx) error {
 		return handle(ctx, handlers)
 	})
-
 }
 
 // Shutdown gracefully shuts down the server without interrupting any active connections.
@@ -267,4 +268,32 @@ func Static(path string, dir string, config ...static.Config) fiber.Router {
 		cfg = config[0]
 	}
 	return app.Use(path, static.New(dir, cfg))
+}
+
+// ShutdownWithTimeout gracefully shuts down the server. If the timeout is
+// exceeded it forcefully closes any remaining active connections.
+func ShutdownWithTimeout(timeout time.Duration) error {
+	shutdown.Run()
+	if app == nil {
+		return nil
+	}
+	return app.ShutdownWithTimeout(timeout)
+}
+
+// ShutdownWithContext shuts down the server, forcing close when ctx is done.
+func ShutdownWithContext(ctx context.Context) error {
+	shutdown.Run()
+	if app == nil {
+		return nil
+	}
+	return app.ShutdownWithContext(ctx)
+}
+
+// GetRoutes returns all registered routes.
+// Pass true to exclude middleware-only routes.
+func GetRoutes(filterMiddleware ...bool) []fiber.Route {
+	if app == nil {
+		return nil
+	}
+	return app.GetRoutes(filterMiddleware...)
 }
