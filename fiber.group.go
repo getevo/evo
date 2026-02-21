@@ -126,7 +126,6 @@ func (grp *group) Static(path string, dir string, config ...static.Config) group
 	if len(config) > 0 {
 		cfg = config[0]
 	}
-	cfg.FS = nil
 	var route fiber.Router
 	route = (*grp.app).Use(path, static.New(dir, cfg))
 	return group{app: &route}
