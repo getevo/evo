@@ -15,7 +15,12 @@ type UpdatedAt struct {
 }
 
 // DeletedAt struct represents the soft delete functionality in GORM.
-// It embeds the `gorm.DeletedAt` struct, which provides the necessary fields for soft deletion.
+// Embedding this struct causes GORM to intercept db.Delete() calls and run
+// UPDATE SET deleted=1, deleted_at=NOW() instead of a hard DELETE.
+// Queries automatically filter with WHERE deleted=0.
+// Use db.Unscoped() to bypass the filter.
+//
+// Prefer types.SoftDelete from lib/db/types for new models.
 type DeletedAt struct {
 	Deleted   bool       `gorm:"column:deleted;index:deleted" json:"deleted"`
 	DeletedAt *time.Time `gorm:"column:deleted_at" json:"deleted_at"`

@@ -138,9 +138,14 @@ func NowUpdatedAt() UpdatedAt {
 
 // SoftDelete provides soft delete functionality in GORM.
 // It includes a `Deleted` flag and a `DeletedAt` timestamp.
+//
+// GORM integration: embedding SoftDelete in a model causes GORM to intercept
+// db.Delete() calls and run UPDATE SET deleted=1, deleted_at=NOW() instead of
+// a hard DELETE. Queries automatically filter with WHERE deleted=0. Use
+// db.Unscoped() to bypass the filter and see or hard-delete records.
 type SoftDelete struct {
-	Deleted   bool       `gorm:"column:deleted;default:0;index" json:"deleted"`
-	DeletedAt *time.Time `gorm:"column:deleted_at;nullable" json:"deleted_at"`
+	Deleted   bool          `gorm:"column:deleted;default:0;index" json:"deleted"`
+	DeletedAt SoftDeletedAt `gorm:"column:deleted_at" json:"deleted_at"`
 }
 
 // IsDeleted checks if the entity has been marked as deleted.
@@ -155,10 +160,9 @@ func (o *SoftDelete) IsDeleted() bool {
 func (o *SoftDelete) SetDeleted(v bool) {
 	o.Deleted = v
 	if v {
-		now := time.Now()
-		o.DeletedAt = &now
+		o.DeletedAt = SoftDeletedAt{Valid: true, Time: time.Now()}
 	} else {
-		o.DeletedAt = nil
+		o.DeletedAt = SoftDeletedAt{Valid: false}
 	}
 }
 
@@ -172,60 +176,61 @@ func (o *SoftDelete) Delete() {
 	o.SetDeleted(true)
 }
 
-// Time returns the underlying time.Time value, or zero time if DeletedAt is nil
+// Time returns the underlying time.Time value, or zero time if DeletedAt is not set.
 func (o SoftDelete) Time() time.Time {
-	if o.DeletedAt == nil {
+	if !o.DeletedAt.Valid {
 		return time.Time{}
 	}
-	return *o.DeletedAt
+	return o.DeletedAt.Time
 }
 
-// Set sets the DeletedAt timestamp
+// Set sets the DeletedAt timestamp.
 func (o *SoftDelete) Set(t time.Time) {
-	o.DeletedAt = &t
+	o.DeletedAt = SoftDeletedAt{Valid: true, Time: t}
 }
 
-// After reports whether the DeletedAt time is after u (returns false if DeletedAt is nil)
+// After reports whether the DeletedAt time is after u (returns false if DeletedAt is not set).
 func (o SoftDelete) After(u time.Time) bool {
-	if o.DeletedAt == nil {
+	if !o.DeletedAt.Valid {
 		return false
 	}
-	return o.DeletedAt.After(u)
+	return o.DeletedAt.Time.After(u)
 }
 
-// Before reports whether the DeletedAt time is before u (returns false if DeletedAt is nil)
+// Before reports whether the DeletedAt time is before u (returns false if DeletedAt is not set).
 func (o SoftDelete) Before(u time.Time) bool {
-	if o.DeletedAt == nil {
+	if !o.DeletedAt.Valid {
 		return false
 	}
-	return o.DeletedAt.Before(u)
+	return o.DeletedAt.Time.Before(u)
 }
 
-// Equal reports whether the DeletedAt time is equal to u (returns false if DeletedAt is nil)
+// Equal reports whether the DeletedAt time is equal to u (returns false if DeletedAt is not set).
 func (o SoftDelete) Equal(u time.Time) bool {
-	if o.DeletedAt == nil {
+	if !o.DeletedAt.Valid {
 		return false
 	}
-	return o.DeletedAt.Equal(u)
+	return o.DeletedAt.Time.Equal(u)
 }
 
-// IsZero reports whether the DeletedAt is nil or represents the zero time instant
+// IsZero reports whether the DeletedAt is not set or represents the zero time instant.
 func (o SoftDelete) IsZero() bool {
-	return o.DeletedAt == nil || o.DeletedAt.IsZero()
+	return !o.DeletedAt.Valid || o.DeletedAt.Time.IsZero()
 }
 
-// Unix returns the local time corresponding to the given Unix time (returns 0 if DeletedAt is nil)
+// Unix returns the Unix timestamp (returns 0 if DeletedAt is not set).
 func (o SoftDelete) Unix() int64 {
-	if o.DeletedAt == nil {
+	if !o.DeletedAt.Valid {
 		return 0
 	}
-	return o.DeletedAt.Unix()
+	return o.DeletedAt.Time.Unix()
 }
 
-// Format returns a textual representation of the time value formatted according to the layout (returns empty string if DeletedAt is nil)
+// Format returns a textual representation of the time value formatted according to the layout
+// (returns empty string if DeletedAt is not set).
 func (o SoftDelete) Format(layout string) string {
-	if o.DeletedAt == nil {
+	if !o.DeletedAt.Valid {
 		return ""
 	}
-	return o.DeletedAt.Format(layout)
+	return o.DeletedAt.Time.Format(layout)
 }
