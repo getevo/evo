@@ -6,6 +6,7 @@ import (
 	htmlpkg "html"
 	"io"
 	neturlpkg "net/url"
+	"reflect"
 	"strconv"
 	"strings"
 	"sync"
@@ -25,8 +26,7 @@ var (
 )
 
 // SetCacheSize sets the maximum number of compiled templates to cache.
-// Pass 0 to disable caching. If n is smaller than the current cache size,
-// the cache is cleared.
+// Pass 0 to disable caching. If n is smaller than the current cache size, the cache is cleared.
 func SetCacheSize(n int) {
 	cacheMu.Lock()
 	defer cacheMu.Unlock()
@@ -36,44 +36,180 @@ func SetCacheSize(n int) {
 	}
 }
 
-// Func is the signature for custom template functions.
-// It receives the resolved variable value (or nil for standalone / modifier-on-empty calls)
-// and must return the string to insert into the output.
-type Func func(v any) string
+// registeredFunc holds a reflected function for dynamic dispatch.
+type registeredFunc struct {
+	fn  reflect.Value
+	typ reflect.Type
+}
 
 var (
 	funcsMu sync.RWMutex
-	funcs   = map[string]Func{}
+	funcs   = map[string]*registeredFunc{}
 )
 
 // RegisterFunc registers a named function for use in templates.
-// A registered function can be used in two ways:
+// fn must be a function value of any signature. Arguments are coerced to the
+// declared parameter types automatically. The return value is stringified.
+// Functions may return one or two values; when two values are returned the last
+// must implement error — a non-nil error suppresses any output.
 //
-//   - modifier:   $var|name  — receives the variable's typed value
-//   - standalone: $name      — receives nil when "name" is not found in params
+// A registered function can be used in three ways:
 //
-// Built-in transform names (upper, lower, title, html, url, trim, json) are
-// reserved and always take precedence over registered functions.
-func RegisterFunc(name string, fn Func) {
+//	$fn(arg1, arg2)   — explicit call; args may be $variables or literals ("str", 42, 3.14)
+//	$var|fn           — modifier: receives the variable's resolved value as first argument
+//	$fn               — standalone: called with no arguments when name is not in params
+func RegisterFunc(name string, fn any) {
+	rv := reflect.ValueOf(fn)
+	if rv.Kind() != reflect.Func {
+		panic(fmt.Sprintf("tpl: RegisterFunc %q: fn must be a function, got %T", name, fn))
+	}
 	funcsMu.Lock()
-	funcs[name] = fn
+	funcs[name] = &registeredFunc{fn: rv, typ: rv.Type()}
 	funcsMu.Unlock()
 }
 
-func lookupFunc(name string) (Func, bool) {
+func lookupFunc(name string) (*registeredFunc, bool) {
 	funcsMu.RLock()
-	fn, ok := funcs[name]
+	rf, ok := funcs[name]
 	funcsMu.RUnlock()
-	return fn, ok
+	return rf, ok
 }
 
-// segment is one piece of a compiled template: either a literal string or a
-// variable reference (with optional modifier).
+// callFunc invokes rf with args and returns the stringified result.
+// Type mismatches and panics are recovered silently (returns "").
+func callFunc(rf *registeredFunc, args []any) (result string) {
+	defer func() {
+		if r := recover(); r != nil {
+			result = ""
+		}
+	}()
+
+	ft := rf.typ
+	numIn := ft.NumIn()
+	isVariadic := ft.IsVariadic()
+
+	var in []reflect.Value
+
+	if isVariadic {
+		fixedCount := numIn - 1
+		varElemType := ft.In(numIn - 1).Elem()
+		for i := 0; i < fixedCount; i++ {
+			var v any
+			if i < len(args) {
+				v = args[i]
+			}
+			in = append(in, coerceArg(v, ft.In(i)))
+		}
+		for i := fixedCount; i < len(args); i++ {
+			in = append(in, coerceArg(args[i], varElemType))
+		}
+	} else {
+		in = make([]reflect.Value, numIn)
+		for i := 0; i < numIn; i++ {
+			var v any
+			if i < len(args) {
+				v = args[i]
+			}
+			in[i] = coerceArg(v, ft.In(i))
+		}
+	}
+
+	out := rf.fn.Call(in)
+
+	if len(out) == 0 {
+		return ""
+	}
+
+	// If the last return value implements error, check it.
+	errType := reflect.TypeOf((*error)(nil)).Elem()
+	if out[len(out)-1].Type().Implements(errType) {
+		if !out[len(out)-1].IsNil() {
+			return "" // function returned an error — produce no output
+		}
+		out = out[:len(out)-1]
+	}
+
+	if len(out) == 0 {
+		return ""
+	}
+	return stringify(out[0].Interface())
+}
+
+// coerceArg converts val to the reflect.Value required for a function parameter of targetType.
+func coerceArg(val any, targetType reflect.Type) reflect.Value {
+	if val == nil {
+		return reflect.Zero(targetType)
+	}
+
+	rv := reflect.ValueOf(val)
+
+	// Direct type match.
+	if rv.Type() == targetType {
+		return rv
+	}
+
+	// Interface target (e.g. any / interface{} / fmt.Stringer).
+	if targetType.Kind() == reflect.Interface {
+		if rv.Type().Implements(targetType) {
+			return rv
+		}
+		return reflect.Zero(targetType)
+	}
+
+	// Assignable without conversion.
+	if rv.Type().AssignableTo(targetType) {
+		return rv
+	}
+
+	// Numeric / kind conversion (e.g. int64 literal → int param, float64 → float32).
+	if rv.Type().ConvertibleTo(targetType) {
+		return rv.Convert(targetType)
+	}
+
+	// Stringify to meet a string target.
+	if targetType.Kind() == reflect.String {
+		return reflect.ValueOf(stringify(val)).Convert(targetType)
+	}
+
+	// Parse a string argument into a numeric or bool target.
+	if s, ok := val.(string); ok {
+		switch targetType.Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			n, _ := strconv.ParseInt(s, 10, 64)
+			return reflect.ValueOf(n).Convert(targetType)
+		case reflect.Float32, reflect.Float64:
+			f, _ := strconv.ParseFloat(s, 64)
+			return reflect.ValueOf(f).Convert(targetType)
+		case reflect.Bool:
+			b, _ := strconv.ParseBool(s)
+			return reflect.ValueOf(b).Convert(targetType)
+		}
+	}
+
+	return reflect.Zero(targetType)
+}
+
+// argSpec is a parsed argument in a $fn(...) call.
+type argSpec struct {
+	isVar   bool
+	path    string // variable path when isVar == true
+	literal any    // pre-parsed value (string, int64, float64) when isVar == false
+}
+
+// segment is one compiled piece of a template: a literal string, a variable reference,
+// or a function call.
 type segment struct {
-	literal  string
-	path     string
-	modifier string // built-in transform, registered function name, or default value
-	isVar    bool
+	literal string
+
+	// variable reference: $path or $path|mod1|mod2|...
+	path      string
+	modifiers []string // zero or more pipe-chained modifiers/transforms
+	isVar     bool
+
+	// function call: $funcName(callArgs...)
+	isCall   bool
+	funcName string
+	callArgs []argSpec
 }
 
 // Template is a pre-compiled template ready for repeated execution.
@@ -81,9 +217,7 @@ type Template struct {
 	segments []segment
 }
 
-// Parse compiles src into a Template and caches the result up to the configured
-// cache size (default 1000). When the cache is full the result is returned but
-// not stored. Setting cache size to 0 disables caching entirely.
+// Parse compiles src into a Template and caches the result up to the configured cache size.
 func Parse(src string) *Template {
 	if cacheLimit > 0 {
 		cacheMu.RLock()
@@ -137,42 +271,198 @@ func compile(src string) *Template {
 
 		r, _ := utf8.DecodeRuneInString(rem)
 		if !isIdentStart(r) {
-			// '$' followed by non-identifier char → literal '$'
+			// '$' followed by a non-identifier character → literal '$'
 			t.segments = append(t.segments, segment{literal: "$"})
 			continue
 		}
 
-		// consume identifier path: [a-zA-Z_][a-zA-Z0-9_.\[\]]*
+		// Consume the identifier. Track whether it contains dots or brackets so
+		// that only plain names (e.g. "fn", not "arr[0]") trigger call syntax.
 		end := 0
+		isSimpleName := true
 		for end < len(rem) {
 			r, sz := utf8.DecodeRuneInString(rem[end:])
 			if !isIdentChar(r) {
 				break
+			}
+			if r == '.' || r == '[' || r == ']' {
+				isSimpleName = false
 			}
 			end += sz
 		}
 		path := rem[:end]
 		rem = rem[end:]
 
-		// optional modifier: |modifier (ends at whitespace, '$', or end)
-		modifier := ""
-		if len(rem) > 0 && rem[0] == '|' {
+		// Function call: $name(args...) — only for plain, unqualified names.
+		if isSimpleName && len(rem) > 0 && rem[0] == '(' {
+			rem = rem[1:] // skip '('
+			args := parseCallArgs(&rem)
+			t.segments = append(t.segments, segment{
+				isCall:   true,
+				funcName: path,
+				callArgs: args,
+			})
+			continue
+		}
+
+		// Optional pipe-chained modifiers: |mod1|mod2|...
+		var modifiers []string
+		for len(rem) > 0 && rem[0] == '|' {
 			rem = rem[1:]
 			modEnd := 0
 			for modEnd < len(rem) {
 				r, sz := utf8.DecodeRuneInString(rem[modEnd:])
-				if r == ' ' || r == '\t' || r == '\n' || r == '\r' || r == '$' {
+				if r == ' ' || r == '\t' || r == '\n' || r == '\r' || r == '$' || r == '|' {
 					break
 				}
 				modEnd += sz
 			}
-			modifier = rem[:modEnd]
+			if modEnd == 0 {
+				break
+			}
+			modifiers = append(modifiers, rem[:modEnd])
 			rem = rem[modEnd:]
 		}
 
-		t.segments = append(t.segments, segment{path: path, modifier: modifier, isVar: true})
+		t.segments = append(t.segments, segment{path: path, modifiers: modifiers, isVar: true})
 	}
 	return t
+}
+
+// parseCallArgs reads a comma-separated argument list until ')' and advances *rem past ')'.
+func parseCallArgs(rem *string) []argSpec {
+	var args []argSpec
+	for {
+		*rem = strings.TrimLeft(*rem, " \t\n\r")
+		if len(*rem) == 0 {
+			break
+		}
+		if (*rem)[0] == ')' {
+			*rem = (*rem)[1:] // consume ')'
+			break
+		}
+		if (*rem)[0] == ',' {
+			*rem = (*rem)[1:]
+			continue
+		}
+		arg, ok := parseCallArg(rem)
+		if !ok {
+			// Unrecognised token — skip to the next ',' or ')' to avoid an infinite loop.
+			i := strings.IndexAny(*rem, ",)")
+			if i < 0 {
+				*rem = ""
+				break
+			}
+			*rem = (*rem)[i:]
+			continue
+		}
+		args = append(args, arg)
+	}
+	return args
+}
+
+// parseCallArg parses one argument — a $variable, a "string", a 'string', or a numeric literal.
+func parseCallArg(rem *string) (argSpec, bool) {
+	*rem = strings.TrimLeft(*rem, " \t\n\r")
+	if len(*rem) == 0 {
+		return argSpec{}, false
+	}
+
+	// $variable — supports dotted paths and bracket access: $user.Name, $arr[0]
+	if (*rem)[0] == '$' {
+		*rem = (*rem)[1:]
+		end := 0
+		for end < len(*rem) {
+			r, sz := utf8.DecodeRuneInString((*rem)[end:])
+			if !isIdentChar(r) {
+				break
+			}
+			end += sz
+		}
+		if end == 0 {
+			return argSpec{}, false
+		}
+		path := (*rem)[:end]
+		*rem = (*rem)[end:]
+		return argSpec{isVar: true, path: path}, true
+	}
+
+	// "double-quoted string literal" with escape sequences
+	if (*rem)[0] == '"' {
+		*rem = (*rem)[1:]
+		var sb strings.Builder
+		for len(*rem) > 0 {
+			if (*rem)[0] == '"' {
+				*rem = (*rem)[1:]
+				break
+			}
+			if (*rem)[0] == '\\' && len(*rem) > 1 {
+				switch (*rem)[1] {
+				case '"':
+					sb.WriteByte('"')
+				case '\\':
+					sb.WriteByte('\\')
+				case 'n':
+					sb.WriteByte('\n')
+				case 't':
+					sb.WriteByte('\t')
+				default:
+					sb.WriteByte((*rem)[1])
+				}
+				*rem = (*rem)[2:]
+				continue
+			}
+			sb.WriteByte((*rem)[0])
+			*rem = (*rem)[1:]
+		}
+		return argSpec{literal: sb.String()}, true
+	}
+
+	// 'single-quoted string literal'
+	if (*rem)[0] == '\'' {
+		*rem = (*rem)[1:]
+		var sb strings.Builder
+		for len(*rem) > 0 {
+			if (*rem)[0] == '\'' {
+				*rem = (*rem)[1:]
+				break
+			}
+			sb.WriteByte((*rem)[0])
+			*rem = (*rem)[1:]
+		}
+		return argSpec{literal: sb.String()}, true
+	}
+
+	// Numeric literal: optional sign, integer digits, optional fractional part.
+	end := 0
+	if end < len(*rem) && ((*rem)[end] == '-' || (*rem)[end] == '+') {
+		end++
+	}
+	digitStart := end
+	hasDot := false
+	for end < len(*rem) {
+		c := (*rem)[end]
+		if c >= '0' && c <= '9' {
+			end++
+		} else if c == '.' && !hasDot {
+			hasDot = true
+			end++
+		} else {
+			break
+		}
+	}
+	if end > digitStart { // at least one digit
+		numStr := (*rem)[:end]
+		*rem = (*rem)[end:]
+		if hasDot {
+			f, _ := strconv.ParseFloat(numStr, 64)
+			return argSpec{literal: f}, true
+		}
+		n, _ := strconv.ParseInt(numStr, 10, 64)
+		return argSpec{literal: n}, true
+	}
+
+	return argSpec{}, false
 }
 
 func isIdentStart(r rune) bool {
@@ -197,55 +487,91 @@ func (t *Template) WriteTo(w io.Writer, params ...any) {
 
 func (t *Template) writeTo(w io.Writer, params []any) {
 	for _, seg := range t.segments {
-		if !seg.isVar {
-			_, _ = io.WriteString(w, seg.literal)
-			continue
-		}
-
-		val, found := resolve(seg.path, params)
-		out := ""
-		if found {
-			out = stringify(val)
-		}
-
 		switch {
-		case out != "":
-			// We have a string value — apply modifier if it is a known transform or function.
-			if seg.modifier != "" {
-				if result, ok := applyModifier(out, val, seg.modifier); ok {
-					out = result
+
+		case seg.isCall:
+			// Resolve each argument, then call the registered function.
+			resolvedArgs := make([]any, len(seg.callArgs))
+			for i, arg := range seg.callArgs {
+				if arg.isVar {
+					v, _ := resolve(arg.path, params)
+					resolvedArgs[i] = v
+				} else {
+					resolvedArgs[i] = arg.literal
 				}
-				// else: modifier is a default value string — ignore since we already have a value.
 			}
-			_, _ = io.WriteString(w, out)
+			if rf, ok := lookupFunc(seg.funcName); ok {
+				_, _ = io.WriteString(w, callFunc(rf, resolvedArgs))
+			}
+			// Unknown function: produce no output.
 
-		case seg.modifier != "":
-			// No string value, but there is a modifier.
-			if fn, ok := lookupFunc(seg.modifier); ok {
-				// Registered function — call with nil (no value available).
-				_, _ = io.WriteString(w, fn(nil))
-			} else if isBuiltinTransform(seg.modifier) {
-				// Built-in transform on a missing variable — keep the placeholder.
-				_, _ = io.WriteString(w, "$")
-				_, _ = io.WriteString(w, seg.path)
-				_, _ = io.WriteString(w, "|")
-				_, _ = io.WriteString(w, seg.modifier)
-			} else {
-				// Unknown modifier — treat as a default value.
-				_, _ = io.WriteString(w, seg.modifier)
+		case !seg.isVar:
+			_, _ = io.WriteString(w, seg.literal)
+
+		default:
+			// Variable reference.
+			val, found := resolve(seg.path, params)
+			out := ""
+			if found {
+				out = stringify(val)
 			}
 
-		case !found:
-			// Variable not found and no modifier — try the path as a standalone function.
-			if fn, ok := lookupFunc(seg.path); ok {
-				_, _ = io.WriteString(w, fn(nil))
-			} else {
-				// Keep the original placeholder unchanged.
-				_, _ = io.WriteString(w, "$")
-				_, _ = io.WriteString(w, seg.path)
-				if seg.modifier != "" {
+			// Multi-modifier (chained): apply each in sequence.
+			if len(seg.modifiers) > 1 {
+				for _, mod := range seg.modifiers {
+					if result, ok := applyModifier(out, val, mod); ok {
+						out = result
+						val = out // updated value feeds subsequent modifiers
+					}
+					// Unknown modifier in a chain: silently skip.
+				}
+				_, _ = io.WriteString(w, out)
+				continue
+			}
+
+			// Zero or one modifier: original behaviour preserved exactly.
+			mod := ""
+			if len(seg.modifiers) == 1 {
+				mod = seg.modifiers[0]
+			}
+
+			switch {
+			case out != "":
+				if mod != "" {
+					if result, ok := applyModifier(out, val, mod); ok {
+						out = result
+					}
+					// else: modifier is a default-value string — keep the current value.
+				}
+				_, _ = io.WriteString(w, out)
+
+			case mod != "":
+				if isBuiltinTransform(mod) {
+					// Built-in transform on a missing variable — keep the placeholder.
+					_, _ = io.WriteString(w, "$")
+					_, _ = io.WriteString(w, seg.path)
 					_, _ = io.WriteString(w, "|")
-					_, _ = io.WriteString(w, seg.modifier)
+					_, _ = io.WriteString(w, mod)
+				} else if rf, ok := lookupFunc(mod); ok {
+					// User-registered function used as modifier on a missing variable — call with nil.
+					_, _ = io.WriteString(w, callFunc(rf, []any{nil}))
+				} else {
+					// Unknown modifier — treat as a default value.
+					_, _ = io.WriteString(w, mod)
+				}
+
+			case !found:
+				// Variable not found and no modifier — try the path as a standalone function call.
+				if rf, ok := lookupFunc(seg.path); ok {
+					_, _ = io.WriteString(w, callFunc(rf, nil))
+				} else {
+					// Keep the original placeholder unchanged.
+					_, _ = io.WriteString(w, "$")
+					_, _ = io.WriteString(w, seg.path)
+					if mod != "" {
+						_, _ = io.WriteString(w, "|")
+						_, _ = io.WriteString(w, mod)
+					}
 				}
 			}
 		}
@@ -287,9 +613,8 @@ func resolve(path string, params []any) (any, bool) {
 
 var titleCaser = cases.Title(language.English, cases.NoLower)
 
-// applyModifier applies a modifier to a value.
-// Returns (result, true) when the modifier is a built-in transform or a registered function.
-// Returns ("", false) when the modifier should be treated as a default value string.
+// applyModifier applies a built-in transform or registered function as a modifier.
+// Returns (result, true) when the modifier is recognised; ("", false) for default-value strings.
 func applyModifier(str string, val any, mod string) (string, bool) {
 	switch strings.ToLower(mod) {
 	case "upper":
@@ -311,8 +636,8 @@ func applyModifier(str string, val any, mod string) (string, bool) {
 		}
 		return string(b), true
 	}
-	if fn, ok := lookupFunc(mod); ok {
-		return fn(val), true
+	if rf, ok := lookupFunc(mod); ok {
+		return callFunc(rf, []any{val}), true
 	}
 	return "", false
 }
@@ -327,8 +652,7 @@ func isBuiltinTransform(mod string) bool {
 }
 
 // stringify converts v to its string representation. It checks for fmt.Stringer
-// first, then uses a type switch for all common scalar types, falling back to
-// fmt.Sprint for everything else.
+// first, then uses a type switch for common scalar types, falling back to fmt.Sprint.
 func stringify(v any) string {
 	if v == nil {
 		return ""

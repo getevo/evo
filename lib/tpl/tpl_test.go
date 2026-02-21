@@ -1,6 +1,7 @@
 package tpl
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -15,6 +16,8 @@ type User struct {
 type Named struct{ name string }
 
 func (n Named) String() string { return n.name }
+
+// ── Existing tests ────────────────────────────────────────────────────────────
 
 func TestRender(t *testing.T) {
 	text := `Hello $title $user.Name $user.Family you have $sender[0] email From $sender[2][from]($sender[2][user].Name $sender[2][user].Family) at $date[0]:$date[1]:$date[2]`
@@ -222,4 +225,207 @@ func TestMultipleParams(t *testing.T) {
 	if got != "1 2" {
 		t.Errorf("multi params: got %q", got)
 	}
+}
+
+// ── Function call syntax: $fn(arg1, arg2, ...) ───────────────────────────────
+
+func TestCallTypedIntArgs(t *testing.T) {
+	RegisterFunc("add", func(a, b int) int { return a + b })
+	// int64 literals coerced to int params
+	if got := Render("$add(3, 4)", map[string]any{}); got != "7" {
+		t.Errorf("add(3,4): got %q", got)
+	}
+}
+
+func TestCallTypedStringArgs(t *testing.T) {
+	RegisterFunc("greet", func(name string) string { return "Hello, " + name })
+	if got := Render(`$greet("World")`, map[string]any{}); got != "Hello, World" {
+		t.Errorf("greet: got %q", got)
+	}
+}
+
+func TestCallVarArgs(t *testing.T) {
+	RegisterFunc("join2", func(a, b string) string { return a + b })
+	got := Render("$join2($first, $last)", Pairs("first", "foo", "last", "bar"))
+	if got != "foobar" {
+		t.Errorf("join2 var args: got %q", got)
+	}
+}
+
+func TestCallMixedArgs(t *testing.T) {
+	RegisterFunc("prefix", func(sep, a, b string) string { return a + sep + b })
+	got := Render(`$prefix("-", $x, $y)`, Pairs("x", "hello", "y", "world"))
+	if got != "hello-world" {
+		t.Errorf("prefix mixed args: got %q", got)
+	}
+}
+
+func TestCallZeroArgs(t *testing.T) {
+	RegisterFunc("version", func() string { return "v2.0" })
+	if got := Render("ver: $version()", map[string]any{}); got != "ver: v2.0" {
+		t.Errorf("zero-arg call: got %q", got)
+	}
+}
+
+func TestCallVariadicFunc(t *testing.T) {
+	RegisterFunc("sum", func(nums ...int) int {
+		total := 0
+		for _, n := range nums {
+			total += n
+		}
+		return total
+	})
+	// int64 literals coerced to variadic int elem type
+	if got := Render("$sum(1, 2, 3, 4)", map[string]any{}); got != "10" {
+		t.Errorf("variadic sum: got %q", got)
+	}
+}
+
+func TestCallVariadicMixed(t *testing.T) {
+	RegisterFunc("cat", func(sep string, parts ...string) string {
+		return strings.Join(parts, sep)
+	})
+	got := Render(`$cat(", ", $a, $b, $c)`, Pairs("a", "one", "b", "two", "c", "three"))
+	if got != "one, two, three" {
+		t.Errorf("variadic cat: got %q", got)
+	}
+}
+
+func TestCallFloatArgs(t *testing.T) {
+	RegisterFunc("mul", func(a, b float64) float64 { return a * b })
+	// float64 literal
+	if got := Render("$mul(2.5, 4.0)", map[string]any{}); got != "10" {
+		t.Errorf("mul float: got %q", got)
+	}
+	// int64 literal coerced to float64
+	if got := Render("$mul(3, 3)", map[string]any{}); got != "9" {
+		t.Errorf("mul int coercion: got %q", got)
+	}
+}
+
+func TestCallSingleQuotedString(t *testing.T) {
+	RegisterFunc("echo", func(s string) string { return s })
+	if got := Render("$echo('hello world')", map[string]any{}); got != "hello world" {
+		t.Errorf("single-quoted arg: got %q", got)
+	}
+}
+
+func TestCallDoubleQuotedEscapes(t *testing.T) {
+	RegisterFunc("echoStr", func(s string) string { return s })
+	if got := Render(`$echoStr("line1\nline2")`, map[string]any{}); got != "line1\nline2" {
+		t.Errorf("escape in arg: got %q", got)
+	}
+}
+
+func TestCallDottedPathArg(t *testing.T) {
+	RegisterFunc("upper2", func(s string) string { return strings.ToUpper(s) })
+	got := Render("$upper2($user.Name)", Pairs("user", User{Name: "alice", Family: "smith"}))
+	if got != "ALICE" {
+		t.Errorf("dotted path arg: got %q", got)
+	}
+}
+
+func TestCallNegativeIntLiteral(t *testing.T) {
+	RegisterFunc("neg", func(n int) string { return fmt.Sprintf("%d", n) })
+	if got := Render("$neg(-5)", map[string]any{}); got != "-5" {
+		t.Errorf("negative literal: got %q", got)
+	}
+}
+
+func TestCallUnknownFuncEmptyOutput(t *testing.T) {
+	// unregistered function — must produce no output, not a placeholder
+	got := Render("[${noSuchFn}($x)]", Pairs("x", "v"))
+	// ${ is not valid identifier start — stays literal; we test the real case:
+	got = Render("[$noSuchFn($x)]", Pairs("x", "v"))
+	if got != "[]" {
+		t.Errorf("unknown func call: got %q", got)
+	}
+}
+
+func TestCallFuncReturnsError(t *testing.T) {
+	RegisterFunc("failFn", func(s string) (string, error) {
+		if s == "bad" {
+			return "", errors.New("bad input")
+		}
+		return "ok:" + s, nil
+	})
+	// error case → empty output
+	if got := Render(`$failFn("bad")`, map[string]any{}); got != "" {
+		t.Errorf("error return: got %q, want empty", got)
+	}
+	// success case
+	if got := Render(`$failFn("good")`, map[string]any{}); got != "ok:good" {
+		t.Errorf("success return: got %q", got)
+	}
+}
+
+func TestCallAnyParamType(t *testing.T) {
+	// func(v any) string — old-style single-arg still works via call syntax
+	RegisterFunc("anyFn", func(v any) string {
+		return fmt.Sprintf("<%v>", v)
+	})
+	got := Render("$anyFn($val)", Pairs("val", 42))
+	if got != "<42>" {
+		t.Errorf("any param: got %q", got)
+	}
+}
+
+func TestCallMultiReturn(t *testing.T) {
+	RegisterFunc("divmod", func(a, b int) string {
+		return fmt.Sprintf("%d/%d", a/b, a%b)
+	})
+	if got := Render("$divmod(10, 3)", map[string]any{}); got != "3/1" {
+		t.Errorf("divmod: got %q", got)
+	}
+}
+
+func TestCallInsideTemplate(t *testing.T) {
+	RegisterFunc("bold", func(s string) string { return "**" + s + "**" })
+	got := Render("Name: $bold($name), Age: $age", Pairs("name", "Go", "age", 10))
+	if got != "Name: **Go**, Age: 10" {
+		t.Errorf("call inside template: got %q", got)
+	}
+}
+
+func TestCallConsecutive(t *testing.T) {
+	RegisterFunc("inc", func(n int) int { return n + 1 })
+	got := Render("$inc(1) $inc(2) $inc(3)", map[string]any{})
+	if got != "2 3 4" {
+		t.Errorf("consecutive calls: got %q", got)
+	}
+}
+
+func TestCallVarShadowsCall(t *testing.T) {
+	// When a template param provides "fn", $fn reads the param value,
+	// but $fn(...) still calls the function (different parse paths).
+	RegisterFunc("stamp", func() string { return "STAMP" })
+	// $stamp as plain var — param wins
+	got := Render("$stamp", Pairs("stamp", "from-param"))
+	if got != "from-param" {
+		t.Errorf("param shadows func standalone: got %q", got)
+	}
+	// $stamp() as call — always calls the function, param irrelevant
+	got = Render("$stamp()", Pairs("stamp", "from-param"))
+	if got != "STAMP" {
+		t.Errorf("call not shadowed by param: got %q", got)
+	}
+}
+
+func TestCallBracketPathArgNotACall(t *testing.T) {
+	// $arr[0](...) must NOT be treated as a function call because the
+	// identifier is not a simple name. The '(' becomes a literal character.
+	got := Render("$arr[0](hi)", map[string]any{"arr": []string{"X"}})
+	// $arr[0] resolves to "X"; "(hi)" is literal text
+	if got != "X(hi)" {
+		t.Errorf("bracket path not a call: got %q", got)
+	}
+}
+
+func TestRegisterFuncPanicOnNonFunc(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Error("expected panic when registering non-function")
+		}
+	}()
+	RegisterFunc("bad", "not a function")
 }
