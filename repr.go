@@ -1,11 +1,13 @@
 package evo
 
-import "github.com/alecthomas/repr"
+import (
+	"github.com/kr/pretty"
+)
 
 func Repr(v any) string {
-	return repr.String(v)
+	return pretty.Sprint(v)
 }
 
 func Dump(v any) {
-	repr.Println(v)
+	_, _ = pretty.Println(v)
 }
