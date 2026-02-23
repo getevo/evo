@@ -39,6 +39,7 @@ func Setup(params ...any) error {
 	settings.Register("HTTP", &http)
 	settings.Get("HTTP").Cast(&http)
 	err = generic.Parse(http).Cast(&fiberConfig)
+
 	if err != nil {
 		log.Fatal("Unable to retrieve HTTP server configurations: ", err)
 	}
@@ -134,7 +135,7 @@ func Run() error {
 
 	serverErr := make(chan error, 1)
 	go func() {
-		serverErr <- app.Listen(http.Host + ":" + http.Port)
+		serverErr <- app.Listen(http.Host+":"+http.Port, fiber.ListenConfig{DisableStartupMessage: true})
 	}()
 
 	quit := make(chan os.Signal, 1)
