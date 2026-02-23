@@ -142,6 +142,13 @@ func fromStatementToTable(stmt *gorm.Statement) ddlTable {
 			}
 		}
 
+		// A column whose default value is NULL must be nullable — regardless of
+		// whether the Go type is a pointer. Emitting DEFAULT NULL NOT NULL is
+		// contradictory and causes MySQL/MariaDB error 1067.
+		if strings.EqualFold(column.Default, "null") {
+			column.Nullable = true
+		}
+
 		if (column.Type == "TIMESTAMP" || column.Type == "timestamp") && column.Default == "" && !column.Nullable {
 			column.Default = "CURRENT_TIMESTAMP"
 		}
