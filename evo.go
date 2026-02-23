@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/getevo/evo/v2/lib/application"
 	"github.com/getevo/evo/v2/lib/args"
@@ -149,7 +150,30 @@ func Run() error {
 		}
 		return nil
 	case <-quit:
-		return Shutdown()
+		fmt.Println("\nshutdown signal received. graceful shutdown in progress...")
+		fmt.Println("press Ctrl+C again to force kill")
+
+		// Listen for a second signal to force kill
+		go func() {
+			<-quit
+			fmt.Println("\nforce kill signal received. exiting immediately.")
+			os.Exit(1)
+		}()
+
+		// Run graceful shutdown with a 5-second deadline
+		done := make(chan error, 1)
+		go func() {
+			done <- Shutdown()
+		}()
+
+		select {
+		case err := <-done:
+			return err
+		case <-time.After(5 * time.Second):
+			fmt.Println("graceful shutdown timed out after 5 seconds. forcing exit.")
+			os.Exit(1)
+			return nil
+		}
 	}
 }
 
