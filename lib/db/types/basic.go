@@ -145,7 +145,7 @@ func NowUpdatedAt() UpdatedAt {
 // db.Unscoped() to bypass the filter and see or hard-delete records.
 type SoftDelete struct {
 	Deleted   bool          `gorm:"column:deleted;default:0;index" json:"deleted"`
-	DeletedAt SoftDeletedAt `gorm:"column:deleted_at" json:"deleted_at"`
+	DeletedAt SoftDeletedAt `gorm:"column:deleted_at;default:null" json:"deleted_at"`
 }
 
 // IsDeleted checks if the entity has been marked as deleted.

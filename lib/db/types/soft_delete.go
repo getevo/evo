@@ -59,7 +59,7 @@ func (n *SoftDeletedAt) UnmarshalJSON(b []byte) error {
 
 // GormDataType returns the GORM column data type.
 func (SoftDeletedAt) GormDataType() string {
-	return "datetime"
+	return "timestamp"
 }
 
 // QueryClauses implements schema.QueryClausesInterface.
