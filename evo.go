@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"runtime"
 	"strings"
 	"syscall"
 	"time"
 
 	"github.com/getevo/evo/v2/lib/application"
 	"github.com/getevo/evo/v2/lib/args"
+	"github.com/getevo/evo/v2/lib/build"
 	"github.com/getevo/evo/v2/lib/log"
 	"github.com/getevo/evo/v2/lib/settings"
 
@@ -20,8 +22,9 @@ import (
 )
 
 var (
-	app *fiber.App
-	Any func(request *Request) error
+	app            *fiber.App
+	Any            func(request *Request) error
+	setupStartTime time.Time
 )
 var http = HTTPConfig{}
 var fiberConfig = fiber.Config{}
@@ -31,6 +34,7 @@ var Application *application.App
 // Optional params: pass a db.Driver to select the database driver (e.g. pgsql.Driver{} or mysql.Driver{}).
 // Returns an error if setup fails instead of calling log.Fatal, allowing for graceful error handling.
 func Setup(params ...any) error {
+	setupStartTime = time.Now()
 	Application = application.GetInstance()
 	var err = settings.Init()
 	if err != nil {
@@ -134,6 +138,8 @@ func Run() error {
 		})
 	}
 
+	printStartupBanner()
+
 	serverErr := make(chan error, 1)
 	go func() {
 		serverErr <- app.Listen(http.Host+":"+http.Port, fiber.ListenConfig{DisableStartupMessage: true})
@@ -184,4 +190,93 @@ func GetFiber() *fiber.App {
 
 func Register(applications ...application.Application) *application.App {
 	return Application.Register(applications...)
+}
+
+// printStartupBanner prints a Fiber-style startup box with server info
+func printStartupBanner() {
+	const boxWidth = 56
+	const colWidth = 26
+
+	// --- helpers ---
+
+	centerLine := func(s string) string {
+		if len(s) >= boxWidth {
+			return s[:boxWidth]
+		}
+		left := (boxWidth - len(s)) / 2
+		right := boxWidth - len(s) - left
+		return strings.Repeat(" ", left) + s + strings.Repeat(" ", right)
+	}
+
+	dotFill := func(key, value string, width int) string {
+		n := width - len(key) - len(value) - 2
+		if n < 1 {
+			n = 1
+		}
+		return key + " " + strings.Repeat(".", n) + " " + value
+	}
+
+	padRight := func(s string, width int) string {
+		if len(s) >= width {
+			return s[:width]
+		}
+		return s + strings.Repeat(" ", width-len(s))
+	}
+
+	twoCol := func(k1, v1, k2, v2 string) string {
+		left := padRight(dotFill(k1, v1, colWidth), colWidth)
+		right := padRight(dotFill(k2, v2, colWidth), colWidth)
+		return " " + left + "  " + right + " "
+	}
+
+	// --- collect data ---
+
+	version := build.Version
+
+	listenAddr := fmt.Sprintf("http://%s:%s", http.Host, http.Port)
+
+	routeCount := 0
+	handlerCount := 0
+	allRoutes := app.GetRoutes(false)
+	handlerCount = len(allRoutes)
+	endpointRoutes := app.GetRoutes(true)
+	routeCount = len(endpointRoutes)
+
+	appCount := len(Application.GetApps())
+	pid := os.Getpid()
+	goVer := runtime.Version()
+	startup := time.Since(setupStartTime).Round(time.Millisecond).String()
+
+	prefork := "Disabled"
+	if http.Prefork {
+		prefork = "Enabled"
+	}
+
+	// --- build lines ---
+
+	lines := []string{
+		centerLine("EVO " + version),
+		centerLine(listenAddr),
+		centerLine(""),
+		twoCol("Routes", fmt.Sprint(routeCount), "Handlers", fmt.Sprint(handlerCount)),
+		twoCol("Apps", fmt.Sprint(appCount), "Prefork", prefork),
+		twoCol("PID", fmt.Sprint(pid), "Startup", startup),
+		twoCol("Go", goVer, "Concurrency", fmt.Sprint(http.Concurrency)),
+	}
+
+	if settings.Get("Database.Enabled").Bool() {
+		dbType := settings.Get("Database.Type").String()
+		dbName := settings.Get("Database.Database").String()
+		lines = append(lines, twoCol("Database", dbType, "DB Name", dbName))
+	}
+
+	// --- print box ---
+
+	fmt.Println()
+	fmt.Println(" ┌" + strings.Repeat("─", boxWidth) + "┐")
+	for _, line := range lines {
+		fmt.Println(" │" + line + "│")
+	}
+	fmt.Println(" └" + strings.Repeat("─", boxWidth) + "┘")
+	fmt.Println()
 }
