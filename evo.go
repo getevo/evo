@@ -11,7 +11,6 @@ import (
 
 	"github.com/getevo/evo/v2/lib/application"
 	"github.com/getevo/evo/v2/lib/args"
-	"github.com/getevo/evo/v2/lib/build"
 	"github.com/getevo/evo/v2/lib/log"
 	"github.com/getevo/evo/v2/lib/settings"
 
@@ -231,8 +230,6 @@ func printStartupBanner() {
 
 	// --- collect data ---
 
-	version := build.Version
-
 	listenAddr := fmt.Sprintf("http://%s:%s", http.Host, http.Port)
 
 	routeCount := 0
@@ -255,7 +252,7 @@ func printStartupBanner() {
 	// --- build lines ---
 
 	lines := []string{
-		centerLine("EVO " + version),
+		centerLine("EVO"),
 		centerLine(listenAddr),
 		centerLine(""),
 		twoCol("Routes", fmt.Sprint(routeCount), "Handlers", fmt.Sprint(handlerCount)),
