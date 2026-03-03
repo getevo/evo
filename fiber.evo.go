@@ -267,7 +267,7 @@ func Static(path string, dir string, config ...static.Config) fiber.Router {
 	if len(config) > 0 {
 		cfg = config[0]
 	}
-	return app.Use(path, static.New(dir, cfg))
+	return app.Get(path+"/*", static.New(dir, cfg))
 }
 
 // ShutdownWithTimeout gracefully shuts down the server. If the timeout is
