@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"reflect"
+	"sync"
 
 	"github.com/getevo/evo/v2/lib/log"
 	"gorm.io/gorm"
@@ -11,6 +12,19 @@ import (
 )
 
 var Models []Model
+
+var (
+	joinConstraintCacheMu sync.RWMutex
+	joinConstraintCache   = map[string][]JoinConstraint{}
+)
+
+// InvalidateJoinConstraintsCache clears the cached FK constraints. Call this
+// after a migration run so subsequent UseModel calls observe the new FK layout.
+func InvalidateJoinConstraintsCache() {
+	joinConstraintCacheMu.Lock()
+	joinConstraintCache = map[string][]JoinConstraint{}
+	joinConstraintCacheMu.Unlock()
+}
 
 type Model struct {
 	Sample      any                 `json:"sample"`
@@ -102,7 +116,17 @@ func UseModel(db *gorm.DB, values ...any) {
 
 		var constraints []JoinConstraint
 		if d != nil {
-			constraints = d.GetJoinConstraints(db, database)
+			joinConstraintCacheMu.RLock()
+			cached, ok := joinConstraintCache[database]
+			joinConstraintCacheMu.RUnlock()
+			if ok {
+				constraints = cached
+			} else {
+				constraints = d.GetJoinConstraints(db, database)
+				joinConstraintCacheMu.Lock()
+				joinConstraintCache[database] = constraints
+				joinConstraintCacheMu.Unlock()
+			}
 		}
 		for _, constraint := range constraints {
 			model.Joins[constraint.ReferencedTable] = []string{constraint.Column, constraint.ReferencedColumn}

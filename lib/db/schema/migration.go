@@ -293,6 +293,10 @@ func DoMigration(db *gorm.DB) error {
 		fn(db)
 	}
 
+	// FK layout may have changed; drop the cached snapshot so future
+	// UseModel calls re-introspect.
+	InvalidateJoinConstraintsCache()
+
 	joinedErr := errors.Join(errs...)
 	if joinedErr != nil {
 		recordMigration(db, hash, "failed", executed, joinedErr.Error())
