@@ -146,9 +146,12 @@ func Set(key string, value any) {
 	data[normalizedKey] = value
 	mu.Unlock()
 
-	// Persist to database if enabled
+	// Persist to database if enabled. The ORIGINAL (dotted) key is passed —
+	// not the flattened normalizedKey — so the domain hierarchy can be
+	// reconstructed and the value lands in the same row LoadDatabaseSettings
+	// reads back.
 	if db.IsEnabled() {
-		_ = saveSingleSetting(normalizedKey, value)
+		_ = saveSingleSetting(key, value)
 	}
 
 	// Trigger change callbacks
@@ -177,15 +180,11 @@ func SetMulti(in map[string]any) {
 	}
 	mu.Unlock()
 
-	// Persist to database if enabled
+	// Persist to database if enabled. Pass the ORIGINAL (dotted) keys so each
+	// value is stored under the correct domain hierarchy (see saveSingleSetting).
 	if db.IsEnabled() {
-		normalizedMap := make(map[string]any, len(in))
-		for key, value := range in {
-			normalizedMap[normalizeKey(key)] = value
-		}
 		db.UseModel(Setting{}, SettingDomain{})
-		_ = saveDatabaseSettings(normalizedMap)
-
+		_ = saveDatabaseSettings(in)
 	}
 
 	// Trigger change callbacks outside lock
