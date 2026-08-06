@@ -20,6 +20,7 @@ With EVO Framework, you can focus on your programming logic and rapidly develop 
   - [Database Migration](docs/migration.md)
 - [Health Checks](docs/health-checks.md)
 - [HTTP Responses (Outcome)](docs/outcome.md)
+- [MCP Server (AI agent tools)](docs/mcp.md)
 - [Modules](#libraries)
 - [Web Server](docs/webserver.md)
 - [Storage Interface](lib/storage/README.md)
@@ -60,6 +61,7 @@ EVO Framework includes a comprehensive set of libraries in the `lib` directory:
 - [Is](lib/is/README.md) - Type checking utilities
 - [JSON](lib/json/README.md) - JSON handling
 - [Log](lib/log/README.md) - Logging system
+- [MCP](lib/mcp/README.md) - Model Context Protocol wire types and schema generation
 - [Memo](lib/memo/README.md) - Memoization and caching
 - [Model](lib/model/README.md) - Data modeling
 - [Outcome](lib/outcome/README.md) - Function result handling

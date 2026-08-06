@@ -42,6 +42,10 @@ func Setup(params ...any) error {
 
 	settings.Register("HTTP", &http)
 	settings.Get("HTTP").Cast(&http)
+
+	settings.Register("MCP", &mcpConfig)
+	settings.Get("MCP").Cast(&mcpConfig)
+
 	err = generic.Parse(http).Cast(&fiberConfig)
 
 	if err != nil {
@@ -121,6 +125,11 @@ func Run() error {
 
 	// Register health check endpoints
 	registerHealthCheckEndpoints()
+
+	// Register the MCP endpoint. This happens after Application.Run() so that
+	// every sub-application has registered its tools, and before the catch-all
+	// middleware below would swallow the route.
+	registerMCPEndpoints()
 
 	if Any != nil {
 		app.Use(func(ctx fiber.Ctx) error {
