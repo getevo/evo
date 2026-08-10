@@ -44,6 +44,14 @@ func (p *PGDialect) fromStatementToTable(stmt *gorm.Statement) pgDdlTable {
 			}
 		}
 
+		// A vector takes its width from the size tag. The dialector reports the
+		// logical type ("vector") rather than the column type, because
+		// GormDBDataType is only consulted by GORM's own migrator, so the width
+		// is applied here — `type:vector(1536)` already arrives complete.
+		if isVectorType(datatype) && vectorDimensions(datatype) == 0 && field.Size > 0 {
+			datatype = fmt.Sprintf("vector(%d)", field.Size)
+		}
+
 		var column = schema.Column{
 			Name:          field.DBName,
 			Type:          datatype,
@@ -98,6 +106,12 @@ func (p *PGDialect) fromStatementToTable(stmt *gorm.Statement) pgDdlTable {
 		if _, ok := field.TagSettings["NULLABLE"]; ok {
 			nullable = true
 		}
+		// A vector column is nullable unless the model insists otherwise: the
+		// embedding of a row is usually computed after the row exists, and a
+		// dimensioned vector column has no zero value to default to.
+		if isVectorType(datatype) {
+			nullable = true
+		}
 		if field.FieldType.Kind() == reflect.Ptr || nullable {
 			if _, ok := field.TagSettings["NOT NULL"]; !ok {
 				column.Nullable = true
@@ -135,6 +149,16 @@ func (p *PGDialect) fromStatementToTable(stmt *gorm.Statement) pgDdlTable {
 				Unique:  true,
 				Columns: schema.Columns{column},
 			})
+		}
+
+		// A vector index is registered here rather than emitted next to the
+		// table, so that the diff knows about it and does not read it back as
+		// an index nobody asked for and drop it.
+		if isVectorType(column.Type) {
+			tag, hasTag := field.TagSettings["VECTOR_INDEX"]
+			if index := vectorIndex(t.Name, column, tag, hasTag); index != nil {
+				t.Index = append(t.Index, *index)
+			}
 		}
 
 		var r = field.IndirectFieldType
@@ -182,6 +206,11 @@ func (p *PGDialect) fromStatementToTable(stmt *gorm.Statement) pgDdlTable {
 // getCreateQuery generates CREATE TABLE DDL for a new table.
 func (p *PGDialect) getCreateQuery(t pgDdlTable) []string {
 	var queries []string
+
+	// Pre-CREATE: the vector type has to exist before a column can use it
+	if tableHasVector(t) {
+		queries = append(queries, vectorExtension)
+	}
 
 	// Pre-CREATE: ENUM types
 	for _, col := range t.Columns {
@@ -267,6 +296,11 @@ func (p *PGDialect) getDiff(local pgDdlTable, remote pgRemoteTable) []string {
 	var afterPK []string
 	var primaryKeys []string
 
+	// Set when a vector column is about to be created, which is the only time
+	// the extension has to be ensured. Emitting it unconditionally would leave
+	// every table with a vector column reporting a pending migration forever.
+	var needsVectorExtension bool
+
 	// Check for new ENUM types needed
 	for _, col := range local.Columns {
 		if strings.HasPrefix(strings.ToLower(col.Type), "enum(") {
@@ -296,6 +330,9 @@ func (p *PGDialect) getDiff(local pgDdlTable, remote pgRemoteTable) []string {
 		r := remote.Columns.GetColumn(field.Name)
 		if r == nil {
 			// Column does not exist — ADD
+			if isVectorType(field.Type) {
+				needsVectorExtension = true
+			}
 			queries = append(queries, fmt.Sprintf("-- column %s does not exist", field.Name))
 			addQuery := p.getFieldQuery(&field, &local)
 			// PG: when adding NOT NULL column to existing table, add DEFAULT for the zero value
@@ -319,6 +356,9 @@ func (p *PGDialect) getDiff(local pgDdlTable, remote pgRemoteTable) []string {
 				localType := p.normalizeType(field.Type)
 				remoteType := p.normalizeType(r.ColumnType)
 				if localType != remoteType {
+					if isVectorType(field.Type) {
+						needsVectorExtension = true
+					}
 					queries = append(queries, fmt.Sprintf("-- column %s type does not match. new:%s old:%s", field.Name, localType, remoteType))
 					stmt := fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s TYPE %s",
 						p.Quote(local.Name), p.Quote(field.Name), p.pgColumnType(&field, &local))
@@ -463,6 +503,18 @@ func (p *PGDialect) getDiff(local pgDdlTable, remote pgRemoteTable) []string {
 				changed = true
 				queries = append(queries, fmt.Sprintf("-- index unique flag not match. new:%t old:%t", index.Unique, r.Unique))
 			}
+			// A vector index is defined by more than its columns: the access
+			// method and the operator class decide which queries can use it, so
+			// a change to either has to rebuild it.
+			if index.Method != "" {
+				if !strings.EqualFold(index.Method, r.Method) {
+					changed = true
+					queries = append(queries, fmt.Sprintf("-- index method does not match. new:%s old:%s", index.Method, r.Method))
+				} else if index.Ops != "" && !strings.EqualFold(index.Ops, r.Ops) {
+					changed = true
+					queries = append(queries, fmt.Sprintf("-- index operator class does not match. new:%s old:%s", index.Ops, r.Ops))
+				}
+			}
 			if len(r.Columns) != len(index.Columns) {
 				queries = append(queries, fmt.Sprintf("-- index columns does not match"))
 				changed = true
@@ -498,6 +550,10 @@ func (p *PGDialect) getDiff(local pgDdlTable, remote pgRemoteTable) []string {
 		if col.OnUpdate != "" {
 			queries = append(queries, p.getUpdateTriggerStatements(local.Name, col.Name)...)
 		}
+	}
+
+	if needsVectorExtension && len(queries) > 0 {
+		queries = append([]string{vectorExtension}, queries...)
 	}
 
 	return queries
@@ -559,6 +615,9 @@ func (p *PGDialect) nullClause(field *schema.Column) string {
 
 // createIndexSQL generates CREATE INDEX SQL for an index.
 func (p *PGDialect) createIndexSQL(index schema.Index, tableName string) string {
+	if index.Method != "" && len(index.Columns) == 1 {
+		return p.vectorIndexSQL(index, tableName)
+	}
 	if index.FullText {
 		var cols []string
 		for _, c := range index.Columns {

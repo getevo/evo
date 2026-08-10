@@ -88,6 +88,9 @@ type pgRemoteIndexStat struct {
 	NonUnique  bool   `gorm:"column:non_unique"`
 	Name       string `gorm:"column:index_name"`
 	ColumnName string `gorm:"column:column_name"`
+	Method     string `gorm:"column:method"`
+	Definition string `gorm:"column:definition"`
+	Ops        string `gorm:"column:ops"`
 }
 
 // pgRemoteIndex represents an index retrieved from the database.
@@ -96,6 +99,19 @@ type pgRemoteIndex struct {
 	Table   string
 	Unique  bool
 	Columns pgRemoteColumns
+
+	// Method is the access method the index was built with — btree for an
+	// ordinary index, hnsw or ivfflat for a vector one.
+	Method string
+
+	// Definition is the statement that would recreate the index, useful in the
+	// message when a difference is reported.
+	Definition string
+
+	// Ops is the operator class of the first indexed column, which pairs with
+	// Method: an hnsw index is only usable by a query whose distance operator
+	// belongs to this class.
+	Ops string
 }
 
 type pgRemoteIndexes []pgRemoteIndex

@@ -260,6 +260,36 @@ type Post struct {
 }
 ```
 
+### Vector columns (pgvector)
+
+`types.Vector` stores an embedding in a [pgvector](https://github.com/pgvector/pgvector)
+`vector` column, with an HNSW or IVFFlat index and distance search:
+
+```go
+import "github.com/getevo/evo/v2/lib/db/types"
+
+type Document struct {
+    ID        uint         `gorm:"column:id;primaryKey;autoIncrement"`
+    Body      string       `gorm:"column:body;type:text"`
+    Embedding types.Vector `gorm:"column:embedding;size:1536;vector_index:hnsw"`
+}
+
+var docs []Document
+db.Model(&Document{}).
+    Scopes(types.Nearest("embedding", query, types.VectorCosine)).
+    Limit(5).
+    Find(&docs)
+```
+
+Migration creates the extension, the `vector(1536)` column and the index. The
+column is nullable, because a row usually exists before its embedding is
+computed.
+
+This needs PostgreSQL with the pgvector extension available — there is no
+equivalent on the other drivers. **See [Vector Columns](vector.md)** for the full
+documentation: index methods and metrics, searching, the API, pitfalls and a
+runnable example.
+
 ## Health checks
 
 Use `db.Ping` and `db.HealthCheck` to integrate with the EVO health check system:
@@ -312,6 +342,7 @@ SELECT pg_advisory_unlock(hashtext('schema_migration_lock'));
 
 ## See Also
 
+- [Vector Columns (pgvector)](vector.md)
 - [MySQL Driver](mysql.md)
 - [Database](database.md)
 - [Health Checks](health-checks.md)

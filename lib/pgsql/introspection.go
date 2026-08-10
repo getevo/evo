@@ -34,6 +34,11 @@ func (p *PGDialect) introspectColumns(db *gorm.DB, database string) pgRemoteColu
 		       c.is_nullable                  AS is_nullable,
 		       c.udt_name                     AS data_type,
 		       CASE
+		           -- A vector's width is part of its type but not of
+		           -- information_schema, so it is read from the catalog. Without
+		           -- it every migration would see vector against vector(1536)
+		           -- and rewrite the column forever.
+		           WHEN c.udt_name = 'vector' THEN format_type(a.atttypid, a.atttypmod)
 		           WHEN c.data_type = 'USER-DEFINED' THEN c.udt_name
 		           WHEN c.udt_name = 'varchar' AND c.character_maximum_length IS NOT NULL
 		               THEN 'varchar(' || c.character_maximum_length || ')'
@@ -72,6 +77,8 @@ func (p *PGDialect) introspectColumns(db *gorm.DB, database string) pgRemoteColu
 		FROM information_schema.columns c
 		LEFT JOIN pg_class cls
 		       ON cls.relname = c.table_name AND cls.relnamespace = (SELECT oid FROM pg_namespace WHERE nspname = ?)
+		LEFT JOIN pg_attribute a
+		       ON a.attrelid = cls.oid AND a.attname = c.column_name AND a.attnum > 0 AND NOT a.attisdropped
 		LEFT JOIN (
 		    SELECT ku.table_name, ku.column_name
 		    FROM information_schema.key_column_usage ku
@@ -116,10 +123,19 @@ func (p *PGDialect) introspectIndexes(db *gorm.DB, database string, is pgRemoteT
 		       t.relname                     AS table_name,
 		       NOT ix.indisunique            AS non_unique,
 		       i.relname                     AS index_name,
-		       a.attname                     AS column_name
+		       a.attname                     AS column_name,
+		       am.amname                     AS method,
+		       pg_get_indexdef(i.oid)        AS definition,
+		       -- The operator class of the first indexed column. It is read
+		       -- from the catalog rather than from the definition above,
+		       -- because pg_get_indexdef leaves the operator class out when it
+		       -- is the default for the access method — an ivfflat index on
+		       -- vector_l2_ops prints as plain "USING ivfflat (embedding)".
+		       (SELECT opc.opcname FROM pg_opclass opc WHERE opc.oid = ix.indclass[0]) AS ops
 		FROM pg_index ix
 		JOIN pg_class t ON t.oid = ix.indrelid
 		JOIN pg_class i ON i.oid = ix.indexrelid
+		JOIN pg_am am ON am.oid = i.relam
 		JOIN pg_namespace ns ON t.relnamespace = ns.oid
 		JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY(ix.indkey)
 		WHERE ns.nspname = ?
@@ -134,9 +150,12 @@ func (p *PGDialect) introspectIndexes(db *gorm.DB, database string, is pgRemoteT
 		}
 		if _, ok := indexMap[item.Table+item.Name]; !ok {
 			indexMap[item.Table+item.Name] = pgRemoteIndex{
-				Name:   item.Name,
-				Table:  item.Table,
-				Unique: !item.NonUnique,
+				Name:       item.Name,
+				Table:      item.Table,
+				Unique:     !item.NonUnique,
+				Method:     item.Method,
+				Definition: item.Definition,
+				Ops:        item.Ops,
 			}
 		}
 		var m = indexMap[item.Table+item.Name]

@@ -80,6 +80,17 @@ type Index struct {
 	Unique   bool
 	FullText bool
 	Columns  Columns
+
+	// Method is the index access method, for the dialects that expose more
+	// than one — PostgreSQL builds a vector index with "hnsw" or "ivfflat".
+	// Empty means the default, which every dialect renders as a plain index.
+	Method string
+
+	// Ops is the operator class applied to the indexed column, which
+	// PostgreSQL needs alongside Method: an "hnsw" index on a vector column is
+	// only used by a query that measures distance the way its operator class
+	// does. Ignored when Method is empty.
+	Ops string
 }
 
 // Indexes is a slice of Index with helper methods.

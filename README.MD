@@ -18,6 +18,7 @@ With EVO Framework, you can focus on your programming logic and rapidly develop 
   - [MySQL Driver](docs/mysql.md)
   - [PostgreSQL Driver](docs/pgsql.md)
   - [Database Migration](docs/migration.md)
+  - [Vector Columns (pgvector)](docs/vector.md)
 - [Health Checks](docs/health-checks.md)
 - [HTTP Responses (Outcome)](docs/outcome.md)
 - [MCP Server (AI agent tools)](docs/mcp.md)
