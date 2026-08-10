@@ -43,8 +43,7 @@ func Setup(params ...any) error {
 	settings.Register("HTTP", &http)
 	settings.Get("HTTP").Cast(&http)
 
-	settings.Register("MCP", &mcpConfig)
-	settings.Get("MCP").Cast(&mcpConfig)
+	loadMCPConfig()
 
 	err = generic.Parse(http).Cast(&fiberConfig)
 

@@ -12,6 +12,7 @@ import (
 	"github.com/getevo/evo/v2/lib/log"
 	"github.com/getevo/evo/v2/lib/mcp"
 	"github.com/getevo/evo/v2/lib/outcome"
+	"github.com/getevo/evo/v2/lib/settings"
 	"github.com/getevo/evo/v2/lib/validation"
 	"github.com/getevo/json"
 	"github.com/tidwall/gjson"
@@ -50,6 +51,20 @@ var mcpConfig = MCPConfig{
 	Path:    "/mcp",
 	Name:    "evo",
 	Version: "1.0.0",
+}
+
+// loadMCPConfig reads the MCP section of the configuration file over the
+// defaults above.
+//
+// The section is optional: the endpoint is off unless it is asked for, and a
+// configuration file written before the endpoint existed has no MCP section at
+// all. Casting a section that is not there would read struct fields off a
+// string, so its presence is checked first.
+func loadMCPConfig() {
+	settings.Register("MCP", &mcpConfig)
+	if exists, section := settings.Has("MCP"); exists {
+		section.Cast(&mcpConfig)
+	}
 }
 
 // MCPToolHandler executes a tool call. The value it returns is shaped into an

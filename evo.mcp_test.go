@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/getevo/evo/v2/lib/mcp"
+	"github.com/getevo/evo/v2/lib/settings"
 	"github.com/getevo/json"
 	"github.com/gofiber/fiber/v3"
 )
@@ -946,5 +947,28 @@ func TestRegisterMCPEndpointsMountsConfiguredPath(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json")
 	if res := do(t, a, req); res.status != nethttp.StatusOK {
 		t.Errorf("expected the endpoint at the configured path, got %d", res.status)
+	}
+}
+
+// A configuration file written before this endpoint existed has no MCP section
+// at all. Loading it has to leave the defaults in place — casting a section
+// that is not there would read struct fields off a string and panic, which
+// would take down every application that upgrades without adopting MCP.
+func TestLoadMCPConfigWithoutASection(t *testing.T) {
+	if exists, _ := settings.Has("MCP"); exists {
+		t.Skip("this environment has an MCP section, so the case under test cannot arise")
+	}
+
+	previous := mcpConfig
+	t.Cleanup(func() { mcpConfig = previous })
+
+	mcpConfig = MCPConfig{Path: "/mcp", Name: "evo", Version: "1.0.0"}
+	loadMCPConfig()
+
+	if mcpConfig.Enabled {
+		t.Error("an absent section enabled the endpoint")
+	}
+	if mcpConfig.Path != "/mcp" || mcpConfig.Name != "evo" || mcpConfig.Version != "1.0.0" {
+		t.Errorf("an absent section overwrote the defaults: %+v", mcpConfig)
 	}
 }
